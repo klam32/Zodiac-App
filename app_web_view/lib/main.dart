@@ -94,7 +94,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
             setState(() => _isLoading = false);
             if (_activeToken != null) _injectTokenToWeb(_activeToken!);
           },
-          onWebResourceError: (_) => setState(() { _isLoading = false; _hasError = true; }),
+          onWebResourceError: (error) {
+            if (error.isForMainFrame ?? true) {
+              setState(() { _isLoading = false; _hasError = true; });
+            }
+          },
           onNavigationRequest: _handleNavigation,
         ),
       )
