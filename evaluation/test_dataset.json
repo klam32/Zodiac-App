@@ -1,0 +1,142 @@
+[
+  {
+    "question": "Người có Mặt Trời ở cung Sư Tử có tính cách như thế nào?",
+    "ground_truth": "Người có Mặt Trời ở cung Sư Tử thường tự tin, lãnh đạo, sáng tạo, hào phóng và yêu thích sự chú ý. Họ có bản lĩnh mạnh mẽ, nhiệt huyết và năng lượng dồi dào. Sư Tử thuộc nguyên tố Lửa và được cai quản bởi Mặt Trời.",
+    "birth_info": {
+      "name": "Test User A",
+      "year": 1995,
+      "month": 8,
+      "day": 10,
+      "hour": 12,
+      "minute": 0,
+      "city": "Ho Chi Minh",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Cung Mọc ảnh hưởng đến ngoại hình và cách thể hiện bản thân như thế nào?",
+    "ground_truth": "Cung Mọc (Ascendant) đại diện cho Nhà 1, ảnh hưởng trực tiếp đến ngoại hình, phong cách, ấn tượng đầu tiên và cách một người tự thể hiện với thế giới bên ngoài. Đây là mặt nạ xã hội và cách người khác nhìn nhận chúng ta.",
+    "birth_info": {
+      "name": "Test User B",
+      "year": 1998,
+      "month": 3,
+      "day": 21,
+      "hour": 6,
+      "minute": 30,
+      "city": "Hanoi",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Thổ ở Nhà 10 ảnh hưởng đến sự nghiệp như thế nào?",
+    "ground_truth": "Sao Thổ ở Nhà 10 chỉ ra sự nghiệp đòi hỏi kỷ luật, kiên nhẫn và nỗ lực lâu dài. Nhà 10 liên quan đến danh tiếng và địa vị xã hội. Sao Thổ mang lại trách nhiệm nặng nề nhưng cũng thành công bền vững nếu kiên trì.",
+    "birth_info": {
+      "name": "Test User C",
+      "year": 1990,
+      "month": 1,
+      "day": 15,
+      "hour": 9,
+      "minute": 0,
+      "city": "Da Nang",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Kim ở Nhà 7 nói lên điều gì về tình duyên và hôn nhân?",
+    "ground_truth": "Sao Kim ở Nhà 7 là vị trí rất thuận lợi cho tình duyên và hôn nhân. Nhà 7 đại diện cho đối tác và hôn nhân. Sao Kim mang lại vẻ đẹp, sự hài hòa và lãng mạn trong các mối quan hệ. Người này thường thu hút đối tác duyên dáng, nghệ thuật.",
+    "birth_info": {
+      "name": "Test User D",
+      "year": 1997,
+      "month": 5,
+      "day": 20,
+      "hour": 15,
+      "minute": 0,
+      "city": "Ho Chi Minh",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Nhà 6 trong bản đồ sao liên quan đến sức khỏe như thế nào?",
+    "ground_truth": "Nhà 6 đại diện cho sức khỏe, thói quen hàng ngày, chế độ ăn uống và công việc thường nhật. Các hành tinh trong Nhà 6 ảnh hưởng đến thể trạng và xu hướng bệnh tật của một người. Đây là nhà quan trọng để đánh giá sức khỏe tổng thể.",
+    "birth_info": {
+      "name": "Test User E",
+      "year": 2000,
+      "month": 9,
+      "day": 5,
+      "hour": 7,
+      "minute": 0,
+      "city": "Hanoi",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Người có Mặt Trăng ở cung Cự Giải có cảm xúc và tâm lý như thế nào?",
+    "ground_truth": "Mặt Trăng ở cung Cự Giải là vị trí rất mạnh vì Mặt Trăng cai quản Cự Giải. Người này cực kỳ nhạy cảm, trực giác tốt, yêu gia đình và có cảm xúc sâu sắc. Họ có xu hướng bảo vệ người thân và cần môi trường an toàn về cảm xúc.",
+    "birth_info": {
+      "name": "Test User F",
+      "year": 1993,
+      "month": 7,
+      "day": 4,
+      "hour": 22,
+      "minute": 0,
+      "city": "Ho Chi Minh",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Mộc ảnh hưởng như thế nào đến may mắn và cơ hội trong cuộc sống?",
+    "ground_truth": "Sao Mộc đại diện cho may mắn, sự mở rộng, triết lý và cơ hội phát triển. Đây là hành tinh của sự sung túc và lạc quan. Vị trí của Sao Mộc trong bản đồ sao chỉ ra lĩnh vực mà người đó dễ gặp may mắn và phát triển nhất.",
+    "birth_info": {
+      "name": "Test User G",
+      "year": 1988,
+      "month": 11,
+      "day": 22,
+      "hour": 10,
+      "minute": 0,
+      "city": "Hanoi",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Cung Bọ Cạp có đặc điểm tính cách gì nổi bật?",
+    "ground_truth": "Bọ Cạp thuộc nguyên tố Nước, được cai quản bởi Sao Diêm Vương và Sao Hỏa. Người Bọ Cạp thường bí ẩn, sâu sắc, quyết đoán, có trực giác mạnh và khả năng tái sinh sau khó khăn. Họ trung thành nhưng cũng có thể ghen tuông và cần kiểm soát.",
+    "birth_info": {
+      "name": "Test User H",
+      "year": 1996,
+      "month": 11,
+      "day": 1,
+      "hour": 0,
+      "minute": 0,
+      "city": "Da Nang",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Nhà 5 trong chiêm tinh liên quan đến tình yêu lãng mạn như thế nào?",
+    "ground_truth": "Nhà 5 đại diện cho tình yêu lãng mạn, niềm vui, sáng tạo, con cái và sự tự thể hiện. Các hành tinh trong Nhà 5 ảnh hưởng đến cách một người trải nghiệm tình yêu và niềm vui sống. Đây là nhà của sự lãng mạn và đam mê.",
+    "birth_info": {
+      "name": "Test User I",
+      "year": 2001,
+      "month": 2,
+      "day": 14,
+      "hour": 12,
+      "minute": 0,
+      "city": "Ho Chi Minh",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Người có Sao Hỏa ở cung Bạch Dương có năng lượng và tham vọng như thế nào?",
+    "ground_truth": "Sao Hỏa ở Bạch Dương là vị trí đặc biệt mạnh vì Sao Hỏa cai quản Bạch Dương. Người này có năng lượng dồi dào, hành động nhanh quyết đoán, tinh thần tiên phong và tham vọng mạnh mẽ. Họ dũng cảm, cạnh tranh và đôi khi bốc đồng.",
+    "birth_info": {
+      "name": "Test User J",
+      "year": 1992,
+      "month": 4,
+      "day": 1,
+      "hour": 8,
+      "minute": 0,
+      "city": "Hanoi",
+      "country": "VN"
+    }
+  }
+]

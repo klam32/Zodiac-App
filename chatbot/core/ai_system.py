@@ -1,0 +1,306 @@
+import re
+import json
+import asyncio
+import logging
+from typing import Dict, Any, List
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
+
+from chatbot.services.astrology_agent import AstrologyChatAgent
+from chatbot.services.career_agent import CareerAgent
+from chatbot.services.love_agent import LoveAgent
+from chatbot.services.daily_agent import DailyAgent
+from chatbot.services.health_agent import HealthAgent
+from chatbot.services.personality_agent import PersonalityAgent
+from chatbot.services.guard_agent import GuardAgent
+from chatbot.services.validator_agent import ValidatorAgent
+from chatbot.utils.text_cleaner import normalize_markdown
+from chatbot.rag.knowledge_graph import get_astrology_kg, extract_astrology_entities, extract_astrology_entities_llm
+
+AGENT_TITLES = {
+    "career": "Định hướng Sự nghiệp",
+    "love": "Nhịp đập Tình duyên",
+    "health": "Năng lượng Sức khỏe",
+    "personality": "Bản sắc Cá nhân",
+    "daily": "Tử vi Hàng ngày",
+    "astrology": "Luận giải Bản đồ sao"
+}
+
+class AISystem:
+    def __init__(
+        self,
+        llm,
+        db,
+        astrology_agent,
+        career_agent,
+        love_agent,
+        daily_agent,
+        personality_agent,
+        health_agent
+    ):
+        self.llm = llm
+        self.db = db
+        self.guard = GuardAgent(llm)
+        self.validator = ValidatorAgent(llm)
+
+        # Tăng số lượng thread để tránh bị treo khi chạy nhiều agent song song
+        self.executor = ThreadPoolExecutor(max_workers=50)
+
+        # 🔮 astrology
+        self.astrology = astrology_agent
+
+        # 🤖 registry
+        self.registry = {
+            "career": career_agent,
+            "love": love_agent,
+            "daily": daily_agent,
+            "personality": personality_agent,
+            "health": health_agent
+        }
+
+
+    # =====================================================
+    # 🧠 ALL-IN-ONE ANALYZER 
+    # =====================================================
+    def analyze(self, question, memory, birth_info):
+
+        prompt = f"""
+Bạn là AI Điều phối viên Chiêm tinh. Hãy phân tích yêu cầu của người dùng.
+
+DỮ LIỆU NGƯỜI DÙNG:
+{json.dumps(birth_info, ensure_ascii=False)}
+
+BỘ NHỚ (MEMORY):
+{json.dumps(memory, ensure_ascii=False)}
+
+CÂU HỎI: "{question}"
+
+NHIỆM VỤ:
+1. Xác định 'intents': Danh sách các lĩnh vực cần trả lời (chọn từ: career, love, daily, personality, health).
+2. Trích xuất 'profile': Cập nhật thông tin mới về người dùng nếu có (tính cách, sở thích...).
+3. Đánh giá 'emotion': Phân tích trạng thái cảm xúc của người dùng qua câu hỏi (ví dụ: vui vẻ, buồn bã, lo âu, tò mò, trung tính, bức xúc, v.v.).
+4. Trích xuất 'entities': Tìm các từ khóa chiêm tinh liên quan (Cung hoàng đạo, Hành tinh, Nhà 1-12, Sự nghiệp, Tình duyên, Sức khỏe).
+
+⚠️ OUTPUT: CHỈ TRẢ JSON, KHÔNG GIẢI THÍCH
+========================
+Format:
+{{
+  "intents": ["intent1", "intent2"],
+  "profile": {{ "traits": [], "focus": [] }},
+  "emotion": "tò mò",
+  "entities": ["Xử Nữ", "Sự nghiệp"]
+}}
+"""
+
+        try:
+            res = self.llm.invoke(prompt)
+            content = res.content if hasattr(res, "content") else str(res)
+            
+            # Robust JSON extraction
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group(0))
+            else:
+                # Fallback nếu không thấy JSON
+                data = {"intents": [], "profile": {}}
+
+            intents = data.get("intents", [])
+            profile = data.get("profile", {})
+            emotion = data.get("emotion", "trung tính")
+            entities = data.get("entities", [])
+            
+            # Lọc sạch intents ngay lập tức
+            valid_intents = [i for i in intents if i in self.registry]
+            
+            # Trả về mặc định nếu rỗng
+            final_intents = valid_intents if valid_intents else ["personality"]
+            return final_intents, profile or memory, emotion, entities
+
+        except Exception as e:
+            print(f"[Orchestrator] ⚠️ Lỗi phân tích Intent: {e}")
+            return ["personality"], memory, "trung tính", []
+
+    # =====================================================
+    # 🚀 SPAWN
+    # =====================================================
+    def spawn(self, intents):
+        print(f"\n[Orchestrator] 🔮 Khởi tạo các Agent chuyên biệt cho: {intents}")
+        return [self.registry[i] for i in intents if i in self.registry]
+
+    # =====================================================
+    # ⚡ RUN PARALLEL
+    # =====================================================
+    async def run_agents(self, agents, input_data):
+        print(f"[Orchestrator] ⚡ Đang chạy song song {len(agents)} Agent...")
+        
+        # --- GRAPH RAG INTEGRATION (OPTIMIZED) ---
+        question = input_data.get("question", "")
+        entities = input_data.get("entities", [])
+        
+        # Kết hợp thêm keyword entities để chắc chắn
+        keyword_entities = extract_astrology_entities(question)
+        final_entities = list(set(entities + keyword_entities))
+        
+        kg = get_astrology_kg()
+        graph_facts = kg.extract_subgraph(final_entities, max_depth=2)
+        
+        if graph_facts:
+            facts_str = "\n".join(graph_facts)
+            print(f"[GraphRAG] Da tim thay {len(graph_facts)} su kien logic tu Knowledge Graph.")
+            input_data["question"] = question + f"\n\n[KIẾN THỨC CHIÊM TINH HỆ THỐNG CUNG CẤP TỪ KNOWLEDGE GRAPH]:\n{facts_str}\n\nHãy ĐỌC KỸ và ÁP DỤNG MỘT CÁCH KHÉO LÉO các chuỗi logic từ Knowledge Graph này vào phần phân tích của bạn để đưa ra những lời khuyên chính xác, học thuật nhất."
+        else:
+            print(f"[GraphRAG] Khong tim thay thuc the chiem tinh trong cau hoi.")
+        # -----------------------------
+        # -----------------------------
+
+        loop = asyncio.get_event_loop()
+        tasks = [loop.run_in_executor(self.executor, lambda a=agent: a.run(input_data)) for agent in agents]
+        results = await asyncio.gather(*tasks)
+        print(f"[Orchestrator] ✅ Tất cả các Agent đã hoàn thành.\n")
+        return results
+
+    # =====================================================
+    # 🧠 FUSION (LLM)
+    # =====================================================
+    def fuse(self, results, question):
+        # Thu thập câu trả lời từ các agent kèm theo loại agent
+        context_data = []
+        for r in results:
+            if isinstance(r, dict) and r.get("answer"):
+                context_data.append({
+                    "type": r.get("type", "chung"),
+                    "content": r.get("answer")
+                })
+        
+        if not context_data: 
+            return "Tôi chưa tìm thấy thông tin phù hợp cho câu hỏi này."
+
+        prompt = f"""
+Bạn là AI Biên tập viên Chiêm tinh Cao cấp. Hãy tổng hợp các phân tích sau đây thành một bản luận giải có cấu trúc chuyên nghiệp, sang trọng và dễ đọc.
+
+CÂU HỎI CỦA NGƯỜI DÙNG: "{question}"
+
+DỮ LIỆU TỪ CÁC CHUYÊN GIA:
+{json.dumps(context_data, ensure_ascii=False, indent=2)}
+
+YÊU CẦU ĐỊNH DẠNG (BẮT BUỘC ĐỂ HỆ THỐNG RAG CHIA CHUNK CHÍNH XÁC):
+1. **Tiêu đề Phân đoạn**: BẮT BUỘC phải sử dụng thẻ Markdown Heading 2 (##) cho các phần chính và Heading 3 (###) cho các mục con (Ví dụ: ## Tầm nhìn Sự nghiệp, ### 1. Động lực và Cơ hội). 
+   - Tuyệt đối KHÔNG sử dụng chữ in đậm thông thường (**text**) hay danh sách số tự do (1. text) để làm tiêu đề phân đoạn. Phải dùng `##` hoặc `###` ở đầu dòng.
+   - Tuyệt đối không sử dụng icon trong tiêu đề.
+2. **Trình bày**: Sử dụng Markdown linh hoạt (danh sách bullet, in đậm, trích dẫn) bên dưới các tiêu đề để làm nổi bật các ý chính. Đừng chỉ viết các đoạn văn dài.
+3. **Mượt mà**: Viết các câu dẫn dắt và kết nối giữa các phần để bài viết là một chỉnh thể thống nhất, không phải là các mảnh ghép rời rạc.
+4. **Văn phong**: Chuyên nghiệp, truyền cảm hứng và sâu sắc.
+
+TRẢ LỜI (MARKDOWN):
+"""
+        print(f"[Orchestrator] 🧠 Đang tổng hợp và biên tập nội dung...")
+        res = self.llm.invoke(prompt)
+        content = res.content if hasattr(res, "content") else str(res)
+        return normalize_markdown(content)
+
+    # =====================================================
+    # 🚀 MAIN RUN
+    # =====================================================
+    async def run(self, question, birth_info):
+        from datetime import datetime
+        current_date = datetime.now().strftime("%d/%m/%Y")
+        user_id = birth_info.get("user_id", 1)
+        
+        local_db = None
+        try:
+            # 🔥 SỬ DỤNG DB RIÊNG CHO MỖI REQUEST ĐỂ TRÁNH TRANH CHẤP THREAD
+            from app.models.base_db import UserDB
+            local_db = await asyncio.to_thread(UserDB)
+            
+            await asyncio.to_thread(local_db.reconnect)
+            memory = await asyncio.to_thread(local_db.get_user_memory, user_id) or {}
+
+            # 1. Detect Mode
+            print(f"[Orchestrator] 🚀 Đang xử lý câu hỏi: {(question or '')[:50]}...")
+            is_init = not question or not question.strip()
+
+            # 2. XỬ LÝ NHANH NẾU LÀ INIT
+            if is_init:
+                astro_res = await asyncio.to_thread(self.astrology.run, {
+                    "birth_info": birth_info, 
+                    "question": "",
+                    "field": birth_info.get("field", "general")
+                })
+                return {
+                    "mode": "init", 
+                    "chart": astro_res.get("chart"), 
+                    "chart_svg": astro_res.get("chart_svg"),
+                    "chart_summary": astro_res.get("chart_summary"),
+                    "answer": ""
+                }
+
+            # 3. CHẾ ĐỘ CHAT: CHẠY SONG SONG CÁC TÁC VỤ KIỂM TRA VÀ PHÂN TÍCH
+            print("[Orchestrator] ⚡ Đang chạy song song Guard, Analyze và AstrologyTask...")
+            guard_task = asyncio.to_thread(self.guard.run, question)
+            analyze_task = asyncio.to_thread(self.analyze, question, memory, birth_info)
+            astro_task = asyncio.to_thread(self.astrology.run, {
+                "birth_info": birth_info, 
+                "question": question,
+                "field": birth_info.get("field", "general")
+            })
+
+            # Chờ cả 3 tác vụ hoàn thành song song
+            guard, (intents, profile, emotion, entities), astro_res = await asyncio.gather(
+                guard_task, analyze_task, astro_task
+            )
+
+            # Kiểm tra Guard sau khi đã có kết quả
+            if not guard.get("is_astrology") or guard.get("confidence", 0) < 0.6:
+                print("[Orchestrator] 🛑 Câu hỏi bị từ chối bởi Guard.")
+                return {"mode": "chat", "answer": "XIN LỖI TÔI CHỈ LÀ CHATBOT CHIÊM TINH"}
+
+            print(f"[Orchestrator] ✅ Intents: {intents}, Emotion: {emotion}")
+
+            # Cập nhật bộ nhớ
+            await asyncio.to_thread(local_db.reconnect)
+            await asyncio.to_thread(local_db.update_user_memory, user_id, profile)
+
+            # 5. CHẾ ĐỘ CHAT: CHẠY AGENTS CHUYÊN GIA
+            agents = self.spawn(intents)
+            agent_results = await self.run_agents(agents, {
+                "question": question, 
+                "birth_info": birth_info, 
+                "current_date": current_date, 
+                "memory": memory, 
+                "emotion": emotion,
+                "entities": entities,
+                "raw_chart_data": astro_res.get("raw_chart_data") if isinstance(astro_res, dict) else None
+            })
+            
+            # 🔥 QUAN TRỌNG: Gộp kết quả từ AstrologyAgent vào danh sách kết quả
+            # Nếu AstrologyAgent có câu trả lời (ở chế độ Chat), ta phải đưa nó vào để hiển thị
+            if astro_res and isinstance(astro_res, dict) and astro_res.get("answer"):
+                agent_results.append(astro_res)
+            
+            # 🔥 TỐI ƯU TỐC ĐỘ:
+            # Nếu chỉ có 1 agent, không cần gọi thêm LLM Fusion để tiết kiệm thời gian.
+            # Chúng ta sẽ tự thêm tiêu đề theo đúng format yêu cầu.
+            if len(agent_results) == 1 and isinstance(agent_results[0], dict):
+                res = agent_results[0]
+                ans = res.get("answer", "")
+                
+                # Chỉ thêm tiêu đề nếu nó chưa có tiêu đề H1/H2/H3
+                if ans and not ans.strip().startswith("#"):
+                    title = AGENT_TITLES.get(res.get("type", "general"), "Luận giải Chiêm tinh")
+                    final_answer = f"### {title}\n\n{ans}"
+                else:
+                    final_answer = ans
+            else:
+                # Chỉ dùng Fusion khi có từ 2 agent trở lên để đảm bảo sự kết nối mượt mà
+                final_answer = await asyncio.to_thread(self.fuse, agent_results, question)
+
+            return {
+                "mode": "chat",
+                "chart": astro_res.get("chart") or astro_res.get("interpretation", ""), 
+                "chart_svg": astro_res.get("chart_svg"),
+                "chart_summary": astro_res.get("chart_summary"),
+                "answer": final_answer
+            }
+        finally:
+            if local_db:
+                local_db.close()

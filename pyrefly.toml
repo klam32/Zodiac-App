@@ -1,0 +1,3 @@
+# Pyrefly configuration
+# Trỏ Pyrefly sang Python interpreter của venv thay vì system Python
+python_interpreter = "e:/HOC_TAP/THUC_TAP/LuanVanTotNghiep/venv/Scripts/python.exe"

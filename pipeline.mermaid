@@ -1,0 +1,37 @@
+graph TD
+    User([Nguoi dung]) -->|Gui cau hoi| API[FastAPI Endpoint /chat]
+    API --> Guard{Guard Agent}
+    
+    Guard -->|Khong hop le| Reject[Tu choi: Xin loi toi chi la...]
+    Guard -->|Hop le| Router[Router / Analyzer]
+    
+    Router -->|Phan tich Intent| Agents{Spawn Agents}
+    
+    subgraph Expert_Agents [Cac Agent Chuyen gia]
+        Career[Career Agent]
+        Love[Love Agent]
+        Health[Health Agent]
+        Daily[Daily Agent]
+        Personality[Personality Agent]
+    end
+    
+    Agents --> Career
+    Agents --> Love
+    Agents --> Health
+    Agents --> Daily
+    Agents --> Personality
+    
+    Career --> Fusion[Fusion Agent]
+    Love --> Fusion
+    Health --> Fusion
+    Daily --> Fusion
+    Personality --> Fusion
+    
+    Fusion -->|Gop cau tra loi| API
+    API -->|Tra ve Markdown| User
+    
+    style User fill:#f9f,stroke:#333,stroke-width:2px
+    style API fill:#bbf,stroke:#333,stroke-width:2px
+    style Guard fill:#fbb,stroke:#333,stroke-width:2px
+    style Router fill:#bfb,stroke:#333,stroke-width:2px
+    style Fusion fill:#fdb,stroke:#333,stroke-width:2px

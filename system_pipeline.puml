@@ -1,0 +1,97 @@
+@startuml Zodiac_Whisper_Backend_Processing
+
+header Zodiac Whisper AI - Backend Architecture
+title ZODIAC WHISPER: DETAILED BACKEND & AI PROCESSING PIPELINE
+
+skinparam shadowing false
+skinparam activity {
+    BackgroundColor #ffffff
+    BorderColor #1a1a1a
+    ArrowColor #1a1a1a
+}
+skinparam note {
+    BackgroundColor #eefbff
+    BorderColor #0078d4
+}
+
+start
+
+partition "1. Request Handling & Astrology Core" {
+    :Tiếp nhận yêu cầu (POST /chat hoặc /chat-followup);
+    
+    :Chuẩn hóa & Parse dữ liệu sinh trắc;
+    note right: Tên, Ngày/Giờ/Nơi sinh, Tọa độ địa lý
+    
+    :Kerykeion Core Calculation;
+    note right
+        - Tính toán vị trí các hành tinh (Sun, Moon, ASC...)
+        - Xác định các góc chiếu (Aspects: Trine, Square...)
+        - Xuất biểu đồ SVG & Dữ liệu JSON bản đồ sao
+    end note
+}
+
+partition "2. AI Orchestration Layer (AISystem)" {
+    :Kích hoạt Guard Agent;
+    note right: Phân loại nội dung & Chặn các câu hỏi rác/nhạy cảm
+
+    fork
+        :Truy vấn SQLite Database;
+        note right: Lấy Memory (Tính cách, sở thích) & Lịch sử hội thoại
+    fork again
+        :LLM Intent Analysis & Routing;
+        note right: Phân tích Ý định: Career, Love, Health, Daily, Personality
+    end fork
+
+    partition "3. Parallel Multi-Agent Execution" {
+        :Spawn Agent Instances (On-demand);
+        
+        :Parallel Processing (ThreadPoolExecutor);
+        note right
+            Mỗi Agent được cấp context:
+            - Câu hỏi hiện tại
+            - Dữ liệu Bản đồ sao
+            - Memory người dùng
+        end note
+        
+        split
+            :Career Analysis;
+        split again
+            :Love/Synastry Analysis;
+        split again
+            :Health/Energy Analysis;
+        split again
+            :Daily Horoscope;
+        split again
+            :Personality Traits;
+        end split
+    }
+
+    :Fusion & UX Synthesis;
+    note right: LLM tổng hợp các insight rời rạc thành một phản hồi Markdown mạch lạc
+}
+
+partition "4. Tokenomics & Data Persistence" {
+    :Token Counter (Counting In/Out);
+    
+    :Deduct User Token Balance;
+    note right: Trừ token dựa trên độ phức tạp và LLM sử dụng
+    
+    :Persistence (SQLite DB Update);
+    note right
+        - Lưu Chat Log (Q&A)
+        - Lưu Chart SVG & Raw Data
+        - Cập nhật Memory (Profile mới)
+    end note
+}
+
+:Trả về Response (JSON);
+note right
+    - Answer (Markdown)
+    - Chart (SVG & Summary)
+    - Tokens & Balance info
+end note
+
+stop
+
+footer Thực hiện theo quy trình xử lý thực tế của Zodiac Whisper Backend
+@enduml

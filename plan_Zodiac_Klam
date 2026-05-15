@@ -1,0 +1,52 @@
+# Tích hợp Hệ thống Chunking & Đánh giá Retriever cho RAG trong Chat Followup
+
+Yêu cầu của bạn là khi tạo bản đồ sao, kết quả luận giải (văn bản được sinh ra bởi LLM) sẽ được lưu lại làm tập dữ liệu (dataset) tạm thời, sau đó tự động cắt nhỏ (chunking). Các câu hỏi "chat followup" sau này bắt buộc phải sử dụng các đoạn chunk này để làm ngữ cảnh trả lời. Đặc biệt, trong câu trả lời phải chỉ ra rõ LLM đã sử dụng những chunk nào, kèm theo tính toán điểm số (score) để đánh giá xem hệ thống Retriever (truy xuất) có hoạt động chính xác không (chunk phù hợp nhất có nằm ở top đầu không).
+
+## ⚠️ User Review Required
+
+- Việc lưu trữ vector (embeddings) sẽ được thực hiện trực tiếp trong MySQL (cột kiểu JSON) thay vì sử dụng một Vector Database chuyên dụng (như Milvus hay Pinecone) để giữ hệ thống nhẹ nhàng và không phải cài cắm thêm dependency. MySQL + NumPy thừa sức xử lý <100 chunks cho mỗi bản đồ sao. Bạn có đồng ý với thiết kế này không?
+- Thay vì để LLM tự chia chunk (tốn thời gian và không ổn định), hệ thống sẽ dùng `RecursiveCharacterTextSplitter` của thư viện `langchain` để cắt text thành các đoạn nhỏ đều nhau (khoảng 500-1000 ký tự). Bạn có muốn giới hạn số lượng token/ký tự của mỗi chunk không?
+
+## Proposed Changes
+
+### Database Layer
+Sẽ bổ sung bảng mới để lưu trữ dữ liệu chunk và cập nhật các hàm truy xuất trong `BaseDB`.
+
+#### [MODIFY] `app/models/base_db.py`
+- Thêm table `conversation_chunks` chứa `conversation_id`, `chunk_index`, `content` (text) và `embedding` (JSON).
+- Thêm các hàm `save_document_chunks(conversation_id, chunks_data)` và `get_document_chunks(conversation_id)`.
+
+---
+
+### Backend Logic & RAG System
+Sẽ xây dựng module mới để thực hiện việc cắt văn bản (chunking) và vector hóa (embedding).
+
+#### [NEW] `chatbot/rag/conversation_rag.py`
+- Hàm `process_and_store_chart`: Sử dụng Langchain `RecursiveCharacterTextSplitter` để chia nhỏ nội dung biểu đồ sao đã luận giải. Gọi Gemini Embeddings API để tạo vector và lưu vào DB.
+- Hàm `retrieve_relevant_chunks`: Nhận câu hỏi, tạo embedding, và sử dụng Cosine Similarity để so sánh vector của câu hỏi với tất cả các chunks. Trả về Top K chunks kèm điểm số (Score).
+
+#### [MODIFY] `app/routers/chatbot.py`
+- Trong API `/chat` (lúc Init tạo bản đồ sao): Bổ sung logic chạy dưới dạng `asyncio.to_thread` để gọi `process_and_store_chart` cắt nội dung và lưu ngay sau khi phản hồi cho user.
+- Trong API `/chat-followup`: Gọi `retrieve_relevant_chunks` lấy ngữ cảnh. Chèn các chunk này vào prompt của các Agent. Cập nhật model `ChatResponse` trả về thêm một list `sources` bao gồm nội dung chunk và score.
+
+---
+
+### Frontend Layer
+Cập nhật Typescript interface và component để hiển thị trích dẫn (sources) và cho phép người dùng kiểm tra đoạn chunk và điểm score.
+
+#### [MODIFY] `frontend/types.ts`
+- Cập nhật interface `ChatMessage` và `ChatResponse` bổ sung field `sources?: Array<{ chunk_index: number, content: string, score: number }>`.
+
+#### [MODIFY] `frontend/components/chat/ChatMessageItem.tsx`
+- Bổ sung UI phía dưới tin nhắn của AI để hiển thị danh sách "Nguồn trích dẫn".
+- Khi click vào từng nguồn, mở một thẻ nhỏ chứa đoạn chunk chính xác và điểm số (Relevance Score) để bạn có thể quan sát xem Retriever đánh giá điểm như thế nào.
+
+## Verification Plan
+
+### Automated/Manual Verification
+1. Xóa một cuộc trò chuyện cũ hoặc tạo mới.
+2. Gửi thông tin ngày sinh để tạo bản đồ sao. Chờ kết quả luận giải đầu tiên.
+3. Kiểm tra MySQL để xem bảng `conversation_chunks` đã có dữ liệu chưa.
+4. Gửi một câu hỏi Follow-up (ví dụ: "Phân tích thêm về đường tình duyên của tôi").
+5. Kiểm tra giao diện xem câu trả lời của AI có xuất hiện mục "Nguồn tài liệu" ở dưới cùng không.
+6. Click vào nguồn tài liệu, kiểm tra tính trùng khớp của văn bản với bản đồ gốc và xem giá trị của Score.

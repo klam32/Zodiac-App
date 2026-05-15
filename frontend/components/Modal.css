@@ -1,0 +1,391 @@
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: modalFadeIn 0.3s ease-out;
+}
+
+.modal-container {
+  background: white;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-header {
+  padding: 24px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.modal-close-btn {
+  background: #f7fafc;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #718096;
+  transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+  background: #edf2f7;
+  color: #2d3748;
+  transform: rotate(90deg);
+}
+
+.modal-body {
+  padding: 32px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(30px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Modal Content Styles */
+.modal-content-centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.modal-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  background: #a52a2a; /* Brownish red like in image */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  margin-bottom: 24px;
+  font-size: 1.5rem;
+  box-shadow: 0 10px 20px rgba(165, 42, 42, 0.2);
+}
+
+.modal-h3 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #2d3748;
+  margin-bottom: 12px;
+}
+
+.modal-subtitle {
+  color: #718096;
+  margin-bottom: 32px;
+  font-size: 1rem;
+  max-width: 500px;
+}
+
+.info-card-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.info-card {
+  background: white;
+  border: 1px solid #edf2f7;
+  padding: 16px 24px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.info-card:hover {
+  border-color: #cbd5e0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.info-card-icon {
+  width: 48px;
+  height: 48px;
+  background: #f7fafc;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a52a2a;
+  font-size: 1.25rem;
+}
+
+.info-card-content {
+  text-align: left;
+}
+
+.info-card-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.info-card-value {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.modal-footer-btn {
+  background: #1a202c;
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-end;
+}
+
+.modal-footer-btn:hover {
+  background: #2d3748;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Contact Modal V2 Styles */
+.contact-modal-v2 {
+  display: flex;
+  flex-direction: column;
+  color: #2d3748;
+}
+
+.contact-header-v2 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.contact-main-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: #1a202c;
+}
+
+.contact-date {
+  color: #a0aec0;
+  font-size: 0.9rem;
+}
+
+.contact-about-v2 {
+  text-align: center;
+  margin-bottom: 3rem;
+  padding: 0 10%;
+}
+
+.contact-about-v2 h3 {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.contact-about-v2 p {
+  line-height: 1.6;
+  color: #4a5568;
+}
+
+.contact-grid-v2 {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 24px;
+}
+
+.contact-info-card-v2 {
+  background: #f7fafc;
+  padding: 32px;
+  border-radius: 20px;
+}
+
+.contact-info-card-v2 h4,
+.contact-message-card-v2 h4 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin-bottom: 24px;
+}
+
+.contact-item-v2 {
+  margin-bottom: 20px;
+}
+
+.contact-item-v2 label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #a0aec0;
+  margin-bottom: 4px;
+}
+
+.contact-item-v2 .value {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.fb-link {
+  color: #6e2cf2;
+  text-decoration: none;
+}
+
+.fb-link:hover {
+  text-decoration: underline;
+}
+
+.contact-message-card-v2 {
+  background: #1a202c;
+  padding: 32px;
+  border-radius: 20px;
+  color: white;
+}
+
+.contact-message-card-v2 p {
+  color: #a0aec0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 2rem;
+}
+
+.tip-box-v2 {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.tip-icon {
+  font-size: 1.2rem;
+}
+
+.tip-box-v2 p {
+  margin: 0;
+  color: white;
+  font-size: 0.9rem;
+}
+
+.tip-box-v2 strong {
+  color: #f6ad55;
+}
+
+/* Dark Modal & FAQ Accordion */
+.dark-modal {
+  background: #050508;
+  color: white;
+  min-height: 100%;
+}
+
+.dark-modal .modal-h3 {
+  color: white;
+  background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.modal-faq-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-faq-item {
+  background: #f8fafc;
+  border: 1px solid #edf2f7;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.modal-faq-item.active {
+  border-color: #6e2cf2;
+  background: #fdfbff;
+}
+
+.modal-faq-header {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.modal-faq-item.active .modal-faq-header {
+  color: #6e2cf2;
+}
+
+.faq-toggle-icon {
+  font-size: 1.2rem;
+  color: #a0aec0;
+}
+
+.modal-faq-item.active .faq-toggle-icon {
+  color: #6e2cf2;
+}
+
+.modal-faq-body {
+  padding: 0 20px 20px;
+  color: #4a5568;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, #f6ad55 0%, #e67e22 100%) !important;
+  color: #000 !important;
+  box-shadow: 0 4px 15px rgba(246, 173, 85, 0.3);
+}
+
+.btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(246, 173, 85, 0.5);
+}

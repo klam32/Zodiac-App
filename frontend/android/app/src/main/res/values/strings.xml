@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Zodiac Whisper</string>
+    <string name="title_activity_main">Zodiac Whisper</string>
+    <string name="package_name">com.zodiacwhisper.app</string>
+    <string name="custom_url_scheme">com.zodiacwhisper.app</string>
+</resources>
