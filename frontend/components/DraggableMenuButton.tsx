@@ -23,7 +23,6 @@ const DraggableMenuButton: React.FC<DraggableMenuButtonProps> = ({ onClick }) =>
 
   const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
     if (!isDragging) return;
-    didMove.current = true;
     
     // Calculate new position
     let newX = startPos.current.x + (e.clientX - startMousePos.current.x);
@@ -43,9 +42,11 @@ const DraggableMenuButton: React.FC<DraggableMenuButtonProps> = ({ onClick }) =>
     setIsDragging(false);
     e.currentTarget.releasePointerCapture(e.pointerId);
     
-    // Snap to edge could be added here if desired
+    const dx = e.clientX - startMousePos.current.x;
+    const dy = e.clientY - startMousePos.current.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-    if (!didMove.current) {
+    if (distance < 10) { // Nếu di chuyển tay dưới 10px thì tính là 1 cú click
       onClick();
     }
   };

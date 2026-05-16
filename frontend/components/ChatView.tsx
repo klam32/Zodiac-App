@@ -395,18 +395,8 @@ const ChatView: React.FC<ChatViewProps> = ({
               <textarea
                 rows={1}
                 value={input}
-                onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={(e) => {
-                  setIsComposing(false)
-                  setInput(e.currentTarget.value)
-                }}
-                onChange={(e) => {
-                  if (!isComposing) {
-                    setInput(e.target.value)
-                  }
-                }}
+                onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => {
-                  if (isComposing) return
                   if (e.key === 'Enter') {
                     if (e.ctrlKey || e.shiftKey) return
                     e.preventDefault()
