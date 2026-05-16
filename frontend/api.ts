@@ -27,6 +27,7 @@ const getHeaders = () => {
   const token = localStorage.getItem('access_token');
   return {
     'Authorization': token ? `Bearer ${token}` : '',
+    'ngrok-skip-browser-warning': '69420', // Bypass ngrok warning page
   };
 };
 
@@ -35,6 +36,7 @@ export const api = {
   async login(formData: FormData): Promise<AuthResponse> {
     const response = await fetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
+      headers: getHeaders(),
       body: formData,
     });
     if (!response.ok) throw new Error('Đăng nhập thất bại');
@@ -44,6 +46,7 @@ export const api = {
   async register(formData: FormData): Promise<{ message: string }> {
     const response = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
+      headers: getHeaders(),
       body: formData,
     });
     if (!response.ok) throw new Error('Đăng ký thất bại');
@@ -60,7 +63,9 @@ export const api = {
   },
 
   async getGoogleLoginUrl(): Promise<string> {
-    const response = await fetch(`${BASE_URL}/auth/google/login`);
+    const response = await fetch(`${BASE_URL}/auth/google/login`, {
+      headers: getHeaders(),
+    });
     const data = await response.json();
     return data.auth_url;
   },
