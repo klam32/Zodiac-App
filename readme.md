@@ -44,5 +44,31 @@ java -jar plantuml.jar system_pipeline.puml
 ```
 Hoặc đơn giản là copy nội dung file `system_pipeline.puml` và dán vào [PlantUML Online Server](http://www.plantuml.com/plantuml/).
 
-#
-1.cloudflared tunnel --url http://localhost:2643
+# Hướng dẫn chạy dự án (Local & Mobile)
+
+Để khởi chạy toàn bộ hệ thống Zodiac Whisper, bạn cần mở **3 cửa sổ Terminal** riêng biệt và thực hiện lần lượt các bước sau:
+
+### 1. Khởi chạy Backend (FastAPI)
+Mở Terminal 1, đứng ở thư mục gốc của dự án và chạy:
+```bash
+venv\Scripts\activate
+python run_api.py
+```
+*Backend sẽ chạy tại địa chỉ: `http://localhost:2643`*
+
+### 2. Khởi chạy Frontend (React/Vite)
+Mở Terminal 2, di chuyển vào thư mục `frontend` và chạy:
+```bash
+cd frontend
+npm run dev
+```
+*(Lúc này bạn đã có thể mở trang web trên trình duyệt máy tính để sử dụng).*
+
+### 3. Khởi chạy Ngrok (Dành cho App Điện thoại & Đăng nhập Google)
+Để App trên điện thoại (qua Vercel) có thể kết nối được với Backend trên máy tính của bạn thông qua một đường dẫn cố định, hãy mở Terminal 3 và chạy:
+```bash
+ngrok http --domain=railcar-frostbite-alumni.ngrok-free.dev 2643
+```
+Terminal sẽ báo trạng thái "Online" với tên miền của bạn.
+
+**✅ Lưu ý:** Các file code (như `.env`, `api.ts`, `config.dart`) và Google Cloud Console đã được cài sẵn tên miền này. Bạn không cần đổi link mỗi lần chạy nữa. Chỉ cần nhớ chạy lệnh trên trước khi dùng App trên điện thoại.

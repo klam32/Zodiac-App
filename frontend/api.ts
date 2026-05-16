@@ -4,9 +4,9 @@ import { AuthResponse, ChatResponse, PaymentPackage, PaymentInvoice, PaymentStat
 const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
 
 const getApiRoot = (): string => {
-  // Hardcode Cloudflare tunnel for production (Vercel)
+  // Hardcode Cloudflare/Ngrok tunnel for production (Vercel)
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return 'https://hidden-categories-allowance-levels.trycloudflare.com';
+    return 'https://railcar-frostbite-alumni.ngrok-free.dev';
   }
   
   // Ưu tiên env var (dùng khi deploy Vercel)
