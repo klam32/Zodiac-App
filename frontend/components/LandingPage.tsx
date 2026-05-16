@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './LandingPage.css';
 import { View, User } from '../types';
-import { API_ROOT } from '../api';
+import { API_ROOT, getImageUrl } from '../api';
 import ContactModal from './ContactModal';
 import InfoModal from './InfoModal';
 import AboutModal from './AboutModal';
@@ -147,7 +147,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onViewChange, onLoginCl
         <div className="logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           {siteConfig.logo_url ? (
             <img 
-              src={siteConfig.logo_url.startsWith('/api/') ? `${API_ROOT}${siteConfig.logo_url}` : siteConfig.logo_url} 
+              src={getImageUrl(siteConfig.logo_url)} 
               alt="Logo" 
               style={{ height: '32px', width: 'auto', objectFit: 'contain' }} 
             />

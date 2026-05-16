@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useMemo, useCallback, useDeferredValue } from 'react'
 import { User, ChatMessage } from '../types'
-import { api, API_ROOT } from '../api'
+import { api, API_ROOT, getImageUrl } from '../api'
 import AuthModal from './AuthModal'
 import toast from 'react-hot-toast'
 import { confirmDestructive } from '../utils/swal'
@@ -314,13 +314,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         key={msg.id}
         msg={msg}
         userAvatar={user?.picture_url}
-        botAvatar={
-          siteConfig?.logo_url
-            ? (siteConfig.logo_url.startsWith("/")
-              ? `${API_ROOT}${siteConfig.logo_url}`
-              : siteConfig.logo_url)
-            : undefined
-        }
+        botAvatar={getImageUrl(siteConfig?.logo_url)}
       />
     ))
   }, [filteredHistory])//[filteredHistory, user?.picture_url, siteConfig?.logo_url])

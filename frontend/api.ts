@@ -23,6 +23,16 @@ const getApiRoot = (): string => {
 export const API_ROOT = getApiRoot().trim();
 const BASE_URL = `${API_ROOT}/api/v1`;
 
+export const getImageUrl = (path: string | undefined): string => {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  const fullUrl = path.startsWith('/') ? `${API_ROOT}${path}` : path;
+  if (fullUrl.includes('ngrok-free')) {
+    return `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}ngrok-skip-browser-warning=69420`;
+  }
+  return fullUrl;
+};
+
 const getHeaders = () => {
   const token = localStorage.getItem('access_token');
   return {
