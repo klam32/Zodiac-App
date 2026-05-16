@@ -34,7 +34,13 @@ const App: React.FC = () => {
 
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+  
+  // Detect Native App (Capacitor / Flutter WebView) or just Mobile Screen
+  const isNative = typeof window !== 'undefined' && (
+    ((window as any).Capacitor?.isNativePlatform?.()) ||
+    ((window as any).FlutterBridge !== undefined) ||
+    window.innerWidth <= 768
+  );
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
