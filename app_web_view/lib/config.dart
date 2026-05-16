@@ -6,7 +6,7 @@
 class AppConfig {
   // ── BASE URLs ──────────────────────────────────────────────
   /// URL backend FastAPI (không có dấu / ở cuối)
-  static const String apiBaseUrl = 'https://states-period-wilson-statute.trycloudflare.com/api/v1';
+  static const String apiBaseUrl = 'https://hidden-categories-allowance-levels.trycloudflare.com/api/v1';
 
   /// URL frontend web (không có dấu / ở cuối)
   static const String webBaseUrl = 'https://frontend-omega-pink-49.vercel.app';
