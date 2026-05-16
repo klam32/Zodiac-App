@@ -4,6 +4,11 @@ import { AuthResponse, ChatResponse, PaymentPackage, PaymentInvoice, PaymentStat
 const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
 
 const getApiRoot = (): string => {
+  // Hardcode Cloudflare tunnel for production (Vercel)
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return 'https://hidden-categories-allowance-levels.trycloudflare.com';
+  }
+  
   // Ưu tiên env var (dùng khi deploy Vercel)
   if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.trim();
   // Native Android emulator
