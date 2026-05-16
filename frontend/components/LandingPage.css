@@ -1536,3 +1536,35 @@
   background: rgba(255, 255, 255, 0.4);
   transform: scale(1.1);
 }
+
+/* Mobile Header Fix */
+@media (max-width: 768px) {
+  .landing-header {
+    padding: 0.8rem 5%;
+    gap: 0.5rem;
+  }
+  .nav-links {
+    display: none;
+  }
+  .logo {
+    font-size: 1.2rem;
+  }
+  .logo img {
+    height: 24px !important;
+  }
+  .auth-buttons {
+    gap: 0.5rem;
+  }
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  .hero-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+    margin-top: 2rem;
+  }
+  .hero h1 {
+    font-size: 2.8rem;
+  }
+}

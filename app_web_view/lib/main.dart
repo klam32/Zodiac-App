@@ -84,6 +84,7 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   void _initWebView() {
     _controller = WebViewController()
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10; SM-G981B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Mobile Safari/537.36')
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFFFCFAF7))
       ..setNavigationDelegate(
@@ -130,8 +131,8 @@ class _WebViewScreenState extends State<WebViewScreen> {
   NavigationDecision _handleNavigation(NavigationRequest request) {
     final url = request.url;
 
-    // ✅ Cho phép các URL chứa callback hoặc token đi qua bình thường
-    if (url.contains('callback') || url.contains('token=')) {
+    // ✅ Cho phép các URL chứa callback, token, hoặc thuộc google.com
+    if (url.contains('callback') || url.contains('token=') || url.contains('google.com')) {
       return NavigationDecision.navigate;
     }
 
