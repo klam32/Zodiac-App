@@ -146,7 +146,7 @@ class LLM:
 
     def __init__(self, temperature: float = 0.0, max_tokens = 8192):
         self.temperature = temperature
-        self.max_tokens = max_tokens
+        self.max_tokens = int(os.getenv("LLM_MAX_TOKENS", max_tokens))
 
     def vertex(self):
 

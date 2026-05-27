@@ -1,7 +1,9 @@
 import os
+from functools import lru_cache
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
 from langchain_google_vertexai import VertexAIEmbeddings
 
+@lru_cache(maxsize=1)
 def get_embeddings_model():
     return VertexAIEmbeddings(model="text-embedding-004")
 

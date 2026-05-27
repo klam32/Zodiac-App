@@ -1,5 +1,5 @@
 //TYPES.TS
-export type View = 'landing' | 'chat' | 'payment' | 'admin' | 'profile' | 'calendar' | 'prediction' | 'contact' | 'terms' | 'faq' | 'guide' | 'details' | 'about' | 'privacy' | 'blog_detail';
+export type View = 'landing' | 'chat' | 'payment' | 'admin' | 'profile' | 'calendar' | 'prediction' | 'contact' | 'terms' | 'faq' | 'guide' | 'details' | 'about' | 'privacy' | 'blog_detail' | 'rewards';
 
 export interface User {
   id: number;
@@ -38,6 +38,8 @@ export interface ChatMessage {
     agent: string;
     interpretation: string;
   }[];
+  isStreaming?: boolean;
+  isFollowUp?: boolean;
 }
 
 export interface Conversation {

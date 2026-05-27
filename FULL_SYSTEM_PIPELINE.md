@@ -92,8 +92,10 @@ USER gửi: {conversation_id, question}
         ▼
 [FastAPI] POST /chat-followup
         │
+        ├── Kiểm tra conversation thuộc đúng user
         ├── Lấy lịch sử chat từ DB (get_user_chat_logs)
         ├── Parse birth_info từ lịch sử
+        ├── Xác định log INIT đầu tiên chứa chart/chart_summary/chart_svg
         ├── Lấy user memory từ DB
         │
         ▼
@@ -115,7 +117,10 @@ USER gửi: {conversation_id, question}
         ▼
 [RAG Retrieval Pipeline]
 pipeline_retrieve_and_rerank(conversation_id, question)
-        ├── UserDB.get_document_chunks() → Lấy chunks từ DB
+        ├── ensure_initial_rag_chunks()
+        │       ├── Nếu đã có chunks → dùng ngay
+        │       └── Nếu chưa có chunks → tạo lại từ log INIT đầu tiên
+        ├── UserDB.get_document_chunks() → Lấy chunks bản đồ sao gốc từ DB
         ├── [Retriever] retrieve_top_chunks(query, chunks, top_k=5)
         │       ├── VertexAIEmbeddings.embed_query(question)
         │       └── cosine_similarity() → Top 5 chunks
@@ -130,6 +135,7 @@ pipeline_retrieve_and_rerank(conversation_id, question)
         ▼
 rag_context = Top 3 chunks nối vào câu hỏi
 final_question = question + "[TRÍCH XUẤT TỪ BẢN ĐỒ SAO GỐC]:" + rag_context
+        ├── Nếu retrieval chưa có kết quả → fallback bằng excerpt chart gốc từ log INIT
         │
         ▼
 [GraphRAG] extract_astrology_entities(question)

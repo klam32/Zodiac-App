@@ -354,7 +354,7 @@ async def get_all_settings(admin: dict = Depends(get_current_admin)):
     
     db.close()
     return {
-        "rate_per_1000": float(rate),
+        "rate_per_1000": float(rate or "1.0"),
         "logo_url": logo_url,
         "background_url": background_url,
         "site_title": site_title,
@@ -397,11 +397,11 @@ async def update_settings(
 
     for key, new_val in fields:
         if new_val is not None:
-            current_val = db.get_setting(key, "")
+            current_val = db.get_setting(key, "") or ""
             # Special case for rate_per_1000 as it's a float stored as string
             if key == "rate_per_1000":
                 try:
-                    if float(current_val) != float(new_val):
+                    if float(current_val or "0.0") != float(new_val):
                         db.set_setting(key, str(new_val))
                         changed_any = True
                 except:
@@ -414,12 +414,12 @@ async def update_settings(
                     seo_changed = True
 
     if seo_changed:
-        current_title = db.get_setting("site_title", "Tarot Talk")
-        current_desc = db.get_setting("seo_description", "")
-        current_keys = db.get_setting("seo_keywords", "")
-        current_author = db.get_setting("seo_author", "")
-        current_favicon = db.get_setting("favicon_url", "/favicon.svg")
-        current_logo = db.get_setting("logo_url", "")
+        current_title = db.get_setting("site_title", "Tarot Talk") or "Tarot Talk"
+        current_desc = db.get_setting("seo_description", "") or ""
+        current_keys = db.get_setting("seo_keywords", "") or ""
+        current_author = db.get_setting("seo_author", "") or ""
+        current_favicon = db.get_setting("favicon_url", "/favicon.svg") or "/favicon.svg"
+        current_logo = db.get_setting("logo_url", "") or ""
         update_index_html_seo(current_title, current_desc, current_keys, current_author, current_favicon, current_logo)
     
     db.close()
@@ -432,7 +432,7 @@ async def upload_logo(
 ):
     try:
         # Ngăn chặn Path Traversal
-        safe_filename = os.path.basename(file.filename)
+        safe_filename = os.path.basename(file.filename or "file")
         file_extension = os.path.splitext(safe_filename)[1]
         unique_filename = f"logo_{uuid4().hex}{file_extension}"
         
@@ -456,7 +456,7 @@ async def upload_blog_image(
     admin: dict = Depends(get_current_admin)
 ):
     try:
-        safe_filename = os.path.basename(file.filename)
+        safe_filename = os.path.basename(file.filename or "file")
         file_extension = os.path.splitext(safe_filename)[1]
         unique_filename = f"blog_{uuid4().hex}{file_extension}"
         

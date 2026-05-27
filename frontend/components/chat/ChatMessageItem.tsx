@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { ChatMessage } from '../../types';
-import { User, Sparkles, BookOpen, ChevronDown } from 'lucide-react';
+import { User, Sparkles, BookOpen, ChevronDown, Orbit } from 'lucide-react';
 import AstrologyInterpretationResult from './AstrologyInterpretationResult';
 import LoveAnalysisResult from './LoveAnalysisResult';
 import { api } from '../../api';
@@ -111,6 +110,20 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
 
   // 🔮 ASTROLOGY
   if (msg.role === 'assistant') {
+    const isFollowUp = !!(msg as any).isFollowUp || (!(msg as any).chart && !(msg as any).analysis && !(msg as any).sections);
+    const hasContent = !!(msg.answer || msg.content || (msg as any).analysis);
+
+    if (isFollowUp && !hasContent) {
+      return (
+        <div className="flex flex-col items-center py-12 animate-pulse w-full max-w-4xl mx-auto">
+          <div className="w-16 h-16 border border-purple-500/30 rounded-full flex items-center justify-center bg-purple-950/20 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+            <Orbit className="animate-spin text-purple-400 w-8 h-8" />
+          </div>
+          <span className="text-xs text-purple-300/60 mt-4 tracking-wider uppercase font-medium">Đang kết nối vũ trụ...</span>
+        </div>
+      );
+    }
+
     return (
       <div className="flex flex-col gap-2">
         <AstrologyInterpretationResult 
@@ -119,8 +132,9 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
           answer={(msg as any).answer}
           chartSummary={(msg as any).chart_summary} 
           chart_svg={(msg as any).chart_svg}
+          isFollowUp={isFollowUp}
         />
-        {msg.sources && msg.sources.length > 0 && (
+        {msg.sources && msg.sources.length > 0 && !msg.isStreaming && (
           <div className="mt-8 mb-4 w-full max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex items-center gap-3 mb-4 px-2">
               <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">

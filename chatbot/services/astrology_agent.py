@@ -1,10 +1,11 @@
 import re
 import json
+from functools import lru_cache
 from typing import Dict, Any
-from kerykeion import AstrologicalSubject, ChartDataFactory, ChartDrawer
+from kerykeion import ChartDataFactory, ChartDrawer
 from kerykeion.utilities import get_house_number
 from chatbot.utils.text_cleaner import normalize_markdown
-from chatbot.utils.geo import get_coordinates
+from chatbot.utils.astro_cache import get_astrological_subject
 import logging
 import os
 
@@ -44,6 +45,55 @@ def save_chart(svg: str, name: str):
 
 logger = logging.getLogger(__name__)
 
+def get_h_num(p):
+    try:
+        return get_house_number(p.house) if p.house else 0
+    except:
+        return 0
+
+def format_chart_data(chart, planets_list, houses_list):
+    planets = [f"- {p.name}: {p.sign}" for p in planets_list]
+    houses = [f"- {h.name}: {h.sign}" for h in houses_list]
+
+    return f"""
+Ascendant: {chart.ascendant.sign}
+
+Planets:
+{chr(10).join(planets)}
+
+Houses:
+{chr(10).join(houses)}
+"""
+
+@lru_cache(maxsize=256)
+def build_natal_payload(name, year, month, day, hour, minute, city, country):
+    user_chart = get_astrological_subject(
+        name, year, month, day, hour, minute, city, country
+    )
+
+    planets_keys = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
+    planets_list = [getattr(user_chart, k) for k in planets_keys if getattr(user_chart, k)]
+
+    houses_keys = ["first_house","second_house","third_house","fourth_house","fifth_house","sixth_house","seventh_house","eighth_house","ninth_house","tenth_house","eleventh_house","twelfth_house"]
+    houses_list = [getattr(user_chart, k) for k in houses_keys if getattr(user_chart, k)]
+
+    chart_data_str = format_chart_data(user_chart, planets_list, houses_list)
+    natal_data = ChartDataFactory.create_natal_chart_data(user_chart.model())
+    drawer = ChartDrawer(natal_data, theme="dark")
+    svg_string = drawer.generate_svg_string(remove_css_variables=True)
+
+    chart_summary = {
+        "sun": user_chart.sun.sign,
+        "moon": user_chart.moon.sign,
+        "ascendant": user_chart.ascendant.sign,
+        "planets": [
+            {"name": p.name, "sign": p.sign, "house": get_h_num(p)}
+            for p in planets_list
+        ]
+    }
+
+    return chart_data_str, svg_string, chart_summary
+
 class AstrologyChatAgent:
 
     def __init__(self, llm_model) -> None:
@@ -66,32 +116,10 @@ class AstrologyChatAgent:
         city = birth_info.get("city", "Hanoi")
         country = birth_info.get("country", "VN")
 
-        def get_h_num(p):
-            try:
-                return get_house_number(p.house) if p.house else 0
-            except:
-                return 0
-
         try:
-            lat, lng = get_coordinates(city, country)
-            
-            user_chart = AstrologicalSubject(
-                name, year, month, day, hour, minute,
-                city=city, nation=country,
-                lat=lat, lng=lng
+            chart_data_str, svg_string, chart_summary = build_natal_payload(
+                name, year, month, day, hour, minute, city, country
             )
-
-            planets_keys = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
-            planets_list = [getattr(user_chart, k) for k in planets_keys if getattr(user_chart, k)]
-
-            houses_keys = ["first_house","second_house","third_house","fourth_house","fifth_house","sixth_house","seventh_house","eighth_house","ninth_house","tenth_house","eleventh_house","twelfth_house"]
-            houses_list = [getattr(user_chart, k) for k in houses_keys if getattr(user_chart, k)]
-
-            chart_data_str = self._format_chart_data(user_chart, planets_list, houses_list)
-
-            natal_data = ChartDataFactory.create_natal_chart_data(user_chart.model())
-            drawer = ChartDrawer(natal_data, theme="dark")
-            svg_string = drawer.generate_svg_string(remove_css_variables=True)
 
             if not context:
                 save_chart(svg_string, name)
@@ -200,15 +228,8 @@ TRẢ LỜI:
                 "chart": "", 
                 "answer": chat_answer,
                 "chart_svg": svg_string,
-                "chart_summary": {
-                    "sun": user_chart.sun.sign,
-                    "moon": user_chart.moon.sign,
-                    "ascendant": user_chart.ascendant.sign,
-                    "planets": [
-                        {"name": p.name, "sign": p.sign, "house": get_h_num(p)}
-                        for p in planets_list
-                    ]
-                }
+                "chart_summary": chart_summary,
+                "raw_chart_data": chart_data_str
             }
 
         if not context or context.strip() == "":
@@ -337,9 +358,9 @@ TRẢ LỜI:
         if not chart_text:
             chart_text = f"""
 Bạn có:
-- ☀️ Mặt Trời: {user_chart.sun.sign}
-- 🌙 Mặt Trăng: {user_chart.moon.sign}
-- ⬆️ Cung Mọc: {user_chart.ascendant.sign}
+- ☀️ Mặt Trời: {chart_summary.get("sun")}
+- 🌙 Mặt Trăng: {chart_summary.get("moon")}
+- ⬆️ Cung Mọc: {chart_summary.get("ascendant")}
 
 👉 Đây là bộ ba rất quan trọng tạo nên tính cách và vận mệnh của bạn.
 
@@ -355,26 +376,12 @@ Hãy đặt câu hỏi cụ thể để AI phân tích sâu hơn.
         if not isinstance(answer, str):
             answer = str(answer)
 
-        def get_h_num(p):
-            try:
-                return get_house_number(p.house) if p.house else 0
-            except:
-                return 0
-
         return {
             "type": "astrology",
             "chart": chart_text,
             "answer": answer or "",
             "chart_svg": svg_string,
-            "chart_summary": {
-                "sun": user_chart.sun.sign,
-                "moon": user_chart.moon.sign,
-                "ascendant": user_chart.ascendant.sign,
-                "planets": [
-                    {"name": p.name, "sign": p.sign, "house": get_h_num(p)}
-                    for p in planets_list
-                ]
-            },
+            "chart_summary": chart_summary,
             "raw_chart_data": chart_data_str # 🔥 Truyền dữ liệu gốc để các Agent khác dùng luôn
         }
         

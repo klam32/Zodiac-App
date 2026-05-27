@@ -10,7 +10,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')
 
 from dotenv import load_dotenv
 
@@ -191,7 +192,7 @@ Ví dụ:
     try:
         response = await llm.ainvoke(prompt)
 
-        content = clean_json_response(response.content)
+        content = clean_json_response(str(response.content))
 
         triplets = json.loads(content)
 

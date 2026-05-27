@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import auth, file_upload, payment, chatbot, admin, calendar, prediction, format_text
+from app.routers import auth, file_upload, payment, chatbot, admin, calendar, prediction, format_text, rewards
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from fastapi.staticfiles import StaticFiles
@@ -34,9 +34,34 @@ app = FastAPI(
 )
 
 # Cấu hình CORS
+origins = []
+allow_origin_regex = None
+
+if settings.ALLOW_ORIGINS:
+    import json
+    try:
+        # Hỗ trợ định dạng JSON trong .env (ví dụ: ["*"] hoặc ["http://localhost:3000"])
+        parsed = json.loads(settings.ALLOW_ORIGINS)
+        if isinstance(parsed, list):
+            origins = parsed
+        else:
+            origins = [str(parsed)]
+    except Exception:
+        # Hỗ trợ định dạng phân tách bằng dấu phẩy
+        if "," in settings.ALLOW_ORIGINS:
+            origins = [o.strip() for o in settings.ALLOW_ORIGINS.split(",")]
+        else:
+            origins = [settings.ALLOW_ORIGINS.strip()]
+
+# Nếu cấu hình là wildcard "*" hoặc chứa "*", ta dùng allow_origin_regex để tương thích với allow_credentials=True
+if "*" in origins:
+    allow_origin_regex = r"https?://.*"
+    origins = []
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOW_ORIGINS,
+    allow_origins=origins,
+    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -52,6 +77,7 @@ app.include_router(admin.router, prefix=api_prefix)
 app.include_router(calendar.router, prefix=api_prefix)
 app.include_router(prediction.router, prefix=api_prefix)
 app.include_router(format_text.router, prefix=api_prefix)
+app.include_router(rewards.router, prefix=api_prefix)
 
 
 @app.get(f"{api_prefix}/")

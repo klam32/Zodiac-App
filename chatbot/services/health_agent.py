@@ -1,9 +1,8 @@
 import re
 from typing import Dict, Any, List
-from kerykeion import AstrologicalSubject
 from kerykeion.utilities import get_house_number
 from chatbot.utils.text_cleaner import normalize_markdown
-from chatbot.utils.geo import get_coordinates
+from chatbot.utils.astro_cache import get_astrological_subject
 
 class HealthAgent:
     """
@@ -19,23 +18,20 @@ class HealthAgent:
     # =========================
     # MAIN ANALYZE
     # =========================
-    def analyze(self, birth_info: Dict[str, Any], context: str, raw_chart_data: str = None) -> Dict[str, Any]:
+    def analyze(self, birth_info: Dict[str, Any], context: str, raw_chart_data: str | None = None) -> Dict[str, Any]:
 
         name = birth_info.get("name", "Người dùng")
 
         try:
-            lat, lng = get_coordinates(birth_info.get("city", "Hanoi"), birth_info.get("country", "VN"))
-            
-            subject = AstrologicalSubject(
+            subject = None if raw_chart_data else get_astrological_subject(
                 name,
                 int(birth_info["year"]),
                 int(birth_info["month"]),
                 int(birth_info["day"]),
                 int(birth_info.get("hour", 0)),
                 int(birth_info.get("minute", 0)),
-                city=birth_info.get("city", "Hanoi"),
-                nation=birth_info.get("country", "VN"),
-                lat=lat, lng=lng
+                birth_info.get("city", "Hanoi"),
+                birth_info.get("country", "VN"),
             )
 
             def get_house(p):
@@ -44,16 +40,16 @@ class HealthAgent:
                 except:
                     return 0
 
-            # Fallback nếu không có raw_chart_data từ Orchestrator
-            health_data = {
-                "Moon": f"{subject.moon.sign} (Nhà {get_house(subject.moon)})",
-                "Mars": f"{subject.mars.sign} (Nhà {get_house(subject.mars)})",
-                "House 6": subject.sixth_house.sign if subject.sixth_house else None
-            }
-
+            health_data_to_use = ""
             if raw_chart_data:
                 health_data_to_use = raw_chart_data
-            else:
+            elif subject is not None:
+                # Fallback nếu không có raw_chart_data từ Orchestrator
+                health_data = {
+                    "Moon": f"{getattr(subject.moon, 'sign', '')} (Nhà {get_house(subject.moon)})",
+                    "Mars": f"{getattr(subject.mars, 'sign', '')} (Nhà {get_house(subject.mars)})",
+                    "House 6": getattr(subject.sixth_house, 'sign', None) if getattr(subject, 'sixth_house', None) else None
+                }
                 health_data_to_use = str(health_data)
 
         except Exception as e:

@@ -1,97 +1,101 @@
-@startuml Zodiac_Whisper_Backend_Processing
+@startuml Zodiac_Whisper_Full_RAG_Flow
 
-header Zodiac Whisper AI - Backend Architecture
-title ZODIAC WHISPER: DETAILED BACKEND & AI PROCESSING PIPELINE
-
+title Zodiac Whisper - INIT to FOLLOW-UP RAG Flow
 skinparam shadowing false
 skinparam activity {
-    BackgroundColor #ffffff
-    BorderColor #1a1a1a
-    ArrowColor #1a1a1a
+  BackgroundColor #ffffff
+  BorderColor #1f2937
+  ArrowColor #1f2937
 }
 skinparam note {
-    BackgroundColor #eefbff
-    BorderColor #0078d4
+  BackgroundColor #eef6ff
+  BorderColor #2563eb
 }
 
 start
+:A. User enters information / question;
+:B. Frontend React + Vite;
+note right
+  Sends REST API request
+  with JWT authentication.
+end note
+:C. Backend FastAPI;
 
-partition "1. Request Handling & Astrology Core" {
-    :Tiếp nhận yêu cầu (POST /chat hoặc /chat-followup);
-    
-    :Chuẩn hóa & Parse dữ liệu sinh trắc;
-    note right: Tên, Ngày/Giờ/Nơi sinh, Tọa độ địa lý
-    
-    :Kerykeion Core Calculation;
-    note right
-        - Tính toán vị trí các hành tinh (Sun, Moon, ASC...)
-        - Xác định các góc chiếu (Aspects: Trine, Square...)
-        - Xuất biểu đồ SVG & Dữ liệu JSON bản đồ sao
-    end note
-}
-
-partition "2. AI Orchestration Layer (AISystem)" {
-    :Kích hoạt Guard Agent;
-    note right: Phân loại nội dung & Chặn các câu hỏi rác/nhạy cảm
+if (D. Mode?) then (INIT / First Time)
+  partition "INIT / First Time" {
+    :E. AstrologyAgent;
+    :F. Kerykeion calculates natal chart;
+    :G. Chart SVG + astrology data;
+    :H. Vertex AI Gemini generates interpretation;
 
     fork
-        :Truy vấn SQLite Database;
-        note right: Lấy Memory (Tính cách, sở thích) & Lịch sử hội thoại
+      :I. Save chat + chart into DB;
     fork again
-        :LLM Intent Analysis & Routing;
-        note right: Phân tích Ý định: Career, Love, Health, Daily, Personality
+      :J. RAG ingestion background;
+      :J1. Chunk Markdown;
+      :J2. Vertex AI Embedding;
+      :J3. Store chunks into DB;
+      note right
+        These INIT chunks are the source
+        that follow-up questions must retrieve.
+      end note
     end fork
 
-    partition "3. Parallel Multi-Agent Execution" {
-        :Spawn Agent Instances (On-demand);
-        
-        :Parallel Processing (ThreadPoolExecutor);
-        note right
-            Mỗi Agent được cấp context:
-            - Câu hỏi hiện tại
-            - Dữ liệu Bản đồ sao
-            - Memory người dùng
-        end note
-        
-        split
-            :Career Analysis;
-        split again
-            :Love/Synastry Analysis;
-        split again
-            :Health/Energy Analysis;
-        split again
-            :Daily Horoscope;
-        split again
-            :Personality Traits;
-        end split
-    }
+    :K. Return chart + interpretation to Frontend;
+  }
+else (FOLLOW-UP)
+  partition "FOLLOW-UP / Follow-up Question" {
+    :L. GuardAgent moderation;
+    if (M. Valid question?) then (No)
+      :N. Refuse response;
+      stop
+    else (Yes)
+      :O. Analyze intent;
 
-    :Fusion & UX Synthesis;
-    note right: LLM tổng hợp các insight rời rạc thành một phản hồi Markdown mạch lạc
-}
+      fork
+        :P. RAG retrieval from INIT chunks;
+        if (P0. INIT chunks exist?) then (Yes)
+        else (No)
+          :Build chunks from first chart log;
+        endif
+        :P1. Embed question;
+        :P2. Cosine Similarity Top 5;
+        :P3. Rerank Top 3;
+      fork again
+        :Q. GraphRAG;
+        :Q1. Extract astrology entities;
+        :Q2. Neo4j / NetworkX;
+        :Q3. Graph facts;
+      end fork
 
-partition "4. Tokenomics & Data Persistence" {
-    :Token Counter (Counting In/Out);
-    
-    :Deduct User Token Balance;
-    note right: Trừ token dựa trên độ phức tạp và LLM sử dụng
-    
-    :Persistence (SQLite DB Update);
-    note right
-        - Lưu Chat Log (Q&A)
-        - Lưu Chart SVG & Raw Data
-        - Cập nhật Memory (Profile mới)
-    end note
-}
+      :R. Compose final_question;
+      note right
+        final_question = user question
+        + RAG chunks from initial chart
+        + GraphRAG facts.
+      end note
 
-:Trả về Response (JSON);
-note right
-    - Answer (Markdown)
-    - Chart (SVG & Summary)
-    - Tokens & Balance info
-end note
+      :S. AISystem Orchestrator;
+      :T. Multi-Agent parallel execution;
+      split
+        :T1. CareerAgent;
+      split again
+        :T2. LoveAgent;
+      split again
+        :T3. HealthAgent;
+      split again
+        :T4. PersonalityAgent;
+      split again
+        :T5. DailyAgent;
+      end split
+
+      :U. Fusion LLM / Direct Answer;
+      :V. Save response into DB;
+      :W. Return response to Frontend;
+    endif
+  }
+endif
 
 stop
 
-footer Thực hiện theo quy trình xử lý thực tế của Zodiac Whisper Backend
 @enduml

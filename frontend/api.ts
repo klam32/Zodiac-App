@@ -4,13 +4,13 @@ import { AuthResponse, ChatResponse, PaymentPackage, PaymentInvoice, PaymentStat
 const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
 
 const getApiRoot = (): string => {
+  // Ưu tiên env var (dùng khi deploy Vercel)
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.trim();
   // Hardcode Cloudflare/Ngrok tunnel for production (Vercel)
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
     return 'https://railcar-frostbite-alumni.ngrok-free.dev';
   }
-  
-  // Ưu tiên env var (dùng khi deploy Vercel)
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.trim();
+
   // Native Android emulator
   if (isNative) return 'http://10.0.2.2:2643';
   // Tự động dùng cùng hostname với trang web:
@@ -23,14 +23,32 @@ const getApiRoot = (): string => {
 export const API_ROOT = getApiRoot().trim();
 const BASE_URL = `${API_ROOT}/api/v1`;
 
+const isApiAssetPath = (path: string): boolean =>
+  path.startsWith('/api/') || path.startsWith('/upload-file/');
+
+const shouldProxyAsset = (path: string): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (!API_ROOT.includes('ngrok-free')) return false;
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return false;
+
+  if (isApiAssetPath(path)) return true;
+
+  try {
+    const assetUrl = new URL(path);
+    const apiUrl = new URL(API_ROOT);
+    return assetUrl.hostname === apiUrl.hostname;
+  } catch {
+    return false;
+  }
+};
+
 export const getImageUrl = (path: string | undefined): string => {
   if (!path) return '';
+  if (path.startsWith('data:') || path.startsWith('blob:')) return path;
+  if (shouldProxyAsset(path)) return `/api/asset?src=${encodeURIComponent(path)}`;
   if (path.startsWith('http')) return path;
-  const fullUrl = path.startsWith('/') ? `${API_ROOT}${path}` : path;
-  if (fullUrl.includes('ngrok-free')) {
-    return `${fullUrl}${fullUrl.includes('?') ? '&' : '?'}ngrok-skip-browser-warning=69420`;
-  }
-  return fullUrl;
+  if (isApiAssetPath(path)) return `${API_ROOT}${path}`;
+  return path;
 };
 
 const getHeaders = () => {
@@ -152,7 +170,9 @@ export const api = {
     about_content?: string,
     blog_posts?: any[]
   }> {
-    const response = await fetch(`${BASE_URL}/config`);
+    const response = await fetch(`${BASE_URL}/config`, {
+      headers: getHeaders(),
+    });
     if (!response.ok) throw new Error('Không thể tải cấu hình website');
     return response.json();
   },
@@ -182,6 +202,33 @@ export const api = {
 
   },
 
+  // SSE streaming version of sendChatFollowup
+  async sendChatFollowupStream(data: {
+    conversation_id: number,
+    field: string,
+    question?: string
+  }): Promise<Response> {
+    const res = await fetch(`${BASE_URL}/chat-followup-stream`, {
+      method: "POST",
+      headers: {
+        ...getHeaders(),
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(data)
+    })
+
+    if (!res.ok) {
+      let errMsg = "Chat lỗi"
+      try {
+        const err = await res.json()
+        errMsg = err.detail || errMsg
+      } catch {}
+      throw new Error(errMsg)
+    }
+
+    return res  // Return raw Response for stream reading
+  },
+
   async formatRagText(text: string): Promise<{ formatted_text: string }> {
     const res = await fetch(`${BASE_URL}/format-rag-text`, {
       method: 'POST',
@@ -203,7 +250,9 @@ export const api = {
   // =========================
 
   async getPackages(): Promise<{ packages: PaymentPackage[] }> {
-    const response = await fetch(`${BASE_URL}/payment/packages`);
+    const response = await fetch(`${BASE_URL}/payment/packages`, {
+      headers: getHeaders(),
+    });
     if (!response.ok) throw new Error('Không thể tải gói nạp');
     return response.json();
   },
@@ -233,6 +282,30 @@ export const api = {
       headers: getHeaders(),
     });
     if (!response.ok) throw new Error('Không thể tải lịch sử giao dịch');
+    return response.json();
+  },
+
+  async createTokenTransaction(
+    amount: number,
+    description: string,
+    txType: 'in' | 'out'
+  ): Promise<{ message: string; new_balance: number }> {
+    const formData = new FormData();
+    formData.append('amount', amount.toString());
+    formData.append('description', description);
+    formData.append('tx_type', txType);
+
+    const response = await fetch(`${BASE_URL}/auth/tokens/transaction`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Không thể cập nhật token');
+    }
+
     return response.json();
   },
 
@@ -641,6 +714,61 @@ export const api = {
     if (!response.ok) {
       const err = await response.json();
       throw new Error(err.detail || 'Không thể lấy dự đoán hàng ngày');
+    }
+    return response.json();
+  },
+
+  // =========================
+  // REWARDS & DAILY GAMES
+  // =========================
+  async getRewardsStatus(): Promise<any> {
+    const response = await fetch(`${BASE_URL}/rewards/status`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error('Không thể tải trạng thái phần thưởng');
+    return response.json();
+  },
+
+  async doCheckin(): Promise<any> {
+    const response = await fetch(`${BASE_URL}/rewards/checkin`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Điểm danh thất bại');
+    }
+    return response.json();
+  },
+
+  async answerQuiz(questionIndex: number, answerOption: string): Promise<any> {
+    const response = await fetch(`${BASE_URL}/rewards/quiz/answer`, {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ question_index: questionIndex, answer_option: answerOption }),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Trả lời thất bại');
+    }
+    return response.json();
+  },
+
+  async claimQuizReward(milestone: number): Promise<any> {
+    const response = await fetch(`${BASE_URL}/rewards/quiz/claim`, {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ milestone }),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Nhận thưởng thất bại');
     }
     return response.json();
   }

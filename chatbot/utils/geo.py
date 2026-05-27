@@ -1,6 +1,6 @@
 def get_coordinates(city: str, country: str):
     """
-    Trả về (lat, lng) cho các thành phố phổ biến để tránh treo khi gọi Geonames.
+    Trả về (lat, lng, tz_str) cho các thành phố phổ biến để tránh treo khi gọi Geonames.
     """
     city = city.lower().strip()
     country = country.upper().strip()
@@ -29,12 +29,15 @@ def get_coordinates(city: str, country: str):
         "đà lạt": (11.9404, 108.4583),
     }
 
+    tz_str = "Asia/Ho_Chi_Minh"
+
     if country == "VN" or "vietnam" in country.lower():
         if city in vietnam_cities:
-            return vietnam_cities[city]
+            lat, lng = vietnam_cities[city]
+            return lat, lng, tz_str
 
     # Default fallback to Hanoi if unknown in VN
     if country == "VN":
-        return (21.0285, 105.8542)
+        return 21.0285, 105.8542, tz_str
 
-    return None, None
+    return None, None, tz_str

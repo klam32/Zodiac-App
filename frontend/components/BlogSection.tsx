@@ -1,5 +1,5 @@
 import React from 'react';
-import { API_ROOT } from '../api';
+import { getImageUrl } from '../api';
 
 interface BlogSectionProps {
   onArticleClick: (articleId: string) => void;
@@ -44,7 +44,7 @@ const BlogSection: React.FC<BlogSectionProps> = ({ onArticleClick, posts }) => {
         {displayPosts.map((article) => (
           <div key={article.slug || article.id} className="blog-card" onClick={() => onArticleClick(article.slug || article.id)}>
             <div className="blog-image-wrapper">
-              <img src={article.image_url?.startsWith('/api/') ? `${API_ROOT}${article.image_url}` : (article.image_url || article.image)} alt={article.title} />
+              <img src={getImageUrl(article.image_url || article.image)} alt={article.title} />
               <div className="blog-date">{new Date(article.created_at || article.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</div>
             </div>
             <div className="blog-content">

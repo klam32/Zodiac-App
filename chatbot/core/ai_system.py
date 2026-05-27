@@ -2,6 +2,7 @@ import re
 import json
 import asyncio
 import logging
+import unicodedata
 from typing import Dict, Any, List
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
@@ -62,7 +63,70 @@ class AISystem:
     # =====================================================
     # 🧠 ALL-IN-ONE ANALYZER 
     # =====================================================
+    def _normalize(self, text: str) -> str:
+        text = (text or "").lower()
+        text = unicodedata.normalize("NFD", text)
+        text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+        return text.replace("đ", "d")
+
+    def _fast_analyze(self, question, memory, birth_info):
+        q = self._normalize(question)
+        intents = []
+
+        keyword_map = {
+            "career": [
+                "su nghiep", "cong viec", "viec lam", "nghe", "tai chinh",
+                "tien bac", "kinh doanh", "hoc nganh", "phong van"
+            ],
+            "love": [
+                "tinh yeu", "tinh cam", "hon nhan", "nguoi yeu", "doi tac",
+                "crush", "chia tay", "yeu", "hop voi"
+            ],
+            "health": [
+                "suc khoe", "nang luong", "met moi", "ngu", "stress",
+                "the luc", "thoi quen"
+            ],
+            "daily": [
+                "hom nay", "ngay nay", "daily", "hien tai", "dao nay"
+            ],
+            "personality": [
+                "tinh cach", "ban than", "diem manh", "diem yeu", "tam ly",
+                "con nguoi", "phong cach", "noi tam"
+            ],
+        }
+
+        for intent, keywords in keyword_map.items():
+            if any(k in q for k in keywords):
+                intents.append(intent)
+
+        field = (birth_info or {}).get("field")
+        if field in self.registry and not intents:
+            intents.append(field)
+
+        personal_markers = ["toi", "minh", "em", "anh", "chi", "tui", "ban than"]
+        if not intents and any(k in q for k in personal_markers):
+            intents.append("personality")
+
+        if not intents:
+            return None
+
+        emotion = "trung tính"
+        if any(k in q for k in ["lo", "lo lang", "stress", "cang thang", "so", "bat an"]):
+            emotion = "lo âu"
+        elif any(k in q for k in ["buon", "chan", "that vong", "co don"]):
+            emotion = "buồn"
+        elif any(k in q for k in ["vui", "hao hung", "hy vong"]):
+            emotion = "vui"
+        elif any(k in q for k in ["tai sao", "vi sao", "muon biet", "thac mac"]):
+            emotion = "tò mò"
+
+        entities = extract_astrology_entities(question)
+        return list(dict.fromkeys(intents)), memory or {}, emotion, entities
+
     def analyze(self, question, memory, birth_info):
+        fast_result = self._fast_analyze(question, memory, birth_info)
+        if fast_result is not None:
+            return fast_result
 
         prompt = f"""
 Bạn là AI Điều phối viên Chiêm tinh. Hãy phân tích yêu cầu của người dùng.

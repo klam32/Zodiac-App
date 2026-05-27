@@ -120,8 +120,8 @@ def compare_modes(query: str):
     print("=" * 80)
 
 if __name__ == "__main__":
-    # Fix lỗi in Unicode trên console Windows
-    sys.stdout.reconfigure(encoding='utf-8')
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding='utf-8')
     
     # CẢNH BÁO: Phải nhập API key trước khi test
     if API_KEY == "YOUR_API_KEY":

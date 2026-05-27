@@ -1,7 +1,7 @@
 import React from 'react';
 import './SubPage.css';
 import { User } from '../types';
-import { API_ROOT } from '../api';
+import { getImageUrl } from '../api';
 
 interface BlogDetailPageProps {
   articleId: string;
@@ -117,7 +117,7 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ articleId, onBack, onLo
 
           <div className="article-hero">
             <img 
-               src={currentArticle.image?.startsWith('/api/') ? `${API_ROOT}${currentArticle.image}` : currentArticle.image} 
+               src={getImageUrl(currentArticle.image)} 
                alt={currentArticle.title} 
             />
           </div>

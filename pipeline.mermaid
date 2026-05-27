@@ -1,37 +1,77 @@
-graph TD
-    User([Nguoi dung]) -->|Gui cau hoi| API[FastAPI Endpoint /chat]
-    API --> Guard{Guard Agent}
-    
-    Guard -->|Khong hop le| Reject[Tu choi: Xin loi toi chi la...]
-    Guard -->|Hop le| Router[Router / Analyzer]
-    
-    Router -->|Phan tich Intent| Agents{Spawn Agents}
-    
-    subgraph Expert_Agents [Cac Agent Chuyen gia]
-        Career[Career Agent]
-        Love[Love Agent]
-        Health[Health Agent]
-        Daily[Daily Agent]
-        Personality[Personality Agent]
+flowchart TD
+    A["A. User enters information / question"] --> B["B. Frontend React + Vite"]
+    B -->|"REST API + JWT"| C["C. Backend FastAPI"]
+    C --> D{"D. Mode?"}
+
+    subgraph INIT["INIT / First Time"]
+        direction TB
+        E["E. AstrologyAgent"] --> F["F. Kerykeion: calculate natal chart"]
+        F --> G["G. Chart SVG + astrology data"]
+        G --> H["H. Vertex AI Gemini generates interpretation"]
+        H --> I["I. Save chat + chart into DB"]
+        H --> J["J. RAG ingestion background"]
+        J --> J1["J1. Chunk Markdown"]
+        J1 --> J2["J2. Vertex AI Embedding"]
+        J2 --> J3["J3. Store chunks into DB"]
+        I --> K["K. Return chart + interpretation to Frontend"]
+        J3 --> K
     end
-    
-    Agents --> Career
-    Agents --> Love
-    Agents --> Health
-    Agents --> Daily
-    Agents --> Personality
-    
-    Career --> Fusion[Fusion Agent]
-    Love --> Fusion
-    Health --> Fusion
-    Daily --> Fusion
-    Personality --> Fusion
-    
-    Fusion -->|Gop cau tra loi| API
-    API -->|Tra ve Markdown| User
-    
-    style User fill:#f9f,stroke:#333,stroke-width:2px
-    style API fill:#bbf,stroke:#333,stroke-width:2px
-    style Guard fill:#fbb,stroke:#333,stroke-width:2px
-    style Router fill:#bfb,stroke:#333,stroke-width:2px
-    style Fusion fill:#fdb,stroke:#333,stroke-width:2px
+
+    subgraph FOLLOW["FOLLOW-UP / Follow-up Question"]
+        direction TB
+        L["L. GuardAgent moderation"] --> M{"M. Valid question?"}
+        M -->|"No"| N["N. Refuse response"]
+        M -->|"Yes"| O["O. Analyze intent"]
+
+        O --> P["P. RAG retrieval from INIT chunks"]
+        P --> P0{"P0. INIT chunks exist?"}
+        P0 -->|"No"| P00["Build chunks from first chart log"]
+        P00 --> P1["P1. Embed question"]
+        P0 -->|"Yes"| P1
+        P1 --> P2["P2. Cosine similarity Top 5"]
+        P2 --> P3["P3. Rerank Top 3"]
+
+        O --> Q["Q. GraphRAG"]
+        Q --> Q1["Q1. Extract astrology entities"]
+        Q1 --> Q2["Q2. Neo4j / NetworkX"]
+        Q2 --> Q3["Q3. Graph facts"]
+
+        P3 --> R["R. Compose final_question"]
+        Q3 --> R
+        R --> S["S. AISystem Orchestrator"]
+        S --> T["T. Multi-agent parallel execution"]
+        T --> T1["T1. CareerAgent"]
+        T --> T2["T2. LoveAgent"]
+        T --> T3["T3. HealthAgent"]
+        T --> T4["T4. PersonalityAgent"]
+        T --> T5["T5. DailyAgent"]
+        T1 --> U["U. Fusion LLM / Direct Answer"]
+        T2 --> U
+        T3 --> U
+        T4 --> U
+        T5 --> U
+        U --> V["V. Save response into DB"]
+        V --> W["W. Return response to Frontend"]
+    end
+
+    D -->|"INIT / First Time"| E
+    D -->|"FOLLOW-UP"| L
+    J3 -. "Stored INIT chart chunks" .-> P
+
+    classDef frontend fill:#eaf6ff,stroke:#1473e6,stroke-width:1.5px,color:#111827;
+    classDef backend fill:#fff7e6,stroke:#f59e0b,stroke-width:1.5px,color:#111827;
+    classDef init fill:#eff6ff,stroke:#3b82f6,stroke-width:1.5px,color:#111827;
+    classDef follow fill:#ecfdf5,stroke:#16a34a,stroke-width:1.5px,color:#111827;
+    classDef reject fill:#fee2e2,stroke:#dc2626,stroke-width:1.5px,color:#111827;
+    classDef rag fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#111827;
+    classDef graph fill:#eff6ff,stroke:#2563eb,stroke-width:1.5px,color:#111827;
+    classDef agent fill:#faf5ff,stroke:#9333ea,stroke-width:1.5px,color:#111827;
+
+    class A,B frontend;
+    class C,D backend;
+    class E,F,G,H,I,J,J1,J2,J3,K init;
+    class L,M,O,R,S,V,W follow;
+    class N reject;
+    class P,P0,P00,P1,P2,P3 rag;
+    class Q,Q1,Q2,Q3 graph;
+    class T,T1,T2,T3,T4,T5,U agent;

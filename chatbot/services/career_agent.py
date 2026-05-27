@@ -19,41 +19,30 @@ class CareerAgent:
     # =========================
     # MAIN ANALYZE
     # =========================
-    def analyze(self, birth_info: Dict[str, Any], context: str, raw_chart_data: str = None) -> Dict[str, Any]:
+    def analyze(self, birth_info: Dict[str, Any], context: str, raw_chart_data: str | None = None) -> Dict[str, Any]:
 
         name = birth_info.get("name", "Người dùng")
 
         try:
-            lat, lng = get_coordinates(birth_info.get("city", "Hanoi"), birth_info.get("country", "VN"))
-            
-            subject = AstrologicalSubject(
-                name,
-                int(birth_info["year"]),
-                int(birth_info["month"]),
-                int(birth_info["day"]),
-                int(birth_info.get("hour", 0)),
-                int(birth_info.get("minute", 0)),
-                city=birth_info.get("city", "Hanoi"),
-                nation=birth_info.get("country", "VN"),
-                lat=lat, lng=lng
-            )
-
-            # =========================
-            # HELPER
-            # =========================
-            def get_house(p):
-                try:
-                    return get_house_number(p.house) if p.house else 0
-                except:
-                    return 0
-
-            # =========================
-            # EXTRACT CAREER DATA
-            # =========================
+            chart_data_str = ""
             if raw_chart_data:
                 chart_data_str = raw_chart_data
             else:
-                # Fallback nếu không có dữ liệu truyền vào
+                lat, lng, tz_str = get_coordinates(birth_info.get("city", "Hanoi"), birth_info.get("country", "VN"))
+                subject = AstrologicalSubject(
+                    name,
+                    int(birth_info["year"]),
+                    int(birth_info["month"]),
+                    int(birth_info["day"]),
+                    int(birth_info.get("hour", 0)),
+                    int(birth_info.get("minute", 0)),
+                    city=birth_info.get("city", "Hanoi"),
+                    nation=birth_info.get("country", "VN"),
+                    lat=lat, lng=lng,
+                    tz_str=tz_str,
+                    online=False
+                )
+
                 planets_keys = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
                 planets_list = [getattr(subject, k) for k in planets_keys if getattr(subject, k)]
                 houses_keys = ["first_house","second_house","third_house","fourth_house","fifth_house","sixth_house","seventh_house","eighth_house","ninth_house","tenth_house","eleventh_house","twelfth_house"]
@@ -61,7 +50,8 @@ class CareerAgent:
                 
                 planets_str = [f"- {p.name}: {p.sign}" for p in planets_list]
                 houses_str = [f"- {h.name}: {h.sign}" for h in houses_list]
-                chart_data_str = f"Ascendant: {subject.ascendant.sign}\nPlanets:\n" + "\n".join(planets_str) + "\nHouses:\n" + "\n".join(houses_str)
+                asc_sign = getattr(subject.ascendant, 'sign', '') if hasattr(subject, 'ascendant') and subject.ascendant else ''
+                chart_data_str = f"Ascendant: {asc_sign}\nPlanets:\n" + "\n".join(planets_str) + "\nHouses:\n" + "\n".join(houses_str)
 
         except Exception as e:
             return {

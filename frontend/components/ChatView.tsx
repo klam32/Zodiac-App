@@ -1,8 +1,8 @@
 // 
 
-import React, { useState, useRef, useEffect, useMemo, useCallback, useDeferredValue } from 'react'
+import React, { useState, useRef, useEffect, useMemo, useCallback, useDeferredValue, useReducer } from 'react'
 import { User, ChatMessage } from '../types'
-import { api, API_ROOT, getImageUrl } from '../api'
+import { api, getImageUrl } from '../api'
 import AuthModal from './AuthModal'
 import toast from 'react-hot-toast'
 import { confirmDestructive } from '../utils/swal'
@@ -10,6 +10,7 @@ import ChatMessageItem from './chat/ChatMessageItem'
 import AstrologyReadingForm from './chat/AstrologyReadingForm'
 import LoveForm from './chat/LoveForm'
 import { Trash2, Orbit, Send } from 'lucide-react'
+import StreamingBotMessage from './chat/StreamingBotMessage'
 
 const FIELD_AGENT_MAP: Record<string, string> = {
   "general": "astrology",
@@ -53,11 +54,30 @@ const ChatView: React.FC<ChatViewProps> = ({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [isComposing, setIsComposing] = useState(false)
 
+  // 🔥 Streaming state
+  const [streamingMsgId, setStreamingMsgId] = useState<string | null>(null)
+  const [streamingDone, setStreamingDone] = useState(false)
+  const streamingContentRef = useRef<string>("")
+  const streamingSources = useRef<any[]>([])
+  const pendingTokenBalance = useRef<number | undefined>(undefined)
+  const pendingTokenCharged = useRef<number>(0)
+  const streamingMsgIdRef = useRef<string>('')
+  const [, forceUpdate] = useReducer(x => x + 1, 0)
+
+  const isWaitingOrStreaming = isLoading || !!streamingMsgId
+
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    const el = scrollRef.current
+    if (!el) return
+    const isCloseToBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 400
+    if (streamingMsgId) {
+      // Mượt khi stream — smooth scroll
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+    } else if (isCloseToBottom || isLoading) {
+      // Instant khi load / user gửi tin
+      el.scrollTop = el.scrollHeight
     }
-  }, [history, isLoading])
+  }, [history, isLoading, streamingMsgId])
 
   useEffect(() => {
     if (!user) return
@@ -219,7 +239,7 @@ const ChatView: React.FC<ChatViewProps> = ({
   }
 
   // =========================
-  // 🔥 FOLLOW-UP (FIXED)
+  // 🔥 FOLLOW-UP (SSE STREAMING — ChatGPT style)
   // =========================
   const sendChat = useCallback(async () => {
     if (!user) {
@@ -233,6 +253,7 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
 
     const message = input || "Phân tích thêm"
+    const botMsgId = `bot-${Date.now()}`
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -245,48 +266,123 @@ const ChatView: React.FC<ChatViewProps> = ({
     setInput("")
     setIsLoading(true)
 
+    // 🔥 Reset streaming refs
+    streamingContentRef.current = ""
+    streamingSources.current = []
+    pendingTokenBalance.current = undefined
+    pendingTokenCharged.current = 0
+    streamingMsgIdRef.current = botMsgId
+    setStreamingDone(false)
+    setStreamingMsgId(botMsgId)
+
     try {
-      const response = await api.sendChatFollowup({
+      const response = await api.sendChatFollowupStream({
         conversation_id: conversationId,
         field: FIELD_AGENT_MAP[selectedField] || "astrology",
         question: message
       })
 
-      const botMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response.analysis || response.answer || "",
-        answer: response.answer,
-        chart: null,
-        analysis: response.analysis,
-        timestamp: new Date(),
-        tokens_charged: response.tokens_charged,
-        sources: response.sources
-      }
-      
-      console.log("RAG Sources received from API:", response.sources);
+      setIsLoading(false) // Spinner tắt, bắt đầu streaming
 
-      if (response.sections && response.sections.length > 0) {
-        (botMsg as any).sections = response.sections
-      }
-      if (response.mode === "love") {
-        (botMsg as any).compatibility = response.compatibility
-          ; (botMsg as any).label = response.label
-          ; (botMsg as any).partner_chart_svg = response.partner_chart_svg
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder("utf-8")
+      if (!reader) throw new Error("Không thể đọc stream")
+
+      let buffer = ""
+      let tokenBalance: number | undefined
+      let tokenCharged = 0
+      let finalSources: any[] = []
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const events = buffer.split("\n\n")
+        buffer = events.pop() || ""
+
+        for (const event of events) {
+          const trimmed = event.trim()
+          if (!trimmed.startsWith("data: ")) continue
+
+          try {
+            const parsed = JSON.parse(trimmed.slice(6))
+
+            if (parsed.type === "meta") {
+              finalSources = parsed.sources || []
+              streamingSources.current = finalSources
+            } else if (parsed.type === "text") {
+              // 🔥 Chỉ cập nhật ref + force re-render StreamingBotMessage, không touch history
+              streamingContentRef.current += parsed.content
+              forceUpdate()
+            } else if (parsed.type === "done") {
+              tokenBalance = parsed.user_token_balance
+              tokenCharged = parsed.tokens_charged || 0
+            } else if (parsed.type === "error") {
+              toast.error(parsed.error || "Lỗi khi nhận câu trả lời")
+            }
+          } catch (e) {
+            console.warn("SSE parse error:", e)
+          }
+        }
       }
 
-      setHistory(prev => [...prev, botMsg])
-      onBalanceUpdate(response.user_token_balance)
-      window.dispatchEvent(new Event("reload_conversations"))
+      // Flush remaining buffer
+      if (buffer.trim().startsWith("data: ")) {
+        try {
+          const parsed = JSON.parse(buffer.trim().slice(6))
+          if (parsed.type === "text") {
+            streamingContentRef.current += parsed.content
+          } else if (parsed.type === "done") {
+            tokenBalance = parsed.user_token_balance
+            tokenCharged = parsed.tokens_charged || 0
+          }
+        } catch {}
+      }
+
+      // 🔥 SSE xong — lưu pending data, báo animation flush queue
+      pendingTokenBalance.current = tokenBalance
+      pendingTokenCharged.current = tokenCharged
+      streamingSources.current = finalSources
+      setStreamingDone(true)  // StreamingBotMessage sẽ flush nhanh rồi gọi onComplete
 
     } catch (err: any) {
       toast.error(err.message)
       setInput(message === "Phân tích thêm" ? "" : message)
+      setStreamingMsgId(null)
+      setStreamingDone(false)
+      streamingContentRef.current = ""
     } finally {
       setIsLoading(false)
     }
 
   }, [input, selectedField, conversationId, user])
+
+  // 🔥 Gọi khi animation typewriter xong — commit vào history
+  const handleStreamingComplete = useCallback(() => {
+    const finalContent = streamingContentRef.current
+    const msgId = streamingMsgIdRef.current
+    setStreamingMsgId(null)
+    setStreamingDone(false)
+    streamingContentRef.current = ''
+
+    const finalBotMsg: ChatMessage = {
+      id: msgId,
+      role: 'assistant',
+      content: finalContent,
+      answer: finalContent,
+      chart: null,
+      analysis: finalContent,
+      timestamp: new Date(),
+      tokens_charged: pendingTokenCharged.current,
+      sources: streamingSources.current,
+      isStreaming: false,
+      isFollowUp: true
+    }
+    setHistory(prev => [...prev, finalBotMsg])
+    if (pendingTokenBalance.current !== undefined) onBalanceUpdate(pendingTokenBalance.current)
+    window.dispatchEvent(new Event('reload_conversations'))
+  }, [setHistory, onBalanceUpdate])
 
   // =========================
   // 🔥 TAB SELECT (CLEAN)
@@ -302,12 +398,10 @@ const ChatView: React.FC<ChatViewProps> = ({
 
   const filteredHistory = history.filter(msg => {
     if (!msg.sections) return true
-
-    return msg.sections.some(s =>
-      s.agent === FIELD_AGENT_MAP[selectedField]
-    )
+    return msg.sections.some(s => s.agent === FIELD_AGENT_MAP[selectedField])
   })
 
+  // 🔥 useMemo chỉ re-render khi history (committed) thay đổi, không re-render khi streaming
   const renderedMessages = useMemo(() => {
     return filteredHistory.map(msg => (
       <ChatMessageItem
@@ -317,7 +411,7 @@ const ChatView: React.FC<ChatViewProps> = ({
         botAvatar={getImageUrl(siteConfig?.logo_url)}
       />
     ))
-  }, [filteredHistory])//[filteredHistory, user?.picture_url, siteConfig?.logo_url])
+  }, [filteredHistory, user?.picture_url, siteConfig?.logo_url])
 
   return (
     // <div className="flex-1 flex flex-col h-full bg-[#0a0a0f] text-white">
@@ -357,6 +451,15 @@ const ChatView: React.FC<ChatViewProps> = ({
 
         {renderedMessages}
 
+        {/* 🔥 StreamingBotMessage — typewriter realtime, commit history sau khi animation xong */}
+        {streamingMsgId && (
+          <StreamingBotMessage
+            content={streamingContentRef.current}
+            isDone={streamingDone}
+            onComplete={handleStreamingComplete}
+          />
+        )}
+
         {isLoveMode && showLoveForm && (
           <div ref={loveFormRef} className="mt-6">
             <LoveForm
@@ -367,11 +470,12 @@ const ChatView: React.FC<ChatViewProps> = ({
           </div>
         )}
 
-        {isLoading && (
+        {isLoading && !streamingMsgId && history[history.length - 1]?.role === "user" && (
           <div className="flex flex-col items-center py-16">
-            <div className="w-20 h-20 border border-blue-500 rounded-full flex items-center justify-center">
-              <Orbit className="animate-spin text-blue-300" />
+            <div className="w-20 h-20 border border-blue-500/30 rounded-full flex items-center justify-center bg-blue-950/10 backdrop-blur-sm shadow-[0_0_30px_rgba(59,130,246,0.2)]">
+              <Orbit className="animate-spin text-blue-300 w-10 h-10" />
             </div>
+            <span className="text-xs text-blue-300/60 mt-4 tracking-wider uppercase font-medium">Đang khởi tạo bản đồ sao...</span>
           </div>
         )}
       </div>
@@ -394,7 +498,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                   if (e.key === 'Enter') {
                     if (e.ctrlKey || e.shiftKey) return
                     e.preventDefault()
-                    if (input.trim() && !isLoading) sendChat()
+                    if (input.trim() && !isWaitingOrStreaming) sendChat()
                   }
                 }}
                 placeholder="Hỏi về vận mệnh của bạn..."
@@ -403,13 +507,13 @@ const ChatView: React.FC<ChatViewProps> = ({
 
               <button
                 onClick={sendChat}
-                disabled={isLoading || !input.trim()}
-                className={`flex items-center justify-center min-w-[50px] h-[50px] rounded-2xl transition-all duration-300 transform ${input.trim() && !isLoading
+                disabled={isWaitingOrStreaming || !input.trim()}
+                className={`flex items-center justify-center min-w-[50px] h-[50px] rounded-2xl transition-all duration-300 transform ${input.trim() && !isWaitingOrStreaming
                   ? "bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] scale-100 hover:scale-105 active:scale-95 opacity-100"
                   : "bg-white/5 text-gray-600 scale-95 opacity-50 cursor-not-allowed"
                   }`}
               >
-                <Send className={`${isLoading ? "animate-pulse" : ""} w-5 h-5 ml-0.5`} />
+                <Send className={`${isWaitingOrStreaming ? "animate-pulse" : ""} w-5 h-5 ml-0.5`} />
               </button>
             </div>
           </div>

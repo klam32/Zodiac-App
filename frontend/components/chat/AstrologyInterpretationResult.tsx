@@ -8,6 +8,7 @@ interface Props {
   answer?: string;
   chart_svg?: string;
   chartSummary?: any;
+  isFollowUp?: boolean;
 }
 
 // 🔥 mapping zodiac
@@ -31,7 +32,8 @@ const AstrologyInterpretationResult: React.FC<Props> = ({
   analysis,
   answer,
   chart_svg,
-  chartSummary
+  chartSummary,
+  isFollowUp: isFollowUpProp
 }) => {
 
   let safeContent = analysis || content || "";
@@ -39,7 +41,7 @@ const AstrologyInterpretationResult: React.FC<Props> = ({
 
   // 🔥 FOLLOWUP toggle
   const [showDetail, setShowDetail] = React.useState(false);
-  const isFollowUp = !!safeAnswer;
+  const isFollowUp = isFollowUpProp !== undefined ? isFollowUpProp : !!safeAnswer;
 
   // 🔥 DOWNLOAD
   const downloadChart = () => {

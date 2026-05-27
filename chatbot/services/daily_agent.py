@@ -1,9 +1,8 @@
 import re
 from typing import Dict, Any, List
 from datetime import datetime
-from kerykeion import AstrologicalSubject
 from chatbot.utils.text_cleaner import normalize_markdown
-from chatbot.utils.geo import get_coordinates
+from chatbot.utils.astro_cache import get_astrological_subject
 
 def calculate_aspects(natal_subject, transit_subject):
     aspects = []
@@ -53,32 +52,28 @@ class DailyAgent:
         today = datetime.now().strftime("%d/%m/%Y")
 
         try:
-            lat, lng = get_coordinates(birth_info.get("city", "Hanoi"), birth_info.get("country", "VN"))
-            
-            subject = AstrologicalSubject(
+            subject = get_astrological_subject(
                 name,
                 int(birth_info["year"]),
                 int(birth_info["month"]),
                 int(birth_info["day"]),
                 int(birth_info.get("hour", 0)),
                 int(birth_info.get("minute", 0)),
-                city=birth_info.get("city", "Hanoi"),
-                nation=birth_info.get("country", "VN"),
-                lat=lat, lng=lng
+                birth_info.get("city", "Hanoi"),
+                birth_info.get("country", "VN"),
             )
             
             # Tính Transit Chart cho ngày hôm nay
             now = datetime.now()
-            transit_subject = AstrologicalSubject(
+            transit_subject = get_astrological_subject(
                 "Transit",
                 now.year,
                 now.month,
                 now.day,
                 now.hour,
                 now.minute,
-                city=birth_info.get("city", "Hanoi"),
-                nation=birth_info.get("country", "VN"),
-                lat=lat, lng=lng
+                birth_info.get("city", "Hanoi"),
+                birth_info.get("country", "VN"),
             )
 
             sun_sign = subject.sun.sign

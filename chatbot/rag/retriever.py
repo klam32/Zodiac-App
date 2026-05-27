@@ -1,4 +1,5 @@
 import numpy as np
+from functools import lru_cache
 from chatbot.rag.chunking_service import get_embeddings_model
 
 def cosine_similarity(v1, v2):
@@ -11,6 +12,11 @@ def cosine_similarity(v1, v2):
 
 from typing import List, Dict, Any
 
+@lru_cache(maxsize=512)
+def _embed_query_cached(query: str) -> tuple[float, ...]:
+    embeddings_model = get_embeddings_model()
+    return tuple(embeddings_model.embed_query(query))
+
 def retrieve_top_chunks(query: str, chunks_data: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
     """
     Tìm kiếm semantic theo Cosine Similarity.
@@ -19,8 +25,7 @@ def retrieve_top_chunks(query: str, chunks_data: List[Dict[str, Any]], top_k: in
     if not chunks_data:
         return []
 
-    embeddings_model = get_embeddings_model()
-    q_emb = embeddings_model.embed_query(query)
+    q_emb = _embed_query_cached((query or "").strip())
     
     scored_chunks = []
     for chunk in chunks_data:

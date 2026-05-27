@@ -57,11 +57,13 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
             country = request.birth_info.get('country', 'VN')
 
             try:
-                lat, lng = get_coordinates(city, country)
+                lat, lng, tz_str = get_coordinates(city, country)
                 user_chart = AstrologicalSubject(
                     name, year, month, day, hour, minute,
                     city=city, nation=country,
-                    lat=lat, lng=lng
+                    lat=lat, lng=lng,
+                    tz_str=tz_str,
+                    online=False
                 )
 
                 # Generate SVG
@@ -114,7 +116,7 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
         """
 
         response = await asyncio.to_thread(llm.invoke, prompt)
-        content = response.content if hasattr(response, "content") else str(response)
+        content = str(response.content if hasattr(response, "content") else response)
         
         # Bóc tách JSON
         def extract_json(text):
@@ -184,7 +186,7 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
         tokens = token_counter.count_tokens(prompt + content)
         cost = token_counter.calculate_cost(tokens)
         
-        email = current_user.get("email")
+        email = str(current_user.get("email") or "")
         if not current_user.get("is_admin"):
             new_balance = await asyncio.to_thread(token_counter.deduct_tokens, email=email, tokens=cost, description=f"Lịch Cát Tường: {request.field}")
         else:

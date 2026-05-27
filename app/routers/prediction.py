@@ -18,7 +18,7 @@ class PredictionRequest(BaseModel):
     date: str  # YYYY-MM-DD
     field: str # Sự nghiệp, Tình cảm, Sức khỏe...
     birth_info: dict
-    conversation_id: int = None
+    conversation_id: int | None = None
 
 @router.post("/daily")
 async def get_daily_prediction(request: PredictionRequest, current_user: dict = Depends(get_current_user)):
@@ -48,11 +48,13 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
         chart_data_str = ""
 
         try:
-            lat, lng = get_coordinates(city, country)
+            lat, lng, tz_str = get_coordinates(city, country)
             user_chart = AstrologicalSubject(
                 name, year, month, day, hour, minute,
                 city=city, nation=country,
-                lat=lat, lng=lng
+                lat=lat, lng=lng,
+                tz_str=tz_str,
+                online=False
             )
             # Generate SVG
             natal_data = ChartDataFactory.create_natal_chart_data(user_chart.model())
@@ -107,7 +109,7 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
         """
         
         response = await asyncio.to_thread(llm.invoke, prompt)
-        content = response.content if hasattr(response, "content") else str(response)
+        content = str(response.content if hasattr(response, "content") else response)
         
         # Extract JSON
         result_data = {
@@ -218,7 +220,7 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
             chart_svg=chart_svg
         )
         
-        email = current_user.get("email")
+        email = str(current_user.get("email") or "")
         if not current_user.get("is_admin"):
             new_balance = await asyncio.to_thread(
                 token_counter.deduct_tokens,

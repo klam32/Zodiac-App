@@ -1,10 +1,60 @@
 import json
 import re
+import unicodedata
 
 
 class GuardAgent:
     def __init__(self, llm):
         self.llm = llm
+
+    def _normalize(self, text: str) -> str:
+        text = (text or "").lower()
+        text = unicodedata.normalize("NFD", text)
+        text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+        return text.replace("đ", "d")
+
+    def _fast_decision(self, question: str):
+        q = self._normalize(question)
+        if not q.strip():
+            return {"is_astrology": False, "confidence": 0}
+
+        personal_markers = [
+            "toi", "minh", "em", "anh", "chi", "tui", "ban than",
+            "nguoi yeu", "doi tac", "vo", "chong", "crush"
+        ]
+        astrology_terms = [
+            "chiem tinh", "cung hoang dao", "ban do sao", "natal",
+            "mat troi", "mat trang", "cung moc", "sao kim", "sao hoa",
+            "nha 1", "nha 2", "nha 3", "nha 4", "nha 5", "nha 6",
+            "nha 7", "nha 8", "nha 9", "nha 10", "nha 11", "nha 12",
+            "cung", "tu vi", "van han", "van trinh", "daily",
+            "ngay sinh", "thang sinh", "nam sinh", "sao", "hom nay", "ngay mai"
+        ]
+        domain_terms = [
+            "tinh yeu", "tinh cam", "hon nhan", "su nghiep", "cong viec",
+            "viec lam", "nghe", "tai chinh", "tien bac", "suc khoe",
+            "nang luong", "tinh cach", "diem manh", "diem yeu",
+            "van menh", "hop voi", "phu hop"
+        ]
+        pure_offtopic_terms = [
+            "viet code", "debug code", "lap trinh python", "javascript",
+            "react", "sql", "database", "api", "html", "css",
+            "lich su", "thoi tiet", "tin tuc", "phap luat"
+        ]
+
+        has_personal = any(k in q for k in personal_markers)
+        has_domain = any(k in q for k in domain_terms)
+
+        if any(k in q for k in astrology_terms):
+            return {"is_astrology": True, "confidence": 0.98}
+
+        if has_personal and has_domain:
+            return {"is_astrology": True, "confidence": 0.95}
+
+        if any(k in q for k in pure_offtopic_terms):
+            return {"is_astrology": False, "confidence": 0.95}
+
+        return None
 
     def _build_prompt(self, question: str) -> str:
         return f"""
@@ -101,6 +151,10 @@ OUTPUT JSON:
 
         if not question or not question.strip():
             return {"is_astrology": False, "confidence": 0}
+
+        fast = self._fast_decision(question)
+        if fast is not None:
+            return fast
 
         prompt = self._build_prompt(question)
 

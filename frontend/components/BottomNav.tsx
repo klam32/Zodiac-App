@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, User } from '../types';
-import { Sparkles, DollarSign, Shield, Star, User as UserIcon, Calendar, Zap } from 'lucide-react';
+import { Sparkles, DollarSign, Shield, Star, User as UserIcon, Calendar, Zap, Gift } from 'lucide-react';
 
 interface BottomNavProps {
   user: User | null;
@@ -14,6 +14,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ user, currentView, onViewChange }
     { id: 'chat' as View, label: 'Chiêm Tinh', icon: Sparkles },
     { id: 'calendar' as View, label: 'Lịch Tường', icon: Calendar },
     { id: 'prediction' as View, label: 'Vận Trình', icon: Zap },
+    { id: 'rewards' as View, label: 'Nhận Token', icon: Gift },
     { id: 'payment' as View, label: 'Nạp Điểm', icon: DollarSign },
     ...(user?.is_admin ? [{ id: 'admin' as View, label: 'Admin', icon: Shield }] : []),
     { id: 'profile' as View, label: 'Hồ Sơ', icon: UserIcon }

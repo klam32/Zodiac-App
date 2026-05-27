@@ -1,7 +1,7 @@
 //APP.TSX
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, View, ChatMessage, Conversation } from './types';
-import { api } from './api';
+import { api, getImageUrl } from './api';
 import Sidebar from './components/Sidebar';
 import BottomNav from './components/BottomNav';
 import DraggableMenuButton from './components/DraggableMenuButton';
@@ -12,6 +12,7 @@ import ProfileView from './components/ProfileView';
 import AdminView from './components/AdminView';
 import CalendarFortune from './components/CalendarFortune';
 import DailyPrediction from './components/DailyPrediction';
+import RewardsView from './components/RewardsView';
 import LandingPage from './components/LandingPage';
 import ContactPage from './components/ContactPage';
 import TermsPage from './components/TermsPage';
@@ -20,7 +21,6 @@ import GuidePage from './components/GuidePage';
 import PrivacyPage from './components/PrivacyPage';
 import BlogDetailPage from './components/BlogDetailPage';
 import AstrologyDetailsPage from './components/AstrologyDetailsPage';
-import { API_ROOT } from './api'
 
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
@@ -162,9 +162,7 @@ const App: React.FC = () => {
       }
       // 🔥 SET FAVICON
       if (config.favicon_url) {
-        const faviconUrl = config.favicon_url.startsWith('/api/')
-          ? `${API_ROOT}${config.favicon_url}`
-          : config.favicon_url;
+        const faviconUrl = getImageUrl(config.favicon_url);
 
         let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
 
@@ -396,10 +394,7 @@ const App: React.FC = () => {
       className="flex flex-col md:flex-row h-screen overflow-hidden view-transition"
       style={{
         background: siteConfig.background_url
-          ? `url(${siteConfig.background_url?.startsWith('/api/')
-            ? `${API_ROOT}${siteConfig.background_url}`
-            : siteConfig.background_url
-          }) center/100% 100% no-repeat`
+          ? `url("${getImageUrl(siteConfig.background_url)}") center/100% 100% no-repeat`
           : '#0a0a0f'
       }}
     >
@@ -478,12 +473,19 @@ const App: React.FC = () => {
               />
             )}
 
-            {currentView === 'prediction' && (
+             {currentView === 'prediction' && (
               <DailyPrediction
                 user={user}
                 onBalanceUpdate={updateBalance}
                 conversationId={currentConversationId}
                 history={chatHistory}
+              />
+            )}
+
+            {currentView === 'rewards' && (
+              <RewardsView
+                user={user}
+                onBalanceUpdate={updateBalance}
               />
             )}
           </>

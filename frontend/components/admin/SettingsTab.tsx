@@ -1,5 +1,5 @@
 import React from 'react';
-import { API_ROOT } from '../../api';
+import { getImageUrl } from '../../api';
 
 interface SettingsTabProps {
     data: any;
@@ -130,7 +130,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <div className="shrink-0 text-center">
                                 <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Logo</p>
                                 <div className="w-16 h-16 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-center p-2">
-                                    <img src={data.logo_url.startsWith('/') ? `${API_ROOT}${data.logo_url}` : data.logo_url} className="w-full h-full object-contain" alt="Preview" />
+                                    <img src={getImageUrl(data.logo_url)} className="w-full h-full object-contain" alt="Preview" />
                                 </div>
                             </div>
                         )}
@@ -152,9 +152,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                     <div className="mt-2">
                         <img
                             src={
-                                data.background_url.startsWith('/')
-                                    ? `${API_ROOT}${data.background_url}`
-                                    : data.background_url
+                                getImageUrl(data.background_url)
                             }
                             className="w-full h-32 object-cover rounded-xl"
                         />
@@ -207,7 +205,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             <div className="shrink-0 text-center">
                                 <p className="text-[10px] font-black uppercase text-slate-400 mb-2">Favicon</p>
                                 <div className="w-12 h-12 bg-slate-50 rounded-lg border border-slate-100 flex items-center justify-center p-2">
-                                    <img src={data.favicon_url.startsWith('/') ? `${API_ROOT}${data.favicon_url}` : data.favicon_url} className="w-full h-full object-contain" alt="Favicon" />
+                                    <img src={getImageUrl(data.favicon_url)} className="w-full h-full object-contain" alt="Favicon" />
                                 </div>
                             </div>
                         )}

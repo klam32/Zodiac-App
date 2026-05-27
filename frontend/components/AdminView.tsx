@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api, API_ROOT } from '../api';
+import { api } from '../api';
 import toast from 'react-hot-toast';
 import { confirmDestructive, promptInput, confirmAction, promptTokenAdjustment } from '../utils/swal';
 

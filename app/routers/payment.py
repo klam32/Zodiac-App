@@ -94,17 +94,19 @@ async def check_payment_status(payment_id: int, user=Depends(get_current_user)):
         payment = db.get_payment(payment_id)
 
     # Sau khi sync mà vẫn pending, kiểm tra xem có quá hạn (15p) chưa
-    if payment["status"] == "pending":
+    if payment and payment["status"] == "pending":
         # created_at trong DB là UTC (theo CURRENT_TIMESTAMP)
-        # created_at = datetime.strptime(payment["created_at"], "%Y-%m-%d %H:%M:%S")
         created_at = payment["created_at"]
-        # Phải so sánh với utcnow()
-        if datetime.utcnow() - created_at > timedelta(minutes=15):
+        current_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        if created_at and current_utc - created_at > timedelta(minutes=15):
             db.update_payment_status(payment_id, "failed")
             payment["status"] = "failed"
-            print(f"⌛ Đơn hàng #{payment_id} đã hết hạn (UTC: {created_at}, Current: {datetime.utcnow()})")
+            print(f"⌛ Đơn hàng #{payment_id} đã hết hạn (UTC: {created_at}, Current: {current_utc})")
 
     db.close()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Hóa đơn không tìm thấy")
+
     return {
         "status": payment["status"],
         "tokens": payment["tokens"],

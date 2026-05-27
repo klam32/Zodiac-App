@@ -1,9 +1,8 @@
 import re
 from typing import Dict, Any, List
-from kerykeion import AstrologicalSubject
 from kerykeion.utilities import get_house_number
 from chatbot.utils.text_cleaner import normalize_markdown
-from chatbot.utils.geo import get_coordinates
+from chatbot.utils.astro_cache import get_astrological_subject
 
 class PersonalityAgent:
     """
@@ -19,23 +18,20 @@ class PersonalityAgent:
     # =========================
     # ANALYZE PERSONALITY
     # =========================
-    def analyze(self, birth_info: Dict[str, Any], raw_chart_data: str = None) -> Dict[str, Any]:
+    def analyze(self, birth_info: Dict[str, Any], raw_chart_data: str | None = None) -> Dict[str, Any]:
 
         name = birth_info.get("name", "Người dùng")
 
         try:
-            lat, lng = get_coordinates(birth_info.get("city", "Hanoi"), birth_info.get("country", "VN"))
-            
-            subject = AstrologicalSubject(
+            subject = None if raw_chart_data else get_astrological_subject(
                 name,
                 int(birth_info["year"]),
                 int(birth_info["month"]),
                 int(birth_info["day"]),
                 int(birth_info.get("hour", 0)),
                 int(birth_info.get("minute", 0)),
-                city=birth_info.get("city", "Hanoi"),
-                nation=birth_info.get("country", "VN"),
-                lat=lat, lng=lng
+                birth_info.get("city", "Hanoi"),
+                birth_info.get("country", "VN"),
             )
 
             # =========================
@@ -47,19 +43,19 @@ class PersonalityAgent:
                 except:
                     return 0
 
-            # Fallback nếu không có raw_chart_data từ Orchestrator
-            chart_data = {
-                "Sun": f"{subject.sun.sign} (Nhà {get_house(subject.sun)})",
-                "Moon": f"{subject.moon.sign} (Nhà {get_house(subject.moon)})",
-                "Ascendant": subject.ascendant.sign,
-                "Mercury": subject.mercury.sign,
-                "Venus": subject.venus.sign,
-                "Mars": subject.mars.sign
-            }
-
+            chart_data_to_use = ""
             if raw_chart_data:
                 chart_data_to_use = raw_chart_data
-            else:
+            elif subject is not None:
+                # Fallback nếu không có raw_chart_data từ Orchestrator
+                chart_data = {
+                    "Sun": f"{getattr(subject.sun, 'sign', '')} (Nhà {get_house(subject.sun)})",
+                    "Moon": f"{getattr(subject.moon, 'sign', '')} (Nhà {get_house(subject.moon)})",
+                    "Ascendant": getattr(subject.ascendant, 'sign', ''),
+                    "Mercury": getattr(subject.mercury, 'sign', ''),
+                    "Venus": getattr(subject.venus, 'sign', ''),
+                    "Mars": getattr(subject.mars, 'sign', '')
+                }
                 chart_data_to_use = str(chart_data)
 
         except Exception as e:

@@ -2,7 +2,8 @@ import os
 import sys
 from typing import List
 
-sys.stdout.reconfigure(encoding='utf-8')
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding='utf-8')
 from dotenv import load_dotenv
 
 from langchain_community.document_loaders import PyPDFLoader

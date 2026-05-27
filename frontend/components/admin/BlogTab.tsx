@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { api } from '../../api';
-import { API_ROOT } from '../../api';
+import { api, getImageUrl } from '../../api';
 
 interface BlogTabProps {
     onShowToast: (msg: string, type: 'success' | 'error') => void;
@@ -159,7 +158,7 @@ const BlogTab: React.FC<BlogTabProps> = ({ onShowToast }) => {
                         {editingPost.image_url && (
                             <div className="mt-2 h-20 w-32 rounded-lg overflow-hidden border border-slate-100">
                                 <img 
-                                    src={editingPost.image_url.startsWith('/api/') ? `${API_ROOT}${editingPost.image_url}` : editingPost.image_url} 
+                                    src={getImageUrl(editingPost.image_url)} 
                                     className="w-full h-full object-cover" 
                                     alt="Preview" 
                                 />
@@ -208,7 +207,7 @@ const BlogTab: React.FC<BlogTabProps> = ({ onShowToast }) => {
                     <div key={post.id} className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hover:shadow-md transition-all">
                         <div className="h-40 bg-slate-100 relative">
                             <img 
-                                src={post.image_url?.startsWith('/api/') ? `${API_ROOT}${post.image_url}` : post.image_url} 
+                                src={getImageUrl(post.image_url)} 
                                 className="w-full h-full object-cover"
                                 alt={post.title} 
                             />

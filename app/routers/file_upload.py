@@ -19,7 +19,7 @@ async def upload_file(
 ):
     try:
         # Ngăn chặn Path Traversal bằng os.path.basename
-        safe_filename = os.path.basename(file.filename)
+        safe_filename = os.path.basename(file.filename or "file")
         file_extension = os.path.splitext(safe_filename)[1]
         unique_filename = f"{uuid4()}{file_extension}"
         folder_path = os.path.join(settings.DIR_ROOT, "utils", "download")

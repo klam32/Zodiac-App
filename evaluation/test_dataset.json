@@ -138,5 +138,285 @@
       "city": "Hanoi",
       "country": "VN"
     }
+  },
+  {
+    "question": "Sao Thủy ở cung Xử Nữ ảnh hưởng đến trí tuệ và cách giao tiếp như thế nào?",
+    "ground_truth": "Sao Thủy ở Xử Nữ là vị trí rất mạnh (cai quản và tôn cao). Người này có trí tuệ thực tế, phân tích sắc bén, chú trọng chi tiết, giao tiếp rõ ràng và logic. Họ thích giải quyết vấn đề thực tế nhưng có thể quá cầu toàn.",
+    "birth_info": {
+      "name": "Test User K",
+      "year": 1994,
+      "month": 9,
+      "day": 12,
+      "hour": 14,
+      "minute": 15,
+      "city": "Hai Phong",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Kim ở cung Kim Ngưu nói lên điều gì về quan điểm tình yêu và tài chính?",
+    "ground_truth": "Sao Kim ở Kim Ngưu là vị trí đắc địa (cai quản). Người này yêu thương chân thành, tìm kiếm sự an toàn, ổn định và các giá trị vật chất trong tình yêu. Họ yêu thích cái đẹp, nghệ thuật, ẩm thực và quản lý tài chính rất thực tế.",
+    "birth_info": {
+      "name": "Test User L",
+      "year": 1991,
+      "month": 5,
+      "day": 8,
+      "hour": 18,
+      "minute": 45,
+      "city": "Can Tho",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Hỏa ở Nhà 1 ảnh hưởng đến tính cách và hành động như thế nào?",
+    "ground_truth": "Sao Hỏa ở Nhà 1 mang lại cá tính mạnh mẽ, năng lượng dồi dào, tinh thần chủ động và khả năng cạnh tranh cao. Người này thẳng thắn, hành động quyết liệt nhưng đôi khi nóng nảy, bốc đồng và dễ gặp các chấn thương thể lý.",
+    "birth_info": {
+      "name": "Test User M",
+      "year": 1999,
+      "month": 12,
+      "day": 25,
+      "hour": 5,
+      "minute": 0,
+      "city": "Nha Trang",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Mộc ở Nhà 9 ảnh hưởng đến học vấn và thế giới quan ra sao?",
+    "ground_truth": "Sao Mộc ở Nhà 9 là vị trí cực kỳ tốt (cai quản tự nhiên). Người này có trí tuệ rộng mở, yêu thích triết học, tôn giáo, học vấn cao và du lịch nước ngoài. Họ luôn lạc quan, tin tưởng vào các giá trị tinh thần và gặp nhiều may mắn.",
+    "birth_info": {
+      "name": "Test User N",
+      "year": 1989,
+      "month": 6,
+      "day": 30,
+      "hour": 11,
+      "minute": 30,
+      "city": "Hue",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Thổ ở cung Ma Kết ảnh hưởng đến tinh thần trách nhiệm và sự nghiệp như thế nào?",
+    "ground_truth": "Sao Thổ ở Ma Kết là vị trí rất mạnh (cai quản). Người này có ý chí kiên định, tính kỷ luật thép, tinh thần trách nhiệm cực cao và luôn nỗ lực bền bỉ để đạt được mục tiêu sự nghiệp. Họ trưởng thành sớm và thành công ở trung vận.",
+    "birth_info": {
+      "name": "Test User O",
+      "year": 1991,
+      "month": 1,
+      "day": 10,
+      "hour": 23,
+      "minute": 15,
+      "city": "Vung Tau",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Người có Mặt Trời ở cung Song Ngư có trực giác và thế giới tâm hồn như thế nào?",
+    "ground_truth": "Mặt Trời ở Song Ngư thuộc nguyên tố Nước, cai quản bởi Sao Hải Vương. Người này có tâm hồn nhạy cảm, trực giác phi thường, giàu lòng trắc ẩn và khả năng nghệ thuật cao. Họ dễ đồng cảm nhưng cũng dễ bị ảnh hưởng bởi môi trường.",
+    "birth_info": {
+      "name": "Test User P",
+      "year": 1994,
+      "month": 3,
+      "day": 2,
+      "hour": 8,
+      "minute": 0,
+      "city": "Da Lat",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Cung Mọc Thiên Bình ảnh hưởng đến phong thái xã hội và gu thẩm mỹ như thế nào?",
+    "ground_truth": "Cung Mọc Thiên Bình mang lại phong thái thanh lịch, hòa nhã, duyên dáng và khả năng giao tiếp khéo léo. Họ yêu cái đẹp, nghệ thuật và luôn tìm kiếm sự công bằng, hài hòa trong các mối quan hệ xã hội xung quanh.",
+    "birth_info": {
+      "name": "Test User Q",
+      "year": 1996,
+      "month": 10,
+      "day": 15,
+      "hour": 17,
+      "minute": 30,
+      "city": "Bien Hoa",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Nhà 8 trong bản đồ sao liên quan đến tài sản chung và tâm lý sâu kín ra sao?",
+    "ground_truth": "Nhà 8 liên quan đến tài sản chung, thừa kế, tài chính của đối tác, tình dục và những chuyển hóa sâu sắc trong tâm lý. Các hành tinh ở Nhà 8 thường chỉ ra những trải nghiệm khủng hoảng mang tính tái sinh và khả năng tâm linh sâu sắc.",
+    "birth_info": {
+      "name": "Test User R",
+      "year": 1993,
+      "month": 11,
+      "day": 20,
+      "hour": 21,
+      "minute": 45,
+      "city": "Buon Ma Thuot",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Người có Mặt Trăng ở cung Kim Ngưu có đời sống cảm xúc ổn định như thế nào?",
+    "ground_truth": "Mặt Trăng ở Kim Ngưu là vị trí tôn cao (exalted). Người này có cảm xúc vô cùng ổn định, kiên định, bình yên và thực tế. Họ tìm kiếm sự an toàn qua các giá trị vật chất và sự thoải mái của các giác quan cơ thể.",
+    "birth_info": {
+      "name": "Test User S",
+      "year": 1997,
+      "month": 4,
+      "day": 28,
+      "hour": 2,
+      "minute": 0,
+      "city": "Ho Chi Minh",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Diêm Vương ở Nhà 10 ảnh hưởng đến quyền lực và sự nghiệp như thế nào?",
+    "ground_truth": "Sao Diêm Vương ở Nhà 10 chỉ ra khát vọng quyền lực, danh tiếng và sự nghiệp trải qua nhiều biến đổi lớn lao mang tính tái sinh. Họ có khả năng lãnh đạo mạnh mẽ nhưng cũng dễ gặp các cuộc tranh đấu quyền lực khốc liệt.",
+    "birth_info": {
+      "name": "Test User T",
+      "year": 1990,
+      "month": 8,
+      "day": 18,
+      "hour": 13,
+      "minute": 10,
+      "city": "Hanoi",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Thiên Vương ở Nhà 4 ảnh hưởng đến gia đình và đời sống nội tâm ra sao?",
+    "ground_truth": "Sao Thiên Vương ở Nhà 4 chỉ ra một gia đình có nhiều biến động, sự thay đổi nơi ở đột ngột hoặc môi trường gia đình tự do, độc lạ. Người này có đời sống nội tâm độc lập, nổi loạn và không thích các ràng buộc truyền thống.",
+    "birth_info": {
+      "name": "Test User U",
+      "year": 1995,
+      "month": 6,
+      "day": 1,
+      "hour": 4,
+      "minute": 30,
+      "city": "Da Nang",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Hải Vương ở Nhà 12 ảnh hưởng đến giấc mơ và trực giác tâm linh thế nào?",
+    "ground_truth": "Sao Hải Vương ở Nhà 12 là vị trí đắc địa tự nhiên. Nó mang lại khả năng kết nối tâm linh mạnh mẽ, trực giác cực kỳ nhạy bén và những giấc mơ tiên tri sống động. Họ có xu hướng ẩn dật và tìm kiếm sự giải thoát tinh thần.",
+    "birth_info": {
+      "name": "Test User V",
+      "year": 1992,
+      "month": 12,
+      "day": 12,
+      "hour": 23,
+      "minute": 0,
+      "city": "Can Tho",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Hỏa ở cung Song Ngư ảnh hưởng đến động lực hành động và năng lượng như thế nào?",
+    "ground_truth": "Sao Hỏa ở Song Ngư thể hiện hành động dựa trên cảm xúc, trực giác và cảm hứng nghệ thuật. Họ thiếu sự quyết liệt vật lý nhưng lại có sức mạnh tinh thần bền bỉ và xu hướng đấu tranh vì các mục tiêu nhân đạo, lý tưởng.",
+    "birth_info": {
+      "name": "Test User W",
+      "year": 1998,
+      "month": 2,
+      "day": 15,
+      "hour": 10,
+      "minute": 15,
+      "city": "Hai Phong",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Thủy ở cung Song Tử ảnh hưởng đến khả năng tiếp thu và giao tiếp ra sao?",
+    "ground_truth": "Sao Thủy ở Song Tử là vị trí rất mạnh (cai quản). Người này có tư duy nhanh nhạy, học hỏi cực nhanh, thích giao tiếp, viết lách và tranh luận. Họ đa tài, linh hoạt nhưng đôi khi thiếu tập trung và nông cạn.",
+    "birth_info": {
+      "name": "Test User X",
+      "year": 1996,
+      "month": 6,
+      "day": 10,
+      "hour": 9,
+      "minute": 45,
+      "city": "Ha Long",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Kim ở Nhà 2 ảnh hưởng đến gu thẩm mỹ và khả năng kiếm tiền thế nào?",
+    "ground_truth": "Sao Kim ở Nhà 2 mang lại may mắn về tài chính, khả năng kiếm tiền từ nghệ thuật, làm đẹp hoặc các mối quan hệ. Họ yêu thích sự xa hoa, đồ hiệu và có xu hướng chi tiêu nhiều cho việc hưởng thụ cuộc sống.",
+    "birth_info": {
+      "name": "Test User Y",
+      "year": 2000,
+      "month": 10,
+      "day": 30,
+      "hour": 15,
+      "minute": 0,
+      "city": "Ho Chi Minh",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Nhà 12 trong bản đồ sao liên quan đến những bí mật và tiềm thức ra sao?",
+    "ground_truth": "Nhà 12 đại diện cho tiềm thức, giấc mơ, các bí mật, sự cô độc, kẻ thù ẩn nấp và nghiệp quả quá khứ. Đây là ngôi nhà của sự giải thoát tâm linh nhưng cũng dễ mang lại cảm giác cô đơn và những nỗi sợ mơ hồ.",
+    "birth_info": {
+      "name": "Test User Z",
+      "year": 1987,
+      "month": 5,
+      "day": 14,
+      "hour": 3,
+      "minute": 0,
+      "city": "Hanoi",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Người có Mặt Trời ở cung Xử Nữ có xu hướng hoàn hảo và làm việc ra sao?",
+    "ground_truth": "Mặt Trời ở Xử Nữ thuộc nguyên tố Đất, được cai quản bởi Sao Thủy. Người này vô cùng cẩn thận, chú trọng chi tiết, thực tế, có tinh thần phục vụ cao và óc phân tích sắc bén. Họ luôn hướng tới sự hoàn hảo trong công việc.",
+    "birth_info": {
+      "name": "Test User AA",
+      "year": 1993,
+      "month": 9,
+      "day": 8,
+      "hour": 16,
+      "minute": 20,
+      "city": "Da Nang",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Người có Mặt Trăng ở cung Bọ Cạp có nội tâm sâu sắc và mãnh liệt thế nào?",
+    "ground_truth": "Mặt Trăng ở Bọ Cạp là vị trí thất thế (fall). Người này có thế giới nội tâm vô cùng mãnh liệt, sâu sắc, trực giác tâm lý nhạy bén nhưng cũng dễ giữ kín cảm xúc, hay ghen tuông và có xu hướng kiểm soát cực đoan.",
+    "birth_info": {
+      "name": "Test User AB",
+      "year": 1995,
+      "month": 11,
+      "day": 15,
+      "hour": 22,
+      "minute": 30,
+      "city": "Can Tho",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Nhà 7 trong bản đồ sao ảnh hưởng đến xu hướng chọn bạn đời ra sao?",
+    "ground_truth": "Nhà 7 là nhà của đối tác, hôn nhân và các mối quan hệ cam kết. Các hành tinh ở Nhà 7 và cung hoàng đạo ở đỉnh Nhà 7 sẽ phác họa nên tính cách, ngoại hình và phong thái của người bạn đời lý tưởng mà bạn thu hút.",
+    "birth_info": {
+      "name": "Test User AC",
+      "year": 1992,
+      "month": 7,
+      "day": 20,
+      "hour": 19,
+      "minute": 0,
+      "city": "Hai Phong",
+      "country": "VN"
+    }
+  },
+  {
+    "question": "Sao Mộc ở Nhà 2 ảnh hưởng đến sự thịnh vượng và tiền bạc ra sao?",
+    "ground_truth": "Sao Mộc ở Nhà 2 là một trong những vị trí giàu có nhất. Nó mang lại may mắn về tài chính, sự sung túc, khả năng kiếm tiền dễ dàng và tư duy tích cực về tiền bạc. Họ hào phóng nhưng cũng cần lưu ý thói quen chi tiêu quá trán.",
+    "birth_info": {
+      "name": "Test User AD",
+      "year": 1994,
+      "month": 1,
+      "day": 5,
+      "hour": 11,
+      "minute": 0,
+      "city": "Ho Chi Minh",
+      "country": "VN"
+    }
   }
 ]

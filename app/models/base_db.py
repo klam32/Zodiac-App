@@ -1,5 +1,5 @@
 
-import pymysql
+import pymysql  # type: ignore
 import os
 from app.config import settings
 
@@ -103,6 +103,8 @@ class BaseDB:
             conversation_id INT,
             user_id INT,
             section_name VARCHAR(100),
+            domain VARCHAR(50),
+            source_type VARCHAR(50),
             chunk_index INT,
             token_count INT,
             content TEXT,
@@ -139,6 +141,7 @@ class BaseDB:
             compatibility INT,
             label VARCHAR(50),
             partner_json LONGTEXT,
+            raw_data LONGTEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
@@ -159,7 +162,22 @@ class BaseDB:
             pass
 
         try:
+            self.cursor.execute("ALTER TABLE conversation_chunks ADD COLUMN domain VARCHAR(50) AFTER section_name")
+        except:
+            pass
+
+        try:
+            self.cursor.execute("ALTER TABLE conversation_chunks ADD COLUMN source_type VARCHAR(50) AFTER domain")
+        except:
+            pass
+
+        try:
             self.cursor.execute("ALTER TABLE chat_logs ADD COLUMN sources JSON AFTER partner_json")
+        except:
+            pass
+
+        try:
+            self.cursor.execute("ALTER TABLE chat_logs ADD COLUMN raw_data LONGTEXT AFTER partner_json")
         except:
             pass
 
@@ -200,7 +218,8 @@ class BaseDB:
 
         # Add initial blog posts if empty
         self.cursor.execute("SELECT COUNT(*) as count FROM blog_posts")
-        if self.cursor.fetchone()['count'] == 0:
+        row = self.cursor.fetchone()
+        if row and row['count'] == 0:
              self.cursor.execute("""
                 INSERT INTO blog_posts (title, excerpt, content, image_url, slug) VALUES 
                 ('Nghiệp Quả Trong Chiêm Tinh Học', 'Hành trình linh hồn qua La Hầu, Kế Đô và Chiron...', 'Nội dung chi tiết...', '/blog-karma.png', 'nghiep-qua'),
@@ -242,6 +261,37 @@ class BaseDB:
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
         """)
+
+        # daily_checkins
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS daily_checkins (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            checkin_date DATE,
+            streak INT DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_checkin (user_id, checkin_date),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """)
+
+        # daily_quizzes
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS daily_quizzes (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            quiz_date DATE,
+            questions_answered INT DEFAULT 0,
+            correct_answers INT DEFAULT 0,
+            claimed_3_correct TINYINT(1) DEFAULT 0,
+            claimed_5_correct TINYINT(1) DEFAULT 0,
+            answers_json TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_user_quiz (user_id, quiz_date),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """)
+
 
     def reconnect(self):
         """Ensure the database connection is alive."""
@@ -459,7 +509,8 @@ class BaseDB:
         compatibility=None,
         label=None,
         partner_json=None,
-        sources=None # 🔥 Thêm sources
+        sources=None,
+        raw_data=None
     ):
 
         import json
@@ -467,11 +518,24 @@ class BaseDB:
         summary_json = json.dumps(chart_summary) if chart_summary else None
         sources_json = json.dumps(sources, ensure_ascii=False) if sources else None
 
+        raw_data_json = None
+        if raw_data is not None:
+            if isinstance(raw_data, (dict, list)):
+                raw_data_json = json.dumps(raw_data, ensure_ascii=False)
+            elif isinstance(raw_data, str):
+                try:
+                    json.loads(raw_data)
+                    raw_data_json = raw_data
+                except Exception:
+                    raw_data_json = json.dumps(raw_data, ensure_ascii=False)
+            else:
+                raw_data_json = json.dumps(raw_data, ensure_ascii=False)
+
         self.cursor.execute(
             """
             INSERT INTO chat_logs
-            (user_id,conversation_id,question,answer,tokens_charged,chart,chart_summary,chart_svg,partner_chart_svg,compatibility,label,partner_json,sources)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            (user_id,conversation_id,question,answer,tokens_charged,chart,chart_summary,chart_svg,partner_chart_svg,compatibility,label,partner_json,sources,raw_data)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
             """,
             (
                 user_id,
@@ -486,7 +550,8 @@ class BaseDB:
                 compatibility,       
                 label,
                 json.dumps(partner_json) if partner_json else None,
-                sources_json
+                sources_json,
+                raw_data_json
             )
         )
     # 🚀 NEW: dùng cho history (1 query duy nhất)
@@ -584,19 +649,29 @@ class BaseDB:
         for chunk in chunks_data:
             self.cursor.execute(
                 """
-                INSERT INTO conversation_chunks (conversation_id, user_id, section_name, chunk_index, token_count, content, embedding)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO conversation_chunks (conversation_id, user_id, section_name, domain, source_type, chunk_index, token_count, content, embedding)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     conversation_id, 
                     chunk.get("user_id"), 
                     chunk.get("section_name", "General"),
+                    chunk.get("domain", "general"),
+                    chunk.get("source_type", "natal_chart_interpretation"),
                     chunk["chunk_index"], 
                     chunk.get("token_count", 0),
                     chunk["content"], 
                     json.dumps(chunk["embedding"])
                 )
             )
+
+    def replace_document_chunks(self, conversation_id, chunks_data):
+        self.cursor.execute(
+            "DELETE FROM conversation_chunks WHERE conversation_id=%s",
+            (conversation_id,)
+        )
+        if chunks_data:
+            self.save_document_chunks(conversation_id, chunks_data)
 
     def get_document_chunks(self, conversation_id):
         import json

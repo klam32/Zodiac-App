@@ -26,10 +26,11 @@ class TokenCounter:
         Tính toán chi phí dựa trên tỷ lệ được cấu hình trong database.
         Mặc định 1000 tokens = 1.0 đơn vị nếu không có cấu hình.
         """
-        rate = float(self.user_db.get_setting('rate_per_1000', '1.0'))
+        setting_val = self.user_db.get_setting('rate_per_1000', '1.0')
+        rate = float(setting_val if setting_val is not None else '1.0')
         return (tokens / 1000.0) * rate
 
-    def deduct_tokens(self, email: str, tokens: int, description: str = "Chatbot output charge"):
+    def deduct_tokens(self, email: str, tokens: float, description: str = "Chatbot output charge"):
         """
         Trừ token từ tài khoản người dùng.
         """
@@ -38,7 +39,7 @@ class TokenCounter:
             return None
 
         # Giả sử 1 token = 1 đơn vị trong DB (hoặc dùng calculate_cost nếu cần)
-        token_cost = float(tokens)
+        token_cost = tokens
         
         user = self.user_db.get_by_email(email)
         if user:

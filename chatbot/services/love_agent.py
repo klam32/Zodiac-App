@@ -1,9 +1,9 @@
 import re
 import random
 from typing import Dict, Any, List
-from kerykeion import AstrologicalSubject, ChartDataFactory, ChartDrawer
+from kerykeion import ChartDataFactory, ChartDrawer
 from chatbot.utils.text_cleaner import normalize_markdown
-from chatbot.utils.geo import get_coordinates
+from chatbot.utils.astro_cache import get_astrological_subject
 import os
 
 def slugify(name: str):
@@ -52,23 +52,20 @@ class LoveAgent:
         self.llm = llm_model
         self.conversation_history: List[Dict[str, str]] = []
     
-    def analyze(self, birth_info: Dict[str, Any], context: str = None, raw_chart_data: str = None) -> Dict[str, Any]:
+    def analyze(self, birth_info: Dict[str, Any], context: str | None = None, raw_chart_data: str | None = None) -> Dict[str, Any]:
         name = birth_info.get("name", "Người dùng")
         partner = birth_info.get("partner")
 
         try:
-            lat1, lng1 = get_coordinates(birth_info.get("city", "Hanoi"), birth_info.get("country", "VN"))
-            
-            p1 = AstrologicalSubject(
+            p1 = get_astrological_subject(
                 name,
                 int(birth_info["year"]),
                 int(birth_info["month"]),
                 int(birth_info["day"]),
                 int(birth_info.get("hour", 0)),
                 int(birth_info.get("minute", 0)),
-                city=birth_info.get("city", "Hanoi"),
-                nation=birth_info.get("country", "VN"),
-                lat=lat1, lng=lng1
+                birth_info.get("city", "Hanoi"),
+                birth_info.get("country", "VN"),
             )
 
             if not partner:
@@ -88,21 +85,20 @@ class LoveAgent:
                     "compatibility": None,
                     "label": None,
                     "chart_svg": None,
-                    "partner_chart_svg": None
+                    "partner_chart_svg": None,
+                    "chart_summary": {"user": chart1},
+                    "raw_chart_data": f"{name}: {chart1}"
                 }
 
-            lat2, lng2 = get_coordinates(partner.get("city", "Hanoi"), partner.get("country", "VN"))
-            
-            p2 = AstrologicalSubject(
+            p2 = get_astrological_subject(
                 partner.get("name", "Đối tác"),
                 int(partner["year"]),
                 int(partner["month"]),
                 int(partner["day"]),
                 int(partner.get("hour", 0)),
                 int(partner.get("minute", 0)),
-                city=partner.get("city", "Hanoi"),
-                nation=partner.get("country", "VN"),
-                lat=lat2, lng=lng2
+                partner.get("city", "Hanoi"),
+                partner.get("country", "VN"),
             )
 
             try:
@@ -118,6 +114,7 @@ class LoveAgent:
 
             chart1 = extract_chart(p1)
             chart2 = extract_chart(p2)
+            raw_chart_text = f"{p1.name}: {chart1}\n{p2.name}: {chart2}"
 
             prompt = f"""
              Bạn là chuyên gia tư vấn tình cảm.
@@ -165,13 +162,20 @@ TIẾNG VIỆT 100%. TRẢ VỀ VĂN BẢN MARKDOWN TRỰC TIẾP.
                 "compatibility": compatibility,
                 "label": label,
                 "chart_svg": svg1,
-                "partner_chart_svg": svg2
+                "partner_chart_svg": svg2,
+                "chart_summary": {
+                    "user": chart1,
+                    "partner": chart2,
+                    "compatibility": compatibility,
+                    "label": label
+                },
+                "raw_chart_data": raw_chart_text
             }
         except Exception as e:
             print("LoveAgent Error:", e)
             return {"answer": "Lỗi phân tích chiêm tinh.", "type": "love"}
 
-    def chat(self, question: str, chart1: dict, chart2: dict = None, name1: str = "User", name2: str = "Partner", emotion: str = "trung tính") -> str:
+    def chat(self, question: str, chart1: dict, chart2: dict | None = None, name1: str = "User", name2: str = "Partner", emotion: str = "trung tính") -> str:
         history_text = ""
         for msg in self.conversation_history[-6:]:
             role = "User" if msg["role"] == "user" else "Expert"
@@ -215,36 +219,30 @@ TIẾNG VIỆT 100%. TRẢ VỀ VĂN BẢN MARKDOWN TRỰC TIẾP.
         birth_info["emotion"] = input_data.get("emotion", "trung tính")
 
         try:
-            lat1, lng1 = get_coordinates(birth_info.get("city", "Hanoi"), birth_info.get("country", "VN"))
-            
-            p1 = AstrologicalSubject(
+            p1 = get_astrological_subject(
                 birth_info["name"], 
                 int(birth_info["year"]), 
                 int(birth_info["month"]), 
                 int(birth_info["day"]), 
                 int(birth_info.get("hour", 0)), 
                 int(birth_info.get("minute", 0)), 
-                city=birth_info.get("city", "Hanoi"),
-                nation=birth_info.get("country", "VN"),
-                lat=lat1, lng=lng1
+                birth_info.get("city", "Hanoi"),
+                birth_info.get("country", "VN"),
             )
             chart1 = extract_chart(p1)
             p2 = None
             chart2 = None
             partner = birth_info.get("partner")
             if partner:
-                lat2, lng2 = get_coordinates(partner.get("city", "Hanoi"), partner.get("country", "VN"))
-                
-                p2 = AstrologicalSubject(
+                p2 = get_astrological_subject(
                     partner["name"], 
                     int(partner["year"]), 
                     int(partner["month"]), 
                     int(partner["day"]), 
                     int(partner.get("hour", 0)), 
                     int(partner.get("minute", 0)), 
-                    city=partner.get("city", "Hanoi"),
-                    nation=partner.get("country", "VN"),
-                    lat=lat2, lng=lng2
+                    partner.get("city", "Hanoi"),
+                    partner.get("country", "VN"),
                 )
                 chart2 = extract_chart(p2)
         except Exception as e:

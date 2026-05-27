@@ -1,7 +1,7 @@
 import React from "react"
 import { User, View, Conversation } from "../types"
-import { API_ROOT, api } from "../api"
-import { Sparkles, DollarSign, Shield, Star, User as UserIcon, Trash, Calendar, Zap, Pin, Edit2, Check, X, Home } from "lucide-react"
+import { api, getImageUrl } from "../api"
+import { Sparkles, DollarSign, Shield, Star, User as UserIcon, Trash, Calendar, Zap, Pin, Edit2, Check, X, Home, Gift } from "lucide-react"
 import ConfirmModal from "./ConfirmModal"
 import Toast from "./Toast"
 
@@ -42,6 +42,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleVisible,
 }) => {
   const [imgError, setImgError] = React.useState(false)
+  const [logoImgError, setLogoImgError] = React.useState(false)
   const [deleteId, setDeleteId] = React.useState<number | null>(null)
   const [showToast, setShowToast] = React.useState(false)
   const [toastMessage, setToastMessage] = React.useState("")
@@ -51,11 +52,16 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [editingTitle, setEditingTitle] = React.useState("")
   const [contextMenuId, setContextMenuId] = React.useState<number | null>(null)
 
+  React.useEffect(() => {
+    setLogoImgError(false)
+  }, [siteConfig?.logo_url])
+
   const navItems = [
     { id: "landing" as View, label: "Trang Chủ", icon: Home },
     { id: "chat" as View, label: "Chiêm Tinh", icon: Star },
     { id: "calendar" as View, label: "Lịch Cát Tường", icon: Calendar },
     { id: "prediction" as View, label: "Vận Trình Ngày", icon: Zap },
+    { id: "rewards" as View, label: "Nhận Token", icon: Gift },
     { id: "payment" as View, label: "Nạp Tokens", icon: DollarSign },
     ...(user?.is_admin
       ? [
@@ -177,15 +183,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* HEADER */}
           <div className="flex items-center gap-2 px-2 mb-4 shrink-0">
 
-            {isVisible && siteConfig?.logo_url ? (
+            {isVisible && siteConfig?.logo_url && !logoImgError ? (
               <img
-                src={
-                  siteConfig.logo_url.startsWith("/api/")
-                    ? `${API_ROOT}${siteConfig.logo_url}`
-                    : siteConfig.logo_url
-                }
+                src={getImageUrl(siteConfig.logo_url)}
                 className="w-10 h-10 object-contain rounded-xl drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
                 alt="Logo"
+                onError={() => setLogoImgError(true)}
               />
             ) : (
               isVisible && (
