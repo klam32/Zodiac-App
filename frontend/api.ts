@@ -4,20 +4,12 @@ import { AuthResponse, ChatResponse, PaymentPackage, PaymentInvoice, PaymentStat
 const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
 
 const getApiRoot = (): string => {
-  // Ưu tiên env var (dùng khi deploy Vercel)
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL.trim();
-  // Hardcode Cloudflare/Ngrok tunnel for production (Vercel)
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return 'https://railcar-frostbite-alumni.ngrok-free.dev';
+  // Nếu chạy trên localhost (Dev mode) thì gọi về máy chủ local
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:2643';
   }
-
-  // Native Android emulator
-  if (isNative) return 'http://10.0.2.2:2643';
-  // Tự động dùng cùng hostname với trang web:
-  // - localhost:3000 → gọi localhost:2643
-  // - 192.168.1.22:3000 → gọi 192.168.1.22:2643 (LAN)
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return `http://${hostname}:2643`;
+  // Cho tất cả các môi trường khác (Vercel deploy, điện thoại khác mạng, v.v.), gọi thẳng tới ngrok
+  return 'https://railcar-frostbite-alumni.ngrok-free.dev';
 };
 
 export const API_ROOT = getApiRoot().trim();
