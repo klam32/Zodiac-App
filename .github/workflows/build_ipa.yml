@@ -23,6 +23,8 @@ jobs:
           cd ios && pod install
 
       - name: Build iOS (no-codesign)
+      # duong dan thu muc cua source flutter
+        working-directory: ./app_web_view
         run: flutter build ios --release --no-codesign
 
       - name: Package IPA
