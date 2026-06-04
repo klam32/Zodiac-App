@@ -7,6 +7,7 @@ export interface User {
   email: string;
   token_balance: number;
   is_admin: boolean;
+  role?: string;
   full_name?: string;
   picture_url?: string;
   created_at?: string;
@@ -122,4 +123,16 @@ export interface SiteSettings {
   seo_author: string;
   favicon_url: string;
   no_answer_fallback: string;
+  about_label?: string;
+  about_title?: string;
+  about_company_name?: string;
+  about_content?: string;
+  about_address?: string;
+  about_hotline?: string;
+  about_working_time?: string;
+  company_name?: string;
+  company_description?: string;
+  company_address?: string;
+  company_hotline?: string;
+  company_active_date?: string;
 }

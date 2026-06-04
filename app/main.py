@@ -1,4 +1,7 @@
 from fastapi import FastAPI
+from dotenv import load_dotenv
+load_dotenv()
+
 from app.routers import auth, file_upload, payment, chatbot, admin, calendar, prediction, format_text, rewards
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -72,8 +75,10 @@ app.add_middleware(
 app.include_router(auth.router, prefix=api_prefix)
 app.include_router(file_upload.router, prefix=api_prefix)
 app.include_router(payment.router, prefix=api_prefix)
+app.include_router(payment.reports_router, prefix=api_prefix)
 app.include_router(chatbot.router, prefix=api_prefix)
 app.include_router(admin.router, prefix=api_prefix)
+app.include_router(admin.public_settings_router, prefix=api_prefix)
 app.include_router(calendar.router, prefix=api_prefix)
 app.include_router(prediction.router, prefix=api_prefix)
 app.include_router(format_text.router, prefix=api_prefix)

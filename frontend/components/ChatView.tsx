@@ -1,6 +1,7 @@
 // 
 
 import React, { useState, useRef, useEffect, useMemo, useCallback, useDeferredValue, useReducer } from 'react'
+import { useTranslation } from 'react-i18next'
 import { User, ChatMessage } from '../types'
 import { api, getImageUrl } from '../api'
 import AuthModal from './AuthModal'
@@ -11,6 +12,7 @@ import AstrologyReadingForm from './chat/AstrologyReadingForm'
 import LoveForm from './chat/LoveForm'
 import { Trash2, Orbit, Send } from 'lucide-react'
 import StreamingBotMessage from './chat/StreamingBotMessage'
+import LanguageSwitcher from './common/LanguageSwitcher'
 
 const FIELD_AGENT_MAP: Record<string, string> = {
   "general": "astrology",
@@ -41,6 +43,8 @@ const ChatView: React.FC<ChatViewProps> = ({
   conversationId,
   setConversationId: externalSetConversationId
 }) => {
+  const { t, i18n } = useTranslation()
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi'
 
   const [isLoading, setIsLoading] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -131,8 +135,8 @@ const ChatView: React.FC<ChatViewProps> = ({
   const handleClearHistory = async () => {
     if (!user) return
     const confirmed = await confirmDestructive(
-      "Xóa lịch sử?",
-      "Bạn có chắc muốn xóa toàn bộ lịch sử?"
+      t('chat.deleteHistory'),
+      t('chat.deleteHistoryConfirm')
     )
     if (!confirmed) return
 
@@ -141,13 +145,9 @@ const ChatView: React.FC<ChatViewProps> = ({
       setHistory([])
       externalSetConversationId?.(null)
       window.dispatchEvent(new Event("reload_conversations"))
-      toast.success("Đã xóa đoạn chat", {
+      toast.success(t('chat.deleteSuccess'), {
         icon: "✅",
-        style: {
-          background: "#111",
-          color: "#fff",
-          border: "1px solid #333"
-        }
+        style: { background: "#111", color: "#fff", border: "1px solid #333" }
       })
     } catch (err: any) {
       toast.error(err.message)
@@ -171,7 +171,7 @@ const ChatView: React.FC<ChatViewProps> = ({
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: "user",
-      content: `Luận giải cho ${data.name}`,
+      content: `${t('chat.interpretedFor')} ${data.name}`,
       timestamp: new Date()
     }
 
@@ -182,6 +182,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       const response = await api.sendMessage({
         ...data,
         field: FIELD_AGENT_MAP[data.field] || "astrology",
+        language: currentLang,
         conversation_id: conversationId ?? undefined
       })
 
@@ -248,11 +249,11 @@ const ChatView: React.FC<ChatViewProps> = ({
     }
 
     if (!conversationId) {
-      toast.error("Chưa có cuộc trò chuyện")
+      toast.error(t('chat.noConversation'))
       return
     }
 
-    const message = input || "Phân tích thêm"
+    const message = input || t('chat.analyzeMore')
     const botMsgId = `bot-${Date.now()}`
 
     const userMsg: ChatMessage = {
@@ -279,14 +280,15 @@ const ChatView: React.FC<ChatViewProps> = ({
       const response = await api.sendChatFollowupStream({
         conversation_id: conversationId,
         field: FIELD_AGENT_MAP[selectedField] || "astrology",
-        question: message
+        question: message,
+        language: currentLang
       })
 
       setIsLoading(false) // Spinner tắt, bắt đầu streaming
 
       const reader = response.body?.getReader()
       const decoder = new TextDecoder("utf-8")
-      if (!reader) throw new Error("Không thể đọc stream")
+      if (!reader) throw new Error(currentLang === 'en' ? 'Cannot read stream' : 'Không thể đọc stream')
 
       let buffer = ""
       let tokenBalance: number | undefined
@@ -319,7 +321,7 @@ const ChatView: React.FC<ChatViewProps> = ({
               tokenBalance = parsed.user_token_balance
               tokenCharged = parsed.tokens_charged || 0
             } else if (parsed.type === "error") {
-              toast.error(parsed.error || "Lỗi khi nhận câu trả lời")
+              toast.error(parsed.error || t('common.error'))
             }
           } catch (e) {
             console.warn("SSE parse error:", e)
@@ -348,7 +350,7 @@ const ChatView: React.FC<ChatViewProps> = ({
 
     } catch (err: any) {
       toast.error(err.message)
-      setInput(message === "Phân tích thêm" ? "" : message)
+      setInput(message === (currentLang === 'en' ? 'Analyze more' : 'Phân tích thêm') ? "" : message)
       setStreamingMsgId(null)
       setStreamingDone(false)
       streamingContentRef.current = ""
@@ -422,20 +424,23 @@ const ChatView: React.FC<ChatViewProps> = ({
           {siteConfig?.site_title || "Zodiac Whisper"}
         </h2>
 
-        {user && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-blue-300">
-              {(user.token_balance ?? 0).toFixed(2)} Tokens
-            </span>
+        <div className="flex items-center gap-3">
+          <LanguageSwitcher variant="compact" />
+          {user && (
+            <>
+              <span className="text-xs text-blue-300">
+                {(user.token_balance ?? 0).toFixed(2)} Tokens
+              </span>
 
-            <button
-              onClick={handleClearHistory}
-              className="text-gray-400 hover:text-red-500"
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        )}
+              <button
+                onClick={handleClearHistory}
+                className="text-gray-400 hover:text-red-500"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -475,7 +480,7 @@ const ChatView: React.FC<ChatViewProps> = ({
             <div className="w-20 h-20 border border-blue-500/30 rounded-full flex items-center justify-center bg-blue-950/10 backdrop-blur-sm shadow-[0_0_30px_rgba(59,130,246,0.2)]">
               <Orbit className="animate-spin text-blue-300 w-10 h-10" />
             </div>
-            <span className="text-xs text-blue-300/60 mt-4 tracking-wider uppercase font-medium">Đang khởi tạo bản đồ sao...</span>
+            <span className="text-xs text-blue-300/60 mt-4 tracking-wider uppercase font-medium">{t("chat.answering")}</span>
           </div>
         )}
       </div>
@@ -501,7 +506,7 @@ const ChatView: React.FC<ChatViewProps> = ({
                     if (input.trim() && !isWaitingOrStreaming) sendChat()
                   }
                 }}
-                placeholder="Hỏi về vận mệnh của bạn..."
+                placeholder={t("chat.askPlaceholder")}
                 className="flex-1 min-h-[48px] max-h-32 py-3.5 bg-transparent border-none text-[15px] text-gray-100 placeholder:text-gray-500 focus:ring-0 resize-none no-scrollbar font-medium"
               />
 

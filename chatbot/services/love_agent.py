@@ -30,11 +30,17 @@ def save_chart(svg: str, name: str):
         f.write(svg)
     return path
 
-def get_label(percent):
-    if percent >= 80: return "Rất hợp 💖"
-    elif percent >= 60: return "Khá hợp 💕"
-    elif percent >= 40: return "Trung bình 🤝"
-    else: return "Khó hòa hợp ⚠️"
+def get_label(percent, lang="vi"):
+    if lang == "en":
+        if percent >= 80: return "Very Compatible 💖"
+        elif percent >= 60: return "Compatible 💕"
+        elif percent >= 40: return "Neutral 🤝"
+        else: return "Challenging ⚠️"
+    else:
+        if percent >= 80: return "Rất hợp 💖"
+        elif percent >= 60: return "Khá hợp 💕"
+        elif percent >= 40: return "Trung bình 🤝"
+        else: return "Khó hòa hợp ⚠️"
 
 def extract_chart(subject):
     return {
@@ -55,6 +61,7 @@ class LoveAgent:
     def analyze(self, birth_info: Dict[str, Any], context: str | None = None, raw_chart_data: str | None = None) -> Dict[str, Any]:
         name = birth_info.get("name", "Người dùng")
         partner = birth_info.get("partner")
+        lang = birth_info.get("language", "vi")
 
         try:
             p1 = get_astrological_subject(
@@ -70,7 +77,10 @@ class LoveAgent:
 
             if not partner:
                 chart1 = extract_chart(p1)
-                prompt = f"Tư vấn tình yêu cá nhân cho {name}. Dữ liệu: {chart1}. Yêu cầu phân tích sâu nhu cầu tình cảm."
+                if lang == "en":
+                    prompt = f"Personal love astrology advice for {name}. Data: {chart1}. Request in-depth emotional needs analysis."
+                else:
+                    prompt = f"Tư vấn tình yêu cá nhân cho {name}. Dữ liệu: {chart1}. Yêu cầu phân tích sâu nhu cầu tình cảm."
                 response = self.llm.invoke(prompt)
                 answer = response.content if hasattr(response, "content") else str(response)
                 answer = re.sub(r"<think>.*?</think>", "", answer, flags=re.DOTALL).strip()
@@ -116,7 +126,34 @@ class LoveAgent:
             chart2 = extract_chart(p2)
             raw_chart_text = f"{p1.name}: {chart1}\n{p2.name}: {chart2}"
 
-            prompt = f"""
+            if lang == "en":
+                prompt = f"""
+You are a relationship advice and compatibility expert based on astrology.
+
+INFO:
+- Person 1: {p1.name} (Born {birth_info.get('day')}/{birth_info.get('month')}/{birth_info.get('year')})
+- Person 2: {p2.name} (Born {partner.get('day')}/{partner.get('month')}/{partner.get('year')})
+- Current Date: {birth_info.get('current_date', 'N/A')}
+
+Astrological Data (Must be used as the sole basis):
+{raw_chart_data if raw_chart_data else f"{p1.name}: {chart1}"}
+{f"{p2.name}: {chart2}" if partner and not raw_chart_data else ""}
+
+⚠️ MANDATORY RULES (LOGIC & ACCURACY):
+1. DATA ORIENTATION: Absolutely do not fabricate planetary positions. Only use the data provided in the "Astrological Data" section.
+2. TONE ADJUSTMENT: Respond in a way that matches the user's psychological state: "{birth_info.get('emotion', 'neutral')}". If they are anxious/sad, be empathetic. If they are curious/neutral, analyze objectively.
+3. LOGIC: Based on the birthdates and current date, recognize their ages to give age-appropriate advice (teen, adult, mid-life).
+4. HIERARCHY:
+   - Use # for the main title at the beginning (e.g. # LOVE COMPATIBILITY - {p1.name} & {p2.name}).
+   - Use ## for main sections. Do NOT use icons in section titles.
+5. EXPLANATION: NEED to explain details of astrological terms (planets, houses, aspects) so the user understands their chart deeply.
+6. COMPATIBILITY: Provide a percentage score (e.g., 85%) and explain clearly why that percentage was chosen based on planetary alignments or conflicts.
+7. MINIMALISM: Do NOT overuse bold formatting (**). Use bullet points (-) for clarity.
+
+ANSWER IN ENGLISH 100%. RETURN DIRECT MARKDOWN TEXT.
+"""
+            else:
+                prompt = f"""
              Bạn là chuyên gia tư vấn tình cảm.
 
 THÔNG TIN:
@@ -149,7 +186,7 @@ TIẾNG VIỆT 100%. TRẢ VỀ VĂN BẢN MARKDOWN TRỰC TIẾP.
 
             match = re.search(r"(\d{1,3})%", answer)
             compatibility = int(match.group(1)) if match else random.randint(65, 85)
-            label = get_label(compatibility)
+            label = get_label(compatibility, lang=lang)
 
             # Đảm bảo gộp lại nếu AI trả về list
             if isinstance(answer, list):
@@ -173,9 +210,9 @@ TIẾNG VIỆT 100%. TRẢ VỀ VĂN BẢN MARKDOWN TRỰC TIẾP.
             }
         except Exception as e:
             print("LoveAgent Error:", e)
-            return {"answer": "Lỗi phân tích chiêm tinh.", "type": "love"}
+            return {"answer": "Astrology analysis error." if lang == "en" else "Lỗi phân tích chiêm tinh.", "type": "love"}
 
-    def chat(self, question: str, chart1: dict, chart2: dict | None = None, name1: str = "User", name2: str = "Partner", emotion: str = "trung tính") -> str:
+    def chat(self, question: str, chart1: dict, chart2: dict | None = None, name1: str = "User", name2: str = "Partner", emotion: str = "trung tính", lang: str = "vi") -> str:
         history_text = ""
         for msg in self.conversation_history[-6:]:
             role = "User" if msg["role"] == "user" else "Expert"
@@ -184,7 +221,23 @@ TIẾNG VIỆT 100%. TRẢ VỀ VĂN BẢN MARKDOWN TRỰC TIẾP.
         context_data = f"- {name1}: {chart1}\n"
         if chart2: context_data += f"- {name2}: {chart2}\n"
 
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+        Relationship and Compatibility Expert. 
+        Natal chart data: {context_data}
+        History: {history_text}
+        Question: "{question}"
+
+        ⚠️ MANDATORY RULES:
+        - TONE ADJUSTMENT: Respond in a way that matches the user's psychological state: "{emotion}". Be empathetic if they are sad/anxious, objective if they are curious.
+        - ANSWER TO THE POINT under a psychological and relationship perspective.
+        - ABSOLUTELY DO NOT explain technical astrological factors (planets, houses, aspects).
+        - If the question is about one person, answer using their chart; if about both, synthesize both charts.
+        - Present in professional, clean Markdown: Use headings (##) if needed and lists (-) for clarity. Do NOT overuse bold formatting.
+        - Answer in English.
+        """
+        else:
+            prompt = f"""
         Chuyên gia Tư vấn Tình cảm. 
         Dữ liệu bản đồ sao: {context_data}
         Lịch sử: {history_text}
@@ -217,6 +270,7 @@ TIẾNG VIỆT 100%. TRẢ VỀ VĂN BẢN MARKDOWN TRỰC TIẾP.
 
         birth_info["current_date"] = input_data.get("current_date")
         birth_info["emotion"] = input_data.get("emotion", "trung tính")
+        lang = birth_info.get("language", "vi")
 
         try:
             p1 = get_astrological_subject(
@@ -247,15 +301,17 @@ TIẾNG VIỆT 100%. TRẢ VỀ VĂN BẢN MARKDOWN TRỰC TIẾP.
                 chart2 = extract_chart(p2)
         except Exception as e:
             print("LoveAgent Run Error:", e)
+            err_msg = f"Data error: {str(e)}" if lang == "en" else f"Lỗi dữ liệu: {str(e)}"
             return {
-                "answer": f"Lỗi dữ liệu: {str(e)}", 
-                "interpretation": f"Lỗi dữ liệu: {str(e)}",
+                "answer": err_msg, 
+                "interpretation": err_msg,
                 "type": "love"
             }
 
         if question:
+            partner_name = "Partner" if lang == "en" else "Đối tác"
             return {
                 "type": "love",
-                "answer": self.chat(question, chart1, chart2, p1.name, p2.name if p2 else "Đối tác", birth_info.get("emotion", "trung tính"))
+                "answer": self.chat(question, chart1, chart2, p1.name, p2.name if p2 else partner_name, birth_info.get("emotion", "trung tính"), lang=lang)
             }
         return self.analyze(birth_info, raw_chart_data=input_data.get("raw_chart_data"))

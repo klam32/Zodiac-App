@@ -10,9 +10,10 @@ import PaymentInvoiceModal from './payment/PaymentInvoiceModal';
 
 interface PaymentViewProps {
   onBalanceUpdate: (balance: number) => void;
+  user: any;
 }
 
-const PaymentView: React.FC<PaymentViewProps> = ({ onBalanceUpdate }) => {
+const PaymentView: React.FC<PaymentViewProps> = ({ onBalanceUpdate, user }) => {
   const [packages, setPackages] = useState<PaymentPackage[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<PaymentInvoice | null>(null);
   const [showReportForm, setShowReportForm] = useState(false);
@@ -118,7 +119,7 @@ const PaymentView: React.FC<PaymentViewProps> = ({ onBalanceUpdate }) => {
       </div>
 
       {showReportForm && (
-        <PaymentReportModal onClose={() => setShowReportForm(false)} />
+        <PaymentReportModal user={user} onClose={() => setShowReportForm(false)} />
       )}
 
       {selectedInvoice && (

@@ -21,14 +21,14 @@ import GuidePage from './components/GuidePage';
 import PrivacyPage from './components/PrivacyPage';
 import BlogDetailPage from './components/BlogDetailPage';
 import AstrologyDetailsPage from './components/AstrologyDetailsPage';
+import { useTextToSpeech } from './hooks/useTextToSpeech';
 
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
 const App: React.FC = () => {
+  const { stop } = useTextToSpeech();
 
   const [user, setUser] = useState<User | null>(null);
-
-  const [currentView, setCurrentView] = useState<View>('landing');
 
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
@@ -47,6 +47,11 @@ const App: React.FC = () => {
   const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<View>('landing');
+
+  useEffect(() => {
+    stop();
+  }, [currentView, currentConversationId]);
 
   // const [siteConfig, setSiteConfig] = useState<{ logo_url: string, site_title: string }>({
   //   logo_url: '',
@@ -153,6 +158,32 @@ const App: React.FC = () => {
 
     try {
 
+      const params = new URLSearchParams(window.location.search);
+      const isPreviewDraft = params.get('preview_draft') === '1';
+
+      if (isPreviewDraft) {
+        const draftStr = sessionStorage.getItem("zodiac_landing_preview_draft");
+        if (draftStr) {
+          const draftConfig = JSON.parse(draftStr);
+          setSiteConfig(draftConfig);
+          if (draftConfig.site_title) {
+            document.title = draftConfig.site_title;
+          }
+          if (draftConfig.favicon_url) {
+            const faviconUrl = getImageUrl(draftConfig.favicon_url);
+            let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+            if (!link) {
+              link = document.createElement('link');
+              link.rel = 'icon';
+              document.head.appendChild(link);
+            }
+            link.type = 'image/png';
+            link.href = faviconUrl + '?v=' + new Date().getTime();
+          }
+          return;
+        }
+      }
+
       const config = await api.getSiteConfig()
 
       setSiteConfig(config)
@@ -227,6 +258,20 @@ const App: React.FC = () => {
 
       await loadConversations()
 
+      const params = new URLSearchParams(window.location.search);
+      const isPreviewDraft = params.get('preview_draft') === '1';
+
+      if (isPreviewDraft) {
+        setCurrentView('landing');
+      } else {
+        const role = userData.role?.toUpperCase();
+        if (userData.is_admin || role === 'ADMIN') {
+          setCurrentView('admin');
+        } else {
+          setCurrentView('chat');
+        }
+      }
+
     } catch (error) {
 
       setUser(null)
@@ -253,9 +298,7 @@ const App: React.FC = () => {
 
       window.history.replaceState({}, document.title, window.location.pathname)
 
-      fetchUser().then(() => {
-        setCurrentView('chat');
-      });
+      fetchUser();
 
     } else {
 
@@ -294,7 +337,12 @@ const App: React.FC = () => {
 
     setUser(userData)
 
-    setCurrentView('chat')
+    const role = userData.role?.toUpperCase();
+    if (userData.is_admin || role === 'ADMIN') {
+      setCurrentView('admin');
+    } else {
+      setCurrentView('chat');
+    }
 
     loadConversations()
 
@@ -363,6 +411,27 @@ const App: React.FC = () => {
         />
       </div>
     );
+  }
+
+  // ===== ADMIN: Full-screen standalone layout =====
+  if (currentView === 'admin') {
+    const role = user?.role?.toUpperCase();
+    if (user && (user.is_admin || role === 'ADMIN')) {
+      return (
+        <div key="admin" className="view-transition" style={{ height: '100vh', width: '100vw' }}>
+          <Toaster position="top-right" />
+          <AdminView
+            onBackToSite={() => setCurrentView('chat')}
+            onLogout={handleLogout}
+            adminName={user.username || user.full_name || 'Admin'}
+            user={user}
+          />
+        </div>
+      );
+    } else {
+      setTimeout(() => setCurrentView(user ? 'chat' : 'landing'), 0);
+      return null;
+    }
   }
 
   if (currentView === 'landing') {
@@ -448,15 +517,11 @@ const App: React.FC = () => {
 
             {currentView === 'payment' && (
 
-              <PaymentView onBalanceUpdate={updateBalance} />
+              <PaymentView user={user} onBalanceUpdate={updateBalance} />
 
             )}
 
-            {currentView === 'admin' && user?.is_admin && (
-
-              <AdminView />
-
-            )}
+            {/* Admin view is now standalone - see above */}
 
             {currentView === 'profile' && user && (
 
@@ -499,6 +564,8 @@ const App: React.FC = () => {
           user={user}
           currentView={currentView}
           onViewChange={setCurrentView}
+          setCurrentConversationId={setCurrentConversationId}
+          setChatHistory={setChatHistory}
         />
       )}
 

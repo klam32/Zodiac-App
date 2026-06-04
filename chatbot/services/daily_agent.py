@@ -50,6 +50,7 @@ class DailyAgent:
 
         name = birth_info.get("name", "Người dùng")
         today = datetime.now().strftime("%d/%m/%Y")
+        lang = birth_info.get("language", "vi")
 
         try:
             subject = get_astrological_subject(
@@ -82,17 +83,48 @@ class DailyAgent:
             
             # Tính góc chiếu giữa Transit và Natal
             aspects = calculate_aspects(subject, transit_subject)
-            aspects_str = "\n".join([f"- {asp}" for asp in aspects]) if aspects else "Không có góc chiếu đáng chú ý."
+            aspects_str = "\n".join([f"- {asp}" for asp in aspects]) if aspects else ("No notable aspects." if lang == "en" else "Không có góc chiếu đáng chú ý.")
 
         except Exception as e:
             return {
-                "interpretation": f"Không thể dự đoán tử vi: {str(e)}"
+                "interpretation": f"Could not predict horoscope: {str(e)}" if lang == "en" else f"Không thể dự đoán tử vi: {str(e)}"
             }
 
         # =========================
         # PROMPT
         # =========================
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+You are a daily horoscope prediction expert based on astronomy.
+📅 Date: {today}
+User's psychological state: {birth_info.get('emotion', 'neutral')}
+
+Astrological Info (Natal Chart):
+- Sun: {sun_sign}
+- Moon: {moon_sign}
+- Asc: {asc}
+
+Today's aspect events (Transits vs Natal):
+{aspects_str}
+
+User question: {birth_info.get("context", "")}
+
+⚠️ MANDATORY RULES (LOGIC & ACCURACY):
+1. DATA ORIENTATION: Absolutely do not fabricate planetary positions. Only use the data provided in "Astrological Info" and "Today's aspect events".
+2. TONE ADJUSTMENT: Respond in a way that matches the user's psychological state: "{birth_info.get('emotion', 'neutral')}". If they are anxious/sad, be empathetic. If they are curious/neutral, analyze objectively.
+3. MAIN TITLE: Must start with `# DAILY ENERGY INTERPRETATION - {today}`.
+4. HEADINGS: Use `##` for section titles (e.g. `## Dominant Energy`).
+5. CONTENT:
+   - Rely PRIMARILY on the transit aspects above to make the most accurate prediction.
+   - Answer directly about energy and trends for the day {today}.
+   - Absolutely DO NOT mention technical astrological terms.
+   - Provide at least 2 insights and 1 practical advice.
+6. STYLE: Clean, professional Markdown, inspiring language.
+
+Answer in English:
+"""
+        else:
+            prompt = f"""
 Bạn là chuyên gia dự đoán tử vi hàng ngày bằng thiên văn học.
 📅 Ngày: {today}
 Trạng thái tâm lý người dùng: {birth_info.get('emotion', 'trung tính')}
@@ -130,7 +162,10 @@ Trả lời:
 
         # Đảm bảo có tiêu đề H1 nếu AI quên
         if not answer.startswith("#"):
-            answer = f"# LUẬN GIẢI NĂNG LƯỢNG NGÀY {today}\n\n" + answer
+            if lang == "en":
+                answer = f"# DAILY ENERGY INTERPRETATION - {today}\n\n" + answer
+            else:
+                answer = f"# LUẬN GIẢI NĂNG LƯỢNG NGÀY {today}\n\n" + answer
 
         return {
             "type":"daily",
@@ -141,7 +176,7 @@ Trả lời:
     # =========================
     # FOLLOW-UP CHAT
     # =========================
-    def chat(self, question: str) -> str:
+    def chat(self, question: str, lang: str = "vi") -> str:
 
         history_text = ""
 
@@ -149,7 +184,27 @@ Trả lời:
             role = "User" if msg["role"] == "user" else "Astrologer"
             history_text += f"{role}: {msg['content']}\n"
 
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+You are a daily horoscope expert.
+
+Here is the previous conversation:
+{history_text}
+
+The user asks further:
+{question}
+Current psychological state: {self.conversation_history[-1].get("emotion", "neutral") if self.conversation_history else "neutral"}
+
+Requirements:
+- ADJUST TONE according to user's psychology.
+- ANSWER TO THE POINT, concisely and clearly.
+- ABSOLUTELY DO NOT mention technical astrology terms.
+- Present in clean, professional Markdown: Use headings (##) if needed and lists (-) for clarity. Do NOT overuse bold.
+
+Answer in English:
+"""
+        else:
+            prompt = f"""
 Bạn là chuyên gia tử vi hàng ngày.
 
 Dưới đây là cuộc hội thoại trước đó:

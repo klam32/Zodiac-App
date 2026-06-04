@@ -1,105 +1,5 @@
-// import * as React from 'react';
-
-// interface ChatLogDetailModalProps {
-//   chat: any;
-//   onClose: () => void;
-// }
-
-// const ChatLogDetailModal: React.FC<ChatLogDetailModalProps> = ({ chat, onClose }) => {
-//   return (
-//     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-//       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in duration-300">
-//          <div className="p-6 bg-indigo-900 text-white flex justify-between items-center shrink-0">
-//             <div className="flex items-center gap-4">
-//                 <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center font-bold text-xl">✨</div>
-//                 <div>
-//                     <h3 className="text-xl font-bold uppercase tracking-tight">Chi Tiết Bản Đồ Sao</h3>
-//                     <p className="text-xs text-indigo-200">ID: #{chat.id} • Người dùng: {chat.username} ({chat.email})</p>
-//                 </div>
-//             </div>
-//             <button onClick={onClose} className="text-white hover:rotate-90 transition-transform p-2 bg-white/10 rounded-lg">
-//                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-//                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-//                 </svg>
-//             </button>
-//          </div>
-         
-//          <div className="flex-1 overflow-y-auto p-6 space-y-8">
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-//                 {/* Left: Input & Interpretation */}
-//                 <div className="space-y-6">
-//                     <div className="space-y-2">
-//                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Yêu cầu từ người dùng</label>
-//                         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 italic text-sm">
-//                             "{chat.question}"
-//                         </div>
-//                     </div>
-
-//                     <div className="space-y-2">
-//                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Luận giải chi tiết</label>
-//                         <div className="prose prose-sm prose-slate max-w-none text-slate-600 bg-white border border-slate-100 p-4 rounded-xl shadow-sm max-h-[400px] overflow-y-auto">
-//                             {chat.answer}
-//                         </div>
-//                     </div>
-//                 </div>
-
-//                 {/* Right: Chart Visual */}
-//                 <div className="space-y-6">
-//                     {chat.chart_svg ? (
-//                         <div className="space-y-2">
-//                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Bản đồ sao đã tạo</label>
-//                             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex justify-center items-center overflow-hidden">
-//                                 <div 
-//                                     className="admin-chart-svg-preview"
-//                                     dangerouslySetInnerHTML={{ __html: chat.chart_svg }}
-//                                     style={{ width: '100%', height: 'auto', maxWidth: '350px' }}
-//                                 />
-//                             </div>
-//                         </div>
-//                     ) : (
-//                         <div className="h-full flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl py-12">
-//                             <p className="text-slate-300 text-xs italic">Không có dữ liệu bản đồ sao hình ảnh</p>
-//                         </div>
-//                     )}
-
-//                     {chat.chart_summary && (
-//                         <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-//                              <label className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-3 block">Tóm tắt hành tinh</label>
-//                              <div className="grid grid-cols-2 gap-2">
-//                                 <div className="text-[10px]"><strong>Mặt Trời:</strong> {chat.chart_summary.sun}</div>
-//                                 <div className="text-[10px]"><strong>Mặt Trăng:</strong> {chat.chart_summary.moon}</div>
-//                                 <div className="text-[10px] col-span-2"><strong>Cung Mọc:</strong> {chat.chart_summary.ascendant}</div>
-//                              </div>
-//                         </div>
-//                     )}
-//                 </div>
-//             </div>
-
-//             <div className="flex items-center justify-between pt-6 border-t border-slate-100 shrink-0">
-//                 <div className="flex gap-8">
-//                     <div className="text-center">
-//                         <p className="text-[10px] text-slate-400 font-bold uppercase">Token sử dụng</p>
-//                         <p className="text-xl font-black text-indigo-600">{chat.tokens_charged}</p>
-//                     </div>
-//                 </div>
-//                 <div className="text-right text-xs text-slate-400 italic">
-//                     Ghi nhận lúc {new Date(chat.created_at).toLocaleString()}
-//                 </div>
-//             </div>
-//          </div>
-//       </div>
-//       <style>{`
-//         .admin-chart-svg-preview svg {
-//             width: 100% !important;
-//             height: auto !important;
-//         }
-//       `}</style>
-//     </div>
-//   );
-// };
-
-// export default ChatLogDetailModal;
-import * as React from 'react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface ChatLogDetailModalProps {
   chat: any;
@@ -107,165 +7,90 @@ interface ChatLogDetailModalProps {
 }
 
 const ChatLogDetailModal: React.FC<ChatLogDetailModalProps> = ({ chat, onClose }) => {
-
-  // 🔥 HANDLE CONTENT (QUAN TRỌNG NHẤT)
+  const { t } = useTranslation();
   const renderContent = () => {
-    if (chat.answer && chat.answer.trim() !== "") {
-      return chat.answer;
-    }
-
-    if (chat.chart && chat.chart.trim() !== "") {
-      return chat.chart;
-    }
-
-    return "Không có dữ liệu";
+    if (chat.answer && chat.answer.trim() !== "") return chat.answer;
+    if (chat.chart && chat.chart.trim() !== "") return chat.chart;
+    return t('common.noData');
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in duration-300">
-        
-        {/* HEADER */}
-        <div className="p-6 bg-indigo-900 text-white flex justify-between items-center shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-indigo-500 rounded-xl flex items-center justify-center font-bold text-xl">✨</div>
+    <div className="admin-modal-overlay">
+      <div className="admin-modal xl">
+        <div className="admin-modal-header" style={{ background: '#1e1b4b', color: 'white', borderBottom: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(109,93,252,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>✨</div>
             <div>
-              <h3 className="text-xl font-bold uppercase tracking-tight">
-                Chi Tiết Bản Đồ Sao
-              </h3>
-              <p className="text-xs text-indigo-200">
-                ID: #{chat.id} • Người dùng: {chat.username} ({chat.email})
-              </p>
+              <div className="admin-modal-title" style={{ color: 'white' }}>{t('admin.chatDetail')}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>ID: #{chat.id} • {chat.username} ({chat.email})</div>
             </div>
           </div>
-
-          <button
-            onClick={onClose}
-            className="text-white hover:rotate-90 transition-transform p-2 bg-white/10 rounded-lg"
-          >
-            ✕
-          </button>
+          <button className="admin-modal-close" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }} onClick={onClose}>✕</button>
         </div>
 
-        {/* BODY */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-            {/* LEFT */}
-            <div className="space-y-6">
-
-              {/* QUESTION */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Yêu cầu từ người dùng
-                </label>
-
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 italic text-sm">
-                  "{chat.question}"
-                </div>
+        <div className="admin-modal-body">
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+            {/* Left */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <div className="admin-input-label">{t('admin.userRequest')}</div>
+                <div style={{ background: '#f8fafc', padding: 14, borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 13, color: '#334155', fontStyle: 'italic' }}>"{chat.question}"</div>
               </div>
-
-              {/* ANSWER / CHART */}
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  Luận giải chi tiết
-                </label>
-
-                <div className="prose prose-sm prose-slate max-w-none text-slate-600 bg-white border border-slate-100 p-4 rounded-xl shadow-sm max-h-[400px] overflow-y-auto">
+              <div>
+                <div className="admin-input-label">{t('admin.detailedInterpretation')}</div>
+                <div style={{ background: 'white', border: '1px solid #e2e8f0', padding: 14, borderRadius: 8, fontSize: 13, color: '#475569', maxHeight: 400, overflowY: 'auto', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
                   {renderContent()}
                 </div>
               </div>
-
             </div>
 
-            {/* RIGHT */}
-            <div className="space-y-6">
-
-              {/* MAIN CHART */}
+            {/* Right */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {chat.chart_svg ? (
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                    Bản đồ sao
-                  </label>
-
-                  <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex justify-center items-center overflow-hidden">
-                    <div
-                      className="admin-chart-svg-preview"
-                      dangerouslySetInnerHTML={{ __html: chat.chart_svg }}
-                      style={{ width: '100%', maxWidth: '350px' }}
-                    />
+                <div>
+                  <div className="admin-input-label">{t('admin.birthChart')}</div>
+                  <div style={{ background: '#0f172a', padding: 16, borderRadius: 10, display: 'flex', justifyContent: 'center' }}>
+                    <div className="admin-chart-svg-preview" dangerouslySetInnerHTML={{ __html: chat.chart_svg }} style={{ width: '100%', maxWidth: 340 }} />
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex items-center justify-center border-2 border-dashed border-slate-100 rounded-xl py-12">
-                  <p className="text-slate-300 text-xs italic">
-                    Không có dữ liệu bản đồ sao
-                  </p>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px dashed #e2e8f0', borderRadius: 10, padding: 40 }}>
+                  <span style={{ color: '#cbd5e1', fontSize: 13 }}>{t('admin.noBirthChart')}</span>
                 </div>
               )}
 
-              {/* 🔥 PARTNER CHART (LOVE FIX) */}
               {chat.partner_chart_svg && (
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-pink-400">
-                    Bản đồ người kia
-                  </label>
-
-                  <div className="bg-pink-50 p-4 rounded-xl border border-pink-100 flex justify-center items-center overflow-hidden">
-                    <div
-                      dangerouslySetInnerHTML={{ __html: chat.partner_chart_svg }}
-                      style={{ width: '100%', maxWidth: '350px' }}
-                    />
+                <div>
+                  <div className="admin-input-label" style={{ color: '#db2777' }}>{t('admin.partnerChart')}</div>
+                  <div style={{ background: '#fdf2f8', padding: 16, borderRadius: 10, display: 'flex', justifyContent: 'center' }}>
+                    <div dangerouslySetInnerHTML={{ __html: chat.partner_chart_svg }} style={{ width: '100%', maxWidth: 340 }} />
                   </div>
                 </div>
               )}
 
-              {/* SUMMARY */}
               {chat.chart_summary && (
-                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                  <label className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-3 block">
-                    Tóm tắt hành tinh
-                  </label>
-
-                  <div className="grid grid-cols-2 gap-2 text-[10px]">
-                    <div><strong>Mặt Trời:</strong> {chat.chart_summary.sun}</div>
-                    <div><strong>Mặt Trăng:</strong> {chat.chart_summary.moon}</div>
-                    <div className="col-span-2"><strong>Cung Mọc:</strong> {chat.chart_summary.ascendant}</div>
+                <div style={{ background: '#ede9fe', padding: 14, borderRadius: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, color: '#7c3aed', marginBottom: 8 }}>{t('admin.planetSummary')}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11, color: '#334155' }}>
+                    <div><strong>{t('astrology.sun', 'Mặt Trời')}:</strong> {chat.chart_summary.sun}</div>
+                    <div><strong>{t('astrology.moon', 'Mặt Trăng')}:</strong> {chat.chart_summary.moon}</div>
+                    <div style={{ gridColumn: 'span 2' }}><strong>{t('astrology.ascendant', 'Cung Mọc')}:</strong> {chat.chart_summary.ascendant}</div>
                   </div>
                 </div>
               )}
-
-            </div>
-
-          </div>
-
-          {/* FOOTER */}
-          <div className="flex items-center justify-between pt-6 border-t border-slate-100">
-            <div className="text-center">
-              <p className="text-[10px] text-slate-400 font-bold uppercase">
-                Token sử dụng
-              </p>
-              <p className="text-xl font-black text-indigo-600">
-                {chat.tokens_charged}
-              </p>
-            </div>
-
-            <div className="text-right text-xs text-slate-400 italic">
-              Ghi nhận lúc {new Date(chat.created_at).toLocaleString()}
             </div>
           </div>
 
+          {/* Footer info */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 20, marginTop: 20, borderTop: '1px solid #e2e8f0' }}>
+            <div>
+              <div style={{ fontSize: 10, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase' }}>{t('admin.tokensUsed')}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#6d5dfc' }}>{chat.tokens_charged}</div>
+            </div>
+            <div style={{ fontSize: 12, color: '#94a3b8', fontStyle: 'italic' }}>{t('admin.recordedAt')} {new Date(chat.created_at).toLocaleString()}</div>
+          </div>
         </div>
       </div>
-
-      {/* FIX SVG SCALE */}
-      <style>{`
-        .admin-chart-svg-preview svg {
-          width: 100% !important;
-          height: auto !important;
-        }
-      `}</style>
     </div>
   );
 };

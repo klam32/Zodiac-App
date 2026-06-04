@@ -2,6 +2,7 @@
 import React from "react"
 import { Download, Star, Orbit } from "lucide-react"
 import { formatText } from "../../utils/formatText";
+import { useTranslation } from "react-i18next";
 
 const LoveAnalysisResult = ({
   chart1,
@@ -12,6 +13,8 @@ const LoveAnalysisResult = ({
   name1,
   name2
 }: any) => {
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
 
   const safePercent = percent ?? 0
 
@@ -53,7 +56,7 @@ const LoveAnalysisResult = ({
         <div className="text-center space-y-4 mb-4">
           <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-pink-500/10 border border-pink-500/20 backdrop-blur-md">
             <Star className="w-4 h-4 text-pink-400 fill-pink-400" />
-            <span className="text-sm font-bold text-pink-300 uppercase tracking-widest">Tương Hợp Tình Duyên</span>
+            <span className="text-sm font-bold text-pink-300 uppercase tracking-widest">{t('chat.loveAnalysis.title', 'Tương Hợp Tình Duyên')}</span>
           </div>
           
           <h2 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-pink-400 via-red-400 to-pink-500 bg-clip-text text-transparent tracking-tighter animate-pulse">
@@ -86,7 +89,7 @@ const LoveAnalysisResult = ({
 
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-pink-400/70 mb-6 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-pink-500"></div>
-              Bản đồ sao: {name1}
+              {t('chat.loveAnalysis.birthChartOf', 'Bản đồ sao')}: {name1}
             </h3>
 
             {isValidSVG(chart1) ? (
@@ -95,7 +98,7 @@ const LoveAnalysisResult = ({
                 dangerouslySetInnerHTML={{ __html: chart1 }}
               />
             ) : (
-              <div className="h-64 flex items-center justify-center text-gray-500 italic">Không có dữ liệu biểu đồ</div>
+              <div className="h-64 flex items-center justify-center text-gray-500 italic">{t('chat.loveAnalysis.noChartData', 'Không có dữ liệu biểu đồ')}</div>
             )}
           </div>
 
@@ -112,7 +115,7 @@ const LoveAnalysisResult = ({
 
             <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-red-400/70 mb-6 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              Bản đồ sao: {name2}
+              {t('chat.loveAnalysis.birthChartOf', 'Bản đồ sao')}: {name2}
             </h3>
 
             {isValidSVG(chart2) ? (
@@ -121,7 +124,7 @@ const LoveAnalysisResult = ({
                 dangerouslySetInnerHTML={{ __html: chart2 }}
               />
             ) : (
-              <div className="h-64 flex items-center justify-center text-gray-500 italic">Không có dữ liệu biểu đồ</div>
+              <div className="h-64 flex items-center justify-center text-gray-500 italic">{t('chat.loveAnalysis.noChartData', 'Không có dữ liệu biểu đồ')}</div>
             )}
           </div>
 
@@ -146,7 +149,7 @@ const LoveAnalysisResult = ({
                   <Star className="w-5 h-5 text-white fill-white" />
                </div>
                <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight uppercase">Phân tích chi tiết</h3>
+                  <h3 className="text-xl font-bold text-white tracking-tight uppercase">{t('chat.loveAnalysis.detailedAnalysis', 'Phân tích chi tiết')}</h3>
                   <div className="h-1 w-12 bg-pink-500 mt-1 rounded-full opacity-50"></div>
                </div>
             </div>
@@ -164,10 +167,10 @@ const LoveAnalysisResult = ({
             <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-[11px] text-white/30 uppercase tracking-[0.2em] font-medium">
                 <Orbit className="w-3 h-3" />
-                Phân tích dựa trên vị trí tương đối giữa hai bản đồ sao
+                {t('chat.loveAnalysis.basisInfo', 'Phân tích dựa trên vị trí tương đối giữa hai bản đồ sao')}
               </div>
               <div className="text-[11px] text-white/20 italic">
-                Cập nhật lần cuối: {new Date().toLocaleDateString('vi-VN')}
+                {t('chat.lastUpdated', 'Cập nhật lần cuối')}: {currentLang === 'en' ? new Date().toLocaleDateString('en-US') : new Date().toLocaleDateString('vi-VN')}
               </div>
             </div>
           </div>

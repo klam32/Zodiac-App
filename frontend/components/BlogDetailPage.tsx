@@ -50,7 +50,12 @@ const BlogDetailPage: React.FC<BlogDetailPageProps> = ({ articleId, onBack, onLo
       const post = dynamicPosts[currentIndex];
       currentArticle = {
         title: post.title,
-        date: new Date(post.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        date: (() => {
+          if (!post.created_at) return 'May 7, 2025';
+          const d = new Date(post.created_at);
+          if (isNaN(d.getTime())) return 'May 7, 2025';
+          return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        })(),
         image: post.image_url,
         content: post.content
       };

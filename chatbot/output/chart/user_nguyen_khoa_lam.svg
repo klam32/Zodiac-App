@@ -9,7 +9,7 @@
     preserveAspectRatio='xMidYMid'
     style='background-color: #0f172a'
 >
-    <title>Nguyễn Khoa Lam - Birth Chart</title>
+    <title>Nguyen Khoa Lam - Birth Chart</title>
 
     <!-- Colors -->
     
@@ -18,7 +18,7 @@
     Main Chart -->
     <g kr:node='Main_Chart'>
         <g kr:node='Top_Left_Text' transform='translate(0,0)'>
-            <text kr:node='Chart_Title' x='20' y='22' style='fill: #c8cbd0; font-size: 24px'>Nguyễn Khoa Lam - Birth Chart</text>
+            <text kr:node='Chart_Title' x='20' y='22' style='fill: #c8cbd0; font-size: 24px'>Nguyen Khoa Lam - Birth Chart</text>
             <text kr:node='Top_Left_Text_0' x='20' y='58' style='fill: #c8cbd0; font-size: 10px'>Location:</text>
             <text kr:node='Top_Left_Text_1' x='20' y='70' style='fill: #c8cbd0; font-size: 10px'>Bạc Liêu, VN</text>
             <text kr:node='Top_Left_Text_2' x='20' y='82' style='fill: #c8cbd0; font-size: 10px'>Latitude: 21°1'43' North</text>

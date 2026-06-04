@@ -1,12 +1,15 @@
 import httpx
 import re
 from fastapi import APIRouter, HTTPException, Depends, Form
+from pydantic import BaseModel
+from typing import Optional
 from app.config import settings
 from app.models.base_db import UserDB
 from app.security.security import get_current_user
 from datetime import datetime, timedelta, timezone
 
 router = APIRouter(prefix="/payment", tags=["payment"])
+reports_router = APIRouter(prefix="/payment-reports", tags=["payment-reports"])
 
 # Format: <nameweb>NAPTOKEN<obfuscated_id> (No underscores)
 # Example: BLOOMNAPTOKEN1A2B
@@ -219,11 +222,148 @@ def create_payment_report(
             detail="Giao dịch này đã hoàn tất và token đã được cộng. Nếu bạn vẫn gặp vấn đề, hãy liên hệ hỗ trợ trực tiếp."
         )
 
-    db.create_payment_report(user["id"], payment["id"], description)
+    # Generate unique report code for compatibility
+    today_str = datetime.now().strftime("%Y%m%d")
+    today_prefix = f"RPT-{today_str}-"
+    try:
+        db.cursor.execute("SELECT COUNT(*) as count FROM payment_reports WHERE report_code LIKE %s", (today_prefix + "%",))
+        res = db.cursor.fetchone()
+        count_today = res["count"] if res and res["count"] is not None else 0
+    except Exception:
+        count_today = 0
+    report_code = f"{today_prefix}{count_today + 1:04d}"
 
+    invoice_code = f"#{payment['id']}"
+    transaction_code = payment.get('transaction_id') or "N/A"
+
+    report_id = db.create_payment_report(
+        report_code=report_code,
+        user_id=user["id"],
+        title="Báo cáo sự cố thanh toán (Tự động tạo)",
+        report_type="payment_not_received",
+        invoice_code=invoice_code,
+        transaction_code=transaction_code,
+        description=description,
+        attachment_url=None,
+        payment_id=payment["id"]
+    )
+    print(f"[Report] Created report_id={report_id}")
     db.close()
 
+    # Send admin notification email
+    try:
+        from app.services.email_service import send_payment_report_admin_notification
+        report_data = {
+            "id": report_id,
+            "report_code": report_code,
+            "title": "Báo cáo sự cố thanh toán (Tự động tạo)",
+            "report_type": "payment_not_received",
+            "invoice_code": invoice_code,
+            "transaction_code": transaction_code,
+            "description": description,
+            "attachment_url": None,
+            "created_at": datetime.now()
+        }
+        send_payment_report_admin_notification(report_data, user)
+    except Exception as email_err:
+        print(f"[Email] Failed to notify admin: {email_err}")
+
     return {
-        "message": "Đã gửi báo cáo thành công",
+        "message": "Đã gửi báo cáo thanh toán. Admin sẽ kiểm tra và phản hồi qua email.",
         "payment_id": payment["id"]
     }
+
+class PaymentReportCreate(BaseModel):
+    title: str
+    report_type: str
+    invoice_code: Optional[str] = None
+    transaction_code: Optional[str] = None
+    description: str
+    attachment_url: Optional[str] = None
+
+@reports_router.post("")
+def create_payment_report_v2(
+    data: PaymentReportCreate,
+    user=Depends(get_current_user)
+):
+    db = UserDB()
+    
+    # 1. Generate unique report code
+    today_str = datetime.now().strftime("%Y%m%d")
+    today_prefix = f"RPT-{today_str}-"
+    try:
+        db.cursor.execute("SELECT COUNT(*) as count FROM payment_reports WHERE report_code LIKE %s", (today_prefix + "%",))
+        res = db.cursor.fetchone()
+        count_today = res["count"] if res and res["count"] is not None else 0
+    except Exception:
+        count_today = 0
+        
+    report_code = f"{today_prefix}{count_today + 1:04d}"
+    
+    # 2. Extract payment_id if invoice_code matches a payment
+    payment_id = None
+    if data.invoice_code:
+        try:
+            clean_code = data.invoice_code.strip()
+            if clean_code.startswith("#"):
+                p_id_str = clean_code[1:]
+                if p_id_str.isdigit():
+                    payment_id = int(p_id_str)
+        except Exception:
+            pass
+            
+    # 3. Insert report to database
+    try:
+        report_id = db.create_payment_report(
+            report_code=report_code,
+            user_id=user["id"],
+            title=data.title,
+            report_type=data.report_type,
+            invoice_code=data.invoice_code,
+            transaction_code=data.transaction_code,
+            description=data.description,
+            attachment_url=data.attachment_url,
+            payment_id=payment_id
+        )
+        print(f"[Report] Created report_id={report_id}")
+    except Exception as db_err:
+        db.close()
+        raise HTTPException(status_code=500, detail=f"Lỗi database: {db_err}")
+        
+    db.close()
+    
+    # 4. Email notification to Admin
+    email_warning = None
+    try:
+        from app.services.email_service import send_payment_report_admin_notification
+        report_data = {
+            "id": report_id,
+            "report_code": report_code,
+            "title": data.title,
+            "report_type": data.report_type,
+            "invoice_code": data.invoice_code,
+            "transaction_code": data.transaction_code,
+            "description": data.description,
+            "attachment_url": data.attachment_url,
+            "created_at": datetime.now()
+        }
+        success = send_payment_report_admin_notification(report_data, user)
+        if not success:
+            email_warning = "Gửi email thông báo cho Admin thất bại."
+    except Exception as email_err:
+        print(f"[Email] Failed to send admin notification: {email_err}")
+        email_warning = f"Gửi email thông báo cho Admin thất bại: {email_err}"
+        
+    response_payload = {
+        "success": True,
+        "message": "Report submitted successfully",
+        "report": {
+            "id": report_id,
+            "report_code": report_code,
+            "status": "pending"
+        }
+    }
+    if email_warning:
+        response_payload["warning"] = email_warning
+        
+    return response_payload

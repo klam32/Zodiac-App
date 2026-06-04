@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Sparkles, Calendar, Clock, MapPin, User, Send } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 
 interface AstrologyReadingFormProps {
   onSubmit: (data: any) => void;
@@ -8,19 +10,21 @@ interface AstrologyReadingFormProps {
   onAuthRequired: () => void;
 }
 
-const FIELDS = [
-  { id: 'general', label: 'Tổng quan vận mệnh' },
-  { id: 'personality', label: 'Tính cách & Phẩm chất' },
-  { id: 'love', label: 'Tình cảm & Mối quan hệ' },
-  { id: 'career', label: 'Sự nghiệp & Công danh' },
-  { id: 'health', label: 'Sức khỏe & Bình an' },
-];
-
 const VIETNAM_PROVINCES = [
-  "An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn", "Bắc Ninh", "Bến Tre", "Bình Dương", "Bình Định", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lạng Sơn", "Lào Cai", "Lâm Đồng", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "TP. Hồ Chí Minh", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
+  "An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn", "Bắc Ninh", "Bến Tre", "Bình Dương", "Bình Định", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng", "Đắc Lắk", "Đắc Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lạng Sơn", "Lào Cai", "Lâm Đồng", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "TP. Hồ Chí Minh", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
 ];
 
 const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, isLoading, isLoggedIn, onAuthRequired }) => {
+  const { t } = useTranslation();
+
+  const fields = [
+    { id: 'general', label: t('chat.form.fields.general', 'Tổng quan vận mệnh') },
+    { id: 'personality', label: t('chat.form.fields.personality', 'Tính cách & Phẩm chất') },
+    { id: 'love', label: t('chat.form.fields.love', 'Tình cảm & Mối quan hệ') },
+    { id: 'career', label: t('chat.form.fields.career', 'Sự nghiệp & Công danh') },
+    { id: 'health', label: t('chat.form.fields.health', 'Sức khỏe & Bình an') },
+  ];
+
   const [formData, setFormData] = useState({
     name: '',
     date: '',
@@ -51,7 +55,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.date || !formData.time || !formData.city) {
-      alert("Vui lòng nhập đầy đủ thông tin ngày giờ sinh.");
+      toast.error(t('chat.form.fillBirthDataError', 'Vui lòng nhập đầy đủ thông tin ngày giờ sinh.'));
       return;
     }
 
@@ -100,7 +104,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
           Zodiac Whisper
         </h1>
         <p className="text-xl text-purple-200/60 mb-12 font-medium leading-relaxed max-w-md mx-auto">
-          Lắng nghe lời thì thầm từ các vì sao. Khám phá bản đồ sao cá nhân để thấu hiểu vận mệnh của chính mình.
+          {t('chat.form.welcomeSubtitle', 'Lắng nghe lời thì thầm từ các vì sao. Khám phá bản đồ sao cá nhân để thấu hiểu vận mệnh của chính mình.')}
         </p>
         <button
           onClick={handleStart}
@@ -113,7 +117,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
                             leading-none whitespace-nowrap">
 
               <span className="block text-center">
-                XEM BẢN ĐỒ SAO
+                {t('chat.form.viewChartBtn', 'XEM BẢN ĐỒ SAO')}
               </span>
 
               <Send className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
@@ -128,9 +132,9 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
     <div className="max-w-3xl mx-auto p-4 md:p-6 bg-[#0d0d16]/60 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.6)] animate-in fade-in duration-700">
       <div className="text-center mb-12">
         <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 mb-2 tracking-tight">
-          Thông Tin Bản Đồ Sao
+          {t('chat.form.chartInfo', 'Thông Tin Bản Đồ Sao')}
         </h2>
-        <p className="text-purple-200/50 font-medium">Vui lòng cung cấp chính xác ngày giờ sinh để AI tính toán chính xác nhất</p>
+        <p className="text-purple-200/50 font-medium">{t('chat.form.chartInfoSubtitle', 'Vui lòng cung cấp chính xác ngày giờ sinh để AI tính toán chính xác nhất')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -138,14 +142,14 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
           {/* Name */}
           <div>
             <label className="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest mb-3 ml-1">
-              <User className="w-3 h-3" /> Họ và tên
+              <User className="w-3 h-3" /> {t('chat.form.fullNameLabel', 'Họ và tên')}
             </label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
-              placeholder="Ví dụ: Nguyễn Văn A"
+              placeholder={t('chat.form.namePlaceholder', 'Ví dụ: Nguyễn Văn A')}
               className="w-full px-4 py-3 rounded-xl text-sm bg-black/40 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
             />
           </div>
@@ -153,7 +157,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
           {/* Birth Date */}
           <div>
             <label className="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest mb-3 ml-1">
-              <Calendar className="w-3 h-3" /> Ngày sinh
+              <Calendar className="w-3 h-3" /> {t('chat.form.birthDateLabel', 'Ngày sinh')}
             </label>
             <input
               type="date"
@@ -167,7 +171,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
           {/* Birth Time */}
           <div>
             <label className="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest mb-3 ml-1">
-              <Clock className="w-3 h-3" /> Giờ sinh
+              <Clock className="w-3 h-3" /> {t('chat.form.birthTimeLabel', 'Giờ sinh')}
             </label>
             <input
               type="time"
@@ -181,7 +185,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
           {/* City */}
           <div>
             <label className="flex items-center gap-2 text-xs font-black text-purple-400 uppercase tracking-widest mb-3 ml-1">
-              <MapPin className="w-3 h-3" /> Nơi sinh
+              <MapPin className="w-3 h-3" /> {t('chat.form.birthPlaceLabel', 'Nơi sinh')}
             </label>
             <div className="relative">
               <select
@@ -190,7 +194,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
                 onChange={(e) => setFormData({...formData, city: e.target.value})}
                 className="w-full px-4 py-3 rounded-xl text-sm bg-[#0a0a14] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all appearance-none cursor-pointer"
               >
-                <option value="" disabled>-- Chọn tỉnh/thành phố --</option>
+                <option value="" disabled>{t('chat.form.selectCityPlaceholder', '-- Chọn tỉnh/thành phố --')}</option>
                 {VIETNAM_PROVINCES.map(province => (
                   <option key={province} value={province} className="bg-[#0a0a14] text-white">
                     {province}
@@ -210,10 +214,10 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
           {/* Field */}
           <div>
             <label className="text-xs font-black text-purple-400 uppercase tracking-widest mb-3 ml-1 block">
-              Lĩnh vực luận giải
+              {t('chat.form.selectFieldLabel', 'Lĩnh vực luận giải')}
             </label>
             <div className="grid grid-cols-1 gap-3">
-              {FIELDS.map((f) => (
+              {fields.map((f) => (
                 <button
                   key={f.id}
                   type="button"
@@ -230,14 +234,14 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
           {formData.field === 'love' && (
             <div className="pt-4 border-t border-white/10 mt-4 space-y-4 animate-in slide-in-from-top duration-500">
                <h3 className="text-sm font-bold text-pink-400 flex items-center gap-2 mb-2">
-                 <Sparkles className="w-4 h-4" /> Thông tin đối phương
+                 <Sparkles className="w-4 h-4" /> {t('chat.form.partnerInfoTitle', 'Thông tin đối phương')}
                </h3>
                
                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <input
                       type="text"
-                      placeholder="Tên đối phương"
+                      placeholder={t('chat.form.partnerNamePlaceholder', 'Tên đối phương')}
                       value={partnerData.name}
                       onChange={(e) => setPartnerData({...partnerData, name: e.target.value})}
                       className="w-full px-4 py-3 rounded-xl text-sm bg-black/40 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 transition-all"
@@ -264,7 +268,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
                     onChange={(e) => setPartnerData({...partnerData, city: e.target.value})}
                     className="w-full px-4 py-3 rounded-xl text-sm bg-[#0a0a14] border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 transition-all appearance-none cursor-pointer"
                   >
-                    <option value="" disabled>-- Nơi sinh đối phương --</option>
+                    <option value="" disabled>{t('chat.form.partnerPlacePlaceholder', '-- Nơi sinh đối phương --')}</option>
                     {VIETNAM_PROVINCES.map(province => (
                       <option key={province} value={province}>{province}</option>
                     ))}
@@ -284,11 +288,11 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                  ĐANG GIẢI MÃ CÁC VÌ SAO...
+                  {t('chat.form.decodingStars', 'ĐANG GIẢI MÃ CÁC VÌ SAO...')}
                 </>
               ) : (
                 <>
-                  KHAI MỞ VẬN MỆNH
+                  {t('chat.form.unlockDestiny', 'KHAI MỞ VẬN MỆNH')}
                   <Sparkles className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                 </>
               )}

@@ -252,12 +252,14 @@ class AstrologyRequest(BaseModel):
     field: str
     context: str
     partner: dict | None = None 
+    language: str | None = "vi"
 
 
 class FollowupRequest(BaseModel):
     conversation_id: int
     field: str
     question: str | None = None
+    language: str | None = "vi"
 
 
 class TitleUpdateRequest(BaseModel):
@@ -445,7 +447,8 @@ async def chat_with_astrology(
                     "minute": request.minute,
                     "city": request.city,
                     "country": request.country,
-                    "partner": request.partner
+                    "partner": request.partner,
+                    "language": request.language or "vi"
                 },
                 "question": None   # 🔥 QUAN TRỌNG
             })
@@ -470,7 +473,8 @@ async def chat_with_astrology(
                     "city": request.city,
                     "country": request.country,
                     "partner": request.partner,
-                    "field": request.field
+                    "field": request.field,
+                    "language": request.language or "vi"
                 }
             )
         chart_summary = None
@@ -694,8 +698,8 @@ async def chat_with_astrology(
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
-        if token_counter: token_counter.close()
-        if user_db: user_db.close()
+        if token_counter is not None: token_counter.close()
+        if user_db is not None: user_db.close()
     
 
 # ============================================
@@ -753,7 +757,8 @@ async def chat_followup(
             "minute": int(date_match.group(5)) if date_match else 0,
             "city": city_match.group(1) if city_match else "Hanoi",
             "country": "VN",
-            "partner": partner_data
+            "partner": partner_data,
+            "language": request.language or "vi"
         }
         # Fetch memory here
         memory = user_db.get_user_memory(current_user["id"]) or {}
@@ -896,7 +901,15 @@ async def chat_followup(
                 # If no agents returned a response, use LLM general answer fallback
                 from chatbot.utils.llm import LLM
                 llm_model = LLM().get_llm()
-                fallback_prompt = f"""Bạn là trợ lý chiêm tinh của hệ thống MARA-AI. 
+                lang = request.language or "vi"
+                if lang == "en":
+                    fallback_prompt = f"""You are the astrology assistant of the MARA-AI system. 
+The user is asking the following question for which the system has not found personalized data. Please answer the user's question accurately, deeply, and helpfully based on your astrological knowledge.
+
+Question: {question}
+Answer in English:"""
+                else:
+                    fallback_prompt = f"""Bạn là trợ lý chiêm tinh của hệ thống MARA-AI. 
 Người dùng hỏi câu hỏi sau đây mà hệ thống chưa tìm thấy dữ liệu cá nhân hóa phù hợp. Hãy trả lời câu hỏi của người dùng một cách chính xác, sâu sắc và hữu ích dựa trên kiến thức chiêm tinh học của bạn.
 
 Câu hỏi: {question}
@@ -1081,8 +1094,8 @@ Trả lời:"""
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
-        if token_counter: token_counter.close()
-        if user_db: user_db.close()
+        if token_counter is not None: token_counter.close()
+        if user_db is not None: user_db.close()
 
 
 # ============================================
@@ -1177,7 +1190,8 @@ async def chat_followup_stream(
             "minute": int(date_match.group(5)) if date_match else 0,
             "city": city_match.group(1) if city_match else "Hanoi",
             "country": "VN",
-            "partner": partner_data
+            "partner": partner_data,
+            "language": request.language or "vi"
         }
         memory = user_db.get_user_memory(current_user["id"]) or {}
 
@@ -1223,8 +1237,8 @@ async def chat_followup_stream(
                 yield f"data: {json.dumps({'type': 'meta', 'sources': [], 'source_used': 'NONE', 'domain': 'general'}, ensure_ascii=False)}\n\n"
                 yield f"data: {json.dumps({'type': 'text', 'content': rejection_msg}, ensure_ascii=False)}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'tokens_charged': 0.0, 'user_token_balance': current_balance}, ensure_ascii=False)}\n\n"
-                if token_counter: token_counter.close()
-                if user_db: user_db.close()
+                if token_counter is not None: token_counter.close()
+                if user_db is not None: user_db.close()
 
             return StreamingResponse(guard_stream(), media_type="text/event-stream")
 
@@ -1328,12 +1342,12 @@ async def chat_followup_stream(
             sources.append({"chunk_index": 0, "section_name": "Không tìm thấy dữ liệu phù hợp", "content": "Dữ liệu bản đồ sao hiện tại chưa đủ thông tin cho câu hỏi này.", "semantic_score": 0.0, "rerank_score": 0.0, "final_score": 0.0, "rank_position": 1})
 
     except HTTPException:
-        if token_counter: token_counter.close()
-        if user_db: user_db.close()
+        if token_counter is not None: token_counter.close()
+        if user_db is not None: user_db.close()
         raise
     except Exception as e:
-        if token_counter: token_counter.close()
-        if user_db: user_db.close()
+        if token_counter is not None: token_counter.close()
+        if user_db is not None: user_db.close()
         raise HTTPException(status_code=500, detail=str(e))
 
     # ---------- PHASE 2: SSE Generator ----------
@@ -1345,13 +1359,39 @@ async def chat_followup_stream(
         yield f"data: {json.dumps({'type': 'meta', 'sources': sources, 'source_used': source_used, 'domain': hybrid_res.get('domain', 'general')}, ensure_ascii=False)}\n\n"
 
         try:
+            lang = request.language or "vi"
             if source_used == "HYBRID_RAG_GRAPHRAG":
                 # Stream from LLM using hybrid context
                 from chatbot.utils.llm import LLM
                 llm_model = LLM().get_llm()
                 hybrid_context = hybrid_res.get("hybrid_context", "")
                 domain = hybrid_res.get("domain", "general")
-                prompt = f"""Bạn là trợ lý chiêm tinh vui.
+                if lang == "en":
+                    prompt = f"""You are a fun astrology assistant.
+
+You must answer based on the HYBRID_CONTEXT consisting of 2 sources:
+1. RAG_CONTEXT: text chunks divided from the natal chart interpretation.
+2. GRAPH_CONTEXT: entities and relationships extracted from the natal chart.
+
+Mandatory rules:
+- Prioritize specific information in RAG_CONTEXT.
+- Use GRAPH_CONTEXT to supplement relations between planets, signs, houses, traits, life areas, and advice.
+- Prioritize information in HYBRID_CONTEXT. However, if HYBRID_CONTEXT does not contain specific information to answer the question, or if both sources are empty/missing data, you MUST USE your deep astrological knowledge and logic to deduce and provide the most accurate, deep, and complete astrological answer to the user's question (absolutely do not answer 'information not found' or 'no data yet').
+- If RAG_CONTEXT and GRAPH_CONTEXT conflict, prioritize RAG_CONTEXT and express it cautiously.
+- If you only have indirect data or deduce from your own knowledge, start or blend subtly: 'Based on astrological indicators...' or 'According to an in-depth astrological perspective...' to analyze in the most convincing way.
+- If the question contains time elements like 'after 30 years old', 'future', 'later' but context has no direct time markers, use your astrological knowledge (e.g., planet cycles like Saturn return at age 30, or house meanings) to provide predictions and deep advice.
+- Answer in English.
+- Answer clearly, friendly, to the point.
+- Do not mention RAG or GraphRAG in detail unless debugging is needed.
+
+QUESTION: {question}
+DOMAIN: {domain}
+HYBRID_CONTEXT:
+{hybrid_context}
+
+ANSWER:"""
+                else:
+                    prompt = f"""Bạn là trợ lý chiêm tinh vui.
 
 Bạn phải trả lời dựa trên HYBRID_CONTEXT gồm 2 nguồn:
 1. RAG_CONTEXT: các đoạn văn bản đã được chia chunk từ luận giải bản đồ sao.
@@ -1390,7 +1430,14 @@ ANSWER:"""
             elif source_used == "LLM_FALLBACK":
                 from chatbot.utils.llm import LLM
                 llm_model = LLM().get_llm()
-                fallback_prompt = f"""Bạn là trợ lý chiêm tinh của hệ thống MARA-AI.
+                if lang == "en":
+                    fallback_prompt = f"""You are the astrology assistant of the MARA-AI system.
+The user is asking the following question for which the system has not found personalized data. Please answer based on your astrological knowledge.
+
+Question: {question}
+Answer in English:"""
+                else:
+                    fallback_prompt = f"""Bạn là trợ lý chiêm tinh của hệ thống MARA-AI.
 Người dùng hỏi câu hỏi sau đây mà hệ thống chưa tìm thấy dữ liệu cá nhân hóa phù hợp. Hãy trả lời dựa trên kiến thức chiêm tinh học của bạn.
 
 Câu hỏi: {question}
@@ -1417,7 +1464,7 @@ Trả lời:"""
                     yield f"data: {json.dumps({'type': 'text', 'content': chunk}, ensure_ascii=False)}\n\n"
                     await asyncio.sleep(0.012)  # ~80 tokens/s — smooth như ChatGPT
             else:
-                fallback_text = "Dữ liệu bản đồ sao hiện tại chưa đủ thông tin cho câu hỏi này."
+                fallback_text = "The current natal chart data is not sufficient to answer this question." if lang == "en" else "Dữ liệu bản đồ sao hiện tại chưa đủ thông tin cho câu hỏi này."
                 full_answer_parts.append(fallback_text)
                 yield f"data: {json.dumps({'type': 'text', 'content': fallback_text}, ensure_ascii=False)}\n\n"
 
@@ -1463,8 +1510,8 @@ Trả lời:"""
             print(f"[SSE Done Phase Error] {e}")
             yield f"data: {json.dumps({'type': 'error', 'error': str(e)}, ensure_ascii=False)}\n\n"
         finally:
-            if token_counter: token_counter.close()
-            if user_db: user_db.close()
+            if token_counter is not None: token_counter.close()
+            if user_db is not None: user_db.close()
 
     return StreamingResponse(
         event_generator(),
@@ -1522,7 +1569,7 @@ async def get_chat_history(current_user: dict = Depends(get_current_user)):
                 "conversation_id": conv["id"]
             })
 
-    if user_db: user_db.close()
+    if user_db is not None: user_db.close()
 
     return {"history": history}
 
@@ -1537,7 +1584,7 @@ async def delete_chat_history(current_user: dict = Depends(get_current_user)):
 
     user_db.delete_user_chat_logs(current_user["id"])
 
-    if user_db: user_db.close()
+    if user_db is not None: user_db.close()
 
     return {"message": "Đã xóa lịch sử chat thành công"}
 
@@ -1548,31 +1595,15 @@ async def delete_chat_history(current_user: dict = Depends(get_current_user)):
 
 @router.get("/config")
 async def get_site_config():
-
+    from app.routers.admin import ALL_SETTINGS_DEFAULTS
     db = UserDB()
-
-    logo_url = db.get_setting("logo_url", "")
-    site_title = db.get_setting("site_title", "Zodiac Whisper")
-    background_url = db.get_setting("background_url", "")
-    favicon_url = db.get_setting("favicon_url", "")
-    
-    hero_title = db.get_setting("hero_title", "Khai mở vận mệnh cùng AI")
-    hero_subtitle = db.get_setting("hero_subtitle", "Khám phá bản đồ sao cá nhân để thấu hiểu vận mệnh của chính mình.")
-    about_title = db.get_setting("about_title", "Về chúng tôi")
-    about_content = db.get_setting("about_content", "")
-    
-    blog_posts = db.get_blog_posts()
-
-    db.close()
-
-    return {
-        "logo_url": logo_url,
-        "site_title": site_title,
-        "background_url": background_url,
-        "favicon_url": favicon_url,
-        "hero_title": hero_title,
-        "hero_subtitle": hero_subtitle,
-        "about_title": about_title,
-        "about_content": about_content,
-        "blog_posts": blog_posts
-    }
+    try:
+        res = {}
+        for key, default in ALL_SETTINGS_DEFAULTS.items():
+            if key == "rate_per_1000":
+                continue
+            res[key] = db.get_setting(key, default)
+        res["blog_posts"] = db.get_blog_posts()
+        return res
+    finally:
+        db.close()

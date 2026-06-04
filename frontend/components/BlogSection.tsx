@@ -4,9 +4,10 @@ import { getImageUrl } from '../api';
 interface BlogSectionProps {
   onArticleClick: (articleId: string) => void;
   posts?: any[];
+  title?: string;
 }
 
-const BlogSection: React.FC<BlogSectionProps> = ({ onArticleClick, posts }) => {
+const BlogSection: React.FC<BlogSectionProps> = ({ onArticleClick, posts, title }) => {
   const defaultArticles = [
     {
       slug: 'nghiep-qua',
@@ -33,10 +34,17 @@ const BlogSection: React.FC<BlogSectionProps> = ({ onArticleClick, posts }) => {
 
   const displayPosts = posts && posts.length > 0 ? posts : defaultArticles;
 
+  const formatDate = (dateVal: any) => {
+    if (!dateVal) return 'MAY 7, 2025';
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return 'MAY 7, 2025';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+  };
+
   return (
     <section className="blog-section" id="blog">
       <div className="section-header">
-        <h2 className="section-title">BÀI VIẾT MỚI NHẤT</h2>
+        <h2 className="section-title">{title || "BÀI VIẾT MỚI NHẤT"}</h2>
         <div className="section-underline"></div>
       </div>
 
@@ -45,12 +53,13 @@ const BlogSection: React.FC<BlogSectionProps> = ({ onArticleClick, posts }) => {
           <div key={article.slug || article.id} className="blog-card" onClick={() => onArticleClick(article.slug || article.id)}>
             <div className="blog-image-wrapper">
               <img src={getImageUrl(article.image_url || article.image)} alt={article.title} />
-              <div className="blog-date">{new Date(article.created_at || article.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</div>
+              <div className="blog-date">{formatDate(article.created_at || article.date)}</div>
             </div>
             <div className="blog-content">
               <h3 className="blog-title">{article.title}</h3>
               <p className="blog-excerpt">{article.excerpt}</p>
             </div>
+
           </div>
         ))}
       </div>

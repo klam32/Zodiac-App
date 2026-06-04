@@ -22,7 +22,7 @@ export const confirmDestructive = async (title: string, text: string) => {
         confirmButton: 'rounded-xl font-bold px-6 py-3',
         cancelButton: 'rounded-xl font-bold px-6 py-3'
     }
-  });
+  } as any);
   return result.isConfirmed;
 };
 
@@ -46,7 +46,7 @@ export const promptInput = async (title: string, label: string, defaultValue: st
         cancelButton: 'rounded-xl font-bold px-6 py-3',
         input: 'rounded-xl border-white/10 bg-black/30 text-white focus:ring-purple-500 focus:border-purple-500'
     }
-  });
+  } as any);
   return result.value;
 };
 
@@ -68,7 +68,7 @@ export const confirmAction = async (title: string, text: string) => {
         confirmButton: 'rounded-xl font-bold px-6 py-3',
         cancelButton: 'rounded-xl font-bold px-6 py-3'
     }
-  });
+  } as any);
   return result.isConfirmed;
 };
 
@@ -89,6 +89,10 @@ export const promptTokenAdjustment = async (title: string, username: string) => 
                     <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-2 block">Số lượng tokens</label>
                     <input id="swal-amount" type="number" step="0.01" className="w-full bg-black/30 border border-white/10 p-3 rounded-xl focus:outline-none focus:border-purple-500 font-bold text-lg text-purple-400" placeholder="0.00" />
                 </div>
+                <div>
+                    <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest mb-2 block">Ghi chú (Admin Note)</label>
+                    <textarea id="swal-note" rows={3} className="w-full bg-black/30 border border-white/10 p-3 rounded-xl focus:outline-none focus:border-purple-500 text-sm text-white" placeholder="Ghi lý do điều chỉnh..." />
+                </div>
             </div>
         ),
         showCancelButton: true,
@@ -102,13 +106,14 @@ export const promptTokenAdjustment = async (title: string, username: string) => 
         preConfirm: () => {
             const type = (document.getElementById('swal-tx-type') as HTMLSelectElement).value;
             const amount = (document.getElementById('swal-amount') as HTMLInputElement).value;
+            const admin_note = (document.getElementById('swal-note') as HTMLTextAreaElement).value;
             if (!amount || parseFloat(amount) <= 0) {
                 Swal.showValidationMessage('Vui lòng nhập số lượng hợp lệ');
                 return false;
             }
-            return { type, amount: parseFloat(amount) };
+            return { type, amount: parseFloat(amount), admin_note };
         }
-    });
+    } as any);
     return result.value;
 };
 
@@ -125,5 +130,5 @@ export const alertSuccess = (title: string, text: string) => {
             popup: 'rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl',
             confirmButton: 'rounded-xl font-bold px-6 py-3'
         }
-    });
+    } as any);
 };

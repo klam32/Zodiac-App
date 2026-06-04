@@ -1,40 +1,61 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-interface LoginsTabProps {
-  logins: any[];
-}
+interface LoginsTabProps { logins: any[]; }
+const PER_PAGE = 20;
 
 const LoginsTab: React.FC<LoginsTabProps> = ({ logins }) => {
+  const { t } = useTranslation();
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    if (!search) return logins;
+    const q = search.toLowerCase();
+    return logins.filter(l => l.username?.toLowerCase().includes(q) || l.email?.toLowerCase().includes(q));
+  }, [logins, search]);
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-stone-100 overflow-hidden animate-in fade-in">
-       <div className="overflow-x-auto">
-         <table className="w-full text-sm">
-            <thead className="bg-stone-50 text-stone-500 text-[10px] font-black uppercase tracking-widest">
-              <tr>
-                <th className="px-6 py-5 text-left">Thời Gian</th>
-                <th className="px-6 py-5 text-left">Người Dùng</th>
-                <th className="px-6 py-5 text-left">Email</th>
-                <th className="px-6 py-5 text-left">IP Address</th>
-                <th className="px-6 py-5 text-left">User Agent</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-50">
-              {logins.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-20 italic text-stone-400">Chưa có lượt đăng nhập nào...</td></tr>
-              ) : logins.map((log: any) => (
-                <tr key={log.id} className="hover:bg-stone-50/50 transition-colors">
-                  <td className="px-6 py-4 text-stone-400 text-xs whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-stone-800">{log.username}</span>
-                  </td>
-                  <td className="px-6 py-4 text-stone-500 text-xs">{log.email}</td>
-                  <td className="px-6 py-4 text-stone-600 font-mono text-xs">{log.ip_address}</td>
-                  <td className="px-6 py-4 text-stone-400 text-[10px] max-w-xs truncate" title={log.user_agent}>{log.user_agent}</td>
+    <div className="admin-card">
+      <div className="admin-card-header">
+        <div className="admin-card-title">{t('admin.loginLogsTitle', 'Lịch sử đăng nhập')} ({filtered.length})</div>
+        <div className="admin-search">
+          <svg className="admin-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input placeholder={t('admin.searchPlaceholder')} value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+        </div>
+      </div>
+      <div className="admin-card-body no-padding">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead><tr><th>{t('admin.time')}</th><th>{t('common.user')}</th><th>{t('admin.email')}</th><th>IP</th><th>User Agent</th></tr></thead>
+            <tbody>
+              {paged.length === 0 ? (
+                <tr><td colSpan={5}><div className="admin-empty"><div className="admin-empty-text">{t('admin.noLogins', 'Chưa có lượt đăng nhập')}</div></div></td></tr>
+              ) : paged.map((log: any) => (
+                <tr key={log.id}>
+                  <td style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap' }}>{new Date(log.created_at).toLocaleString()}</td>
+                  <td><strong>{log.username}</strong></td>
+                  <td style={{ fontSize: 13, color: '#64748b' }}>{log.email}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b' }}>{log.ip_address}</td>
+                  <td style={{ fontSize: 11, color: '#94a3b8', maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={log.user_agent}>{log.user_agent}</td>
                 </tr>
               ))}
             </tbody>
-         </table>
-       </div>
+          </table>
+        </div>
+        {totalPages > 1 && (
+          <div className="admin-pagination">
+            <span>{t('common.page')} {page}/{totalPages}</span>
+            <div className="admin-pagination-btns">
+              <button className="admin-pagination-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
+              <button className="admin-pagination-btn" disabled={page >= totalPages} onClick={() => setPage(p => p - 1)}>›</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

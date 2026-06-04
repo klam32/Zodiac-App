@@ -1,72 +1,95 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PaymentsTabProps {
   payments: any[];
-  paymentFilter: 'completed' | 'pending' | 'failed';
-  setPaymentFilter: (filter: 'completed' | 'pending' | 'failed') => void;
+  paymentFilter: 'completed' | 'failed';
+  setPaymentFilter: (filter: 'completed' | 'failed') => void;
 }
 
-const PaymentsTab: React.FC<PaymentsTabProps> = ({ 
-  payments, 
-  paymentFilter, 
-  setPaymentFilter 
-}) => {
-  return (
-    <div className="space-y-6 animate-in fade-in">
-       <div className="flex bg-stone-100 p-1.5 rounded-2xl w-fit">
-          {(['completed', 'pending', 'failed'] as const).map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setPaymentFilter(filter)}
-              className={`px-6 py-2 rounded-xl text-xs font-bold uppercase transition-all ${
-                paymentFilter === filter 
-                ? 'bg-white text-stone-900 shadow-sm' 
-                : 'text-stone-500 hover:text-stone-800'
-              }`}
-            >
-              {filter === 'completed' ? 'Thành công' : filter === 'pending' ? 'Chờ Duyệt' : 'Bị Hủy'}
-            </button>
-          ))}
-       </div>
+const PaymentsTab: React.FC<PaymentsTabProps> = ({ payments, paymentFilter, setPaymentFilter }) => {
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
 
-       <div className="bg-white rounded-2xl shadow-xl border border-stone-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-            <thead className="bg-stone-50 text-stone-700 text-[10px] font-black uppercase tracking-widest">
-              <tr>
-                <th className="px-6 py-5 text-left">Mã</th>
-                <th className="px-6 py-5 text-left">Người Dùng</th>
-                <th className="px-6 py-5 text-right">Thanh Toán</th>
-                <th className="px-6 py-5 text-left">Hiện Vật</th>
-                <th className="px-6 py-5 text-center">Thực Tế</th>
-                <th className="px-6 py-5 text-right">Khởi Tạo</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-50">
-              {payments
-                .filter((pm: any) => pm.status === paymentFilter)
-                .map((pm: any) => (
-                <tr key={pm.id} className="hover:bg-stone-50/50 transition-colors">
-                  <td className="px-6 py-4 font-mono text-stone-500">#{pm.id}</td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-stone-800">{pm.username}</p>
-                    <p className="text-[10px] text-stone-600">{pm.email}</p>
-                  </td>
-                  <td className="px-6 py-4 text-right font-black text-stone-800">{pm.amount_vnd.toLocaleString()} đ</td>
-                  <td className="px-6 py-4 font-bold text-amber-600">+{pm.tokens} Tokens</td>
-                  <td className="px-6 py-4 text-center">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase shadow-sm ${
-                      pm.status === 'completed' ? 'bg-green-600 text-white' : 
-                      pm.status === 'pending' ? 'bg-yellow-400 text-white' : 'bg-red-500 text-white'
-                    }`}>
-                      {pm.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right text-stone-600 text-xs">{new Date(pm.created_at).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+  const filtered = useMemo(() => payments.filter((p: any) => p.status === paymentFilter), [payments, paymentFilter]);
+
+  const stats = useMemo(() => {
+    const completed = payments.filter((p: any) => p.status === 'completed');
+    return {
+      totalRevenue: completed.reduce((s: number, p: any) => s + (p.amount_vnd || 0), 0),
+      successCount: completed.length,
+      failedCount: payments.filter((p: any) => p.status === 'failed').length,
+    };
+  }, [payments]);
+
+  const statusLabel = (status: string) => {
+    if (status === 'completed') return t('admin.completed') || 'Thành công';
+    return t('admin.failed') || 'Thất bại';
+  };
+
+  return (
+    <div>
+      <div className="admin-stats-grid" style={{ marginBottom: 16 }}>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon green"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V7m0 10v1"/></svg></div>
+          <div className="admin-stat-info"><div className="admin-stat-label">{t('admin.totalRevenueStat') || 'Tổng doanh thu'}</div><div className="admin-stat-value" style={{fontSize:18}}>{stats.totalRevenue.toLocaleString()}đ</div></div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon blue"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg></div>
+          <div className="admin-stat-info"><div className="admin-stat-label">{t('admin.successStat') || 'Thành công'}</div><div className="admin-stat-value" style={{fontSize:18}}>{stats.successCount}</div></div>
+        </div>
+        <div className="admin-stat-card">
+          <div className="admin-stat-icon red"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg></div>
+          <div className="admin-stat-info"><div className="admin-stat-label">{t('admin.failedStat') || 'Thất bại'}</div><div className="admin-stat-value" style={{fontSize:18}}>{stats.failedCount}</div></div>
+        </div>
+      </div>
+
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <div className="admin-card-title">{t('admin.paymentInvoice') || 'Hóa đơn thanh toán'}</div>
+          <div className="admin-filter-bar">
+            {(['completed', 'failed'] as const).map(f => (
+              <button key={f} className={`admin-filter-btn ${paymentFilter === f ? 'active' : ''}`} onClick={() => setPaymentFilter(f)}>
+                {statusLabel(f)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="admin-card-body no-padding">
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr>
+                <th>{t('admin.code') || 'Mã'}</th>
+                <th>{t('common.user') || 'Người dùng'}</th>
+                <th style={{textAlign:'right'}}>{t('common.amount') || 'Số tiền'}</th>
+                <th>Tokens</th>
+                <th>{t('common.status') || 'Trạng thái'}</th>
+                <th>{t('common.date') || 'Ngày tạo'}</th>
+              </tr></thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr><td colSpan={6}><div className="admin-empty"><div className="admin-empty-text">{t('admin.noInvoices') || 'Không có hóa đơn'}</div></div></td></tr>
+                ) : filtered.map((pm: any) => (
+                  <tr key={pm.id}>
+                    <td style={{ fontFamily: 'monospace', color: '#64748b' }}>#{pm.id}</td>
+                    <td><strong>{pm.username}</strong><div style={{ fontSize: 11, color: '#94a3b8' }}>{pm.email}</div></td>
+                    <td style={{ textAlign: 'right', fontWeight: 700 }}>{pm.amount_vnd?.toLocaleString()}đ</td>
+                    <td><span style={{ fontWeight: 700, color: '#6d5dfc' }}>+{pm.tokens}</span></td>
+                    <td>
+                      <span className={`admin-badge ${pm.status === 'completed' ? 'green' : 'red'}`}>
+                        {statusLabel(pm.status)}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: 12, color: '#94a3b8' }}>{(() => {
+                      if (!pm.created_at) return '—';
+                      const d = new Date(pm.created_at);
+                      return isNaN(d.getTime()) ? '—' : d.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'vi-VN');
+                    })()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

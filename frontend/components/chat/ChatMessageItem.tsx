@@ -1,6 +1,7 @@
 import React from 'react';
 import { ChatMessage } from '../../types';
 import { User, Sparkles, BookOpen, ChevronDown, Orbit } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import AstrologyInterpretationResult from './AstrologyInterpretationResult';
 import LoveAnalysisResult from './LoveAnalysisResult';
 import { api } from '../../api';
@@ -8,6 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 
 const RagSourceItem = ({ source, idx }: { source: any; idx: number }) => {
+  const { t } = useTranslation();
   const [formattedContent, setFormattedContent] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -17,10 +19,10 @@ const RagSourceItem = ({ source, idx }: { source: any; idx: number }) => {
       setIsLoading(true);
       const res = await api.formatRagText(source.content);
       setFormattedContent(res.formatted_text);
-      toast.success('Đã sửa format văn bản!');
+      toast.success(t('chat.message.formatSuccess', 'Đã sửa format văn bản!'));
     } catch (e: any) {
       console.error(e);
-      toast.error(e.message || 'Lỗi khi format văn bản');
+      toast.error(e.message || t('chat.message.formatError', 'Lỗi khi format văn bản'));
     } finally {
       setIsLoading(false);
     }
@@ -40,7 +42,7 @@ const RagSourceItem = ({ source, idx }: { source: any; idx: number }) => {
         </div>
         <div className="flex items-center gap-4">
           <div className="hidden sm:flex flex-col items-end" title={`Semantic: ${source.semantic_score?.toFixed(4)}\nRerank: ${source.rerank_score?.toFixed(4)}`}>
-            <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-0.5">Độ liên quan</span>
+            <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-0.5">{t('chat.message.relevance', 'Độ liên quan')}</span>
             <span className="text-xs font-mono text-green-400 font-bold bg-green-400/10 px-2 py-0.5 rounded border border-green-400/20 shadow-[0_0_10px_rgba(74,222,128,0.1)]">
               {(source.final_score * 100).toFixed(1)}%
             </span>
@@ -52,7 +54,7 @@ const RagSourceItem = ({ source, idx }: { source: any; idx: number }) => {
       </summary>
       <div className="p-5 pt-2 text-sm text-gray-300/90 leading-relaxed border-t border-white/5 bg-black/20">
         <div className="flex justify-between items-center mb-4">
-          <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Đoạn trích</span>
+          <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">{t('chat.message.excerpt', 'Đoạn trích')}</span>
           {!formattedContent && (
             <button
               onClick={handleFormat}
@@ -60,7 +62,7 @@ const RagSourceItem = ({ source, idx }: { source: any; idx: number }) => {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-orange-500/30 rounded-lg text-orange-300 text-xs font-bold hover:from-amber-500/30 hover:to-orange-500/30 transition-colors disabled:opacity-50"
             >
               <Sparkles className="w-3 h-3" />
-              {isLoading ? "Đang xử lý..." : "✨ Sửa chữ bằng AI"}
+              {isLoading ? t('chat.message.processing', 'Đang xử lý...') : t('chat.message.aiRewrite', '✨ Sửa chữ bằng AI')}
             </button>
           )}
         </div>
@@ -85,9 +87,10 @@ interface ChatMessageItemProps {
 }
 
 const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botAvatar }) => {
+  const { t } = useTranslation();
   const [imgError, setImgError] = React.useState(false);
   const avatar = msg.role === 'user' ? userAvatar : botAvatar;
-  const username = msg.role === 'user' ? 'Gia chủ' : 'Bậc thầy Chiêm tinh';
+  const username = msg.role === 'user' ? t('chat.message.userRole', 'Gia chủ') : t('chat.message.botRole', 'Bậc thầy Chiêm tinh');
 
   const isLove = !!(msg as any).partner_chart_svg;
 
@@ -119,7 +122,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
           <div className="w-16 h-16 border border-purple-500/30 rounded-full flex items-center justify-center bg-purple-950/20 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.1)]">
             <Orbit className="animate-spin text-purple-400 w-8 h-8" />
           </div>
-          <span className="text-xs text-purple-300/60 mt-4 tracking-wider uppercase font-medium">Đang kết nối vũ trụ...</span>
+          <span className="text-xs text-purple-300/60 mt-4 tracking-wider uppercase font-medium">{t('chat.message.connectingUniverse', 'Đang kết nối vũ trụ...')}</span>
         </div>
       );
     }
@@ -127,6 +130,8 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
     return (
       <div className="flex flex-col gap-2">
         <AstrologyInterpretationResult 
+          id={msg.id}
+          isStreaming={msg.isStreaming}
           content={(msg as any).analysis || (msg as any).chart || msg.content}    
           analysis={(msg as any).analysis} 
           answer={(msg as any).answer}
@@ -141,7 +146,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
                 <BookOpen className="w-4 h-4 text-purple-300" />
               </div>
               <h4 className="text-[11px] font-bold text-purple-300/80 uppercase tracking-[0.2em]">
-                Tài liệu tham khảo (RAG)
+                {t('chat.message.ragReferences', 'Tài liệu tham khảo (RAG)')}
               </h4>
               <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-500/20 to-transparent ml-2"></div>
             </div>
@@ -172,7 +177,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
           <User className="w-4 h-4 text-purple-400" />
         )}
         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-purple-200/50">
-          Yêu cầu từ {username}
+          {t('chat.message.requestFrom', 'Yêu cầu từ')} {username}
         </span>
         <div className="w-1 h-1 rounded-full bg-white/20"></div>
         <span className="text-[10px] font-medium text-white/30">

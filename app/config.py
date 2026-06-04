@@ -82,6 +82,16 @@ class Settings:
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
     # ====================
+    # SMTP EMAIL CONFIG
+    # ====================
+    SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+    SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+    SMTP_USER = os.getenv("SMTP_USER", "")
+    SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM_EMAIL = os.getenv("SMTP_FROM_EMAIL", "")
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "")
+
+    # ====================
     # SEPAY PAYMENT
     # ====================
 
@@ -119,3 +129,17 @@ class Settings:
 
 
 settings = Settings()
+
+# Validate SMTP environment variables
+smtp_vars = [
+    "SMTP_HOST",
+    "SMTP_PORT",
+    "SMTP_USER",
+    "SMTP_PASSWORD",
+    "SMTP_FROM_EMAIL",
+    "ADMIN_EMAIL",
+]
+for var in smtp_vars:
+    val = getattr(settings, var, None)
+    if not val:
+        print(f"[Email] Warning: Environment variable '{var}' is missing or empty in .env")

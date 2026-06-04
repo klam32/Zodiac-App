@@ -181,6 +181,26 @@ class BaseDB:
         except:
             pass
 
+        # Alter payment_reports table for new columns
+        for sql_alter in [
+            "ALTER TABLE payment_reports ADD COLUMN report_code VARCHAR(50) UNIQUE AFTER id",
+            "ALTER TABLE payment_reports ADD COLUMN title VARCHAR(255) AFTER user_id",
+            "ALTER TABLE payment_reports ADD COLUMN report_type VARCHAR(50) AFTER title",
+            "ALTER TABLE payment_reports ADD COLUMN invoice_code VARCHAR(50) NULL AFTER report_type",
+            "ALTER TABLE payment_reports ADD COLUMN transaction_code VARCHAR(100) NULL AFTER invoice_code",
+            "ALTER TABLE payment_reports ADD COLUMN attachment_url TEXT NULL AFTER description",
+            "ALTER TABLE payment_reports ADD COLUMN admin_note TEXT NULL AFTER status",
+            "ALTER TABLE payment_reports ADD COLUMN adjustment_type VARCHAR(20) NULL AFTER admin_note",
+            "ALTER TABLE payment_reports ADD COLUMN token_amount FLOAT NULL AFTER adjustment_type",
+            "ALTER TABLE payment_reports ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
+            "ALTER TABLE payment_reports ADD COLUMN resolved_at TIMESTAMP NULL AFTER updated_at",
+            "ALTER TABLE payment_reports MODIFY COLUMN payment_id INT NULL"
+        ]:
+            try:
+                self.cursor.execute(sql_alter)
+            except Exception as ex:
+                pass
+
 
         # settings
         self.cursor.execute("""
@@ -231,11 +251,22 @@ class BaseDB:
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS payment_reports (
             id INT AUTO_INCREMENT PRIMARY KEY,
+            report_code VARCHAR(50) UNIQUE,
             user_id INT,
-            payment_id INT,
+            payment_id INT NULL,
+            title VARCHAR(255),
+            report_type VARCHAR(50),
+            invoice_code VARCHAR(50) NULL,
+            transaction_code VARCHAR(100) NULL,
             description TEXT,
+            attachment_url TEXT NULL,
             status VARCHAR(20) DEFAULT 'pending',
+            admin_note TEXT NULL,
+            adjustment_type VARCHAR(20) NULL,
+            token_amount FLOAT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            resolved_at TIMESTAMP NULL,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
         """)
@@ -910,15 +941,13 @@ class UserDB(BaseDB):
 
     # ---------------- PAYMENT REPORT ----------------
 
-    def create_payment_report(self, user_id, payment_id, description):
-
+    def create_payment_report(self, report_code, user_id, title, report_type, invoice_code, transaction_code, description, attachment_url, payment_id=None):
         self.cursor.execute(
             """INSERT INTO payment_reports
-            (user_id, payment_id, description)
-            VALUES (%s,%s,%s)""",
-            (user_id, payment_id, description)
+            (report_code, user_id, title, report_type, invoice_code, transaction_code, description, attachment_url, payment_id, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending')""",
+            (report_code, user_id, title, report_type, invoice_code, transaction_code, description, attachment_url, payment_id)
         )
-
         return self.cursor.lastrowid
 
 
@@ -936,12 +965,24 @@ class UserDB(BaseDB):
         return self.cursor.fetchall()
 
 
-    def update_payment_report_status(self, report_id, status):
-
+    def update_payment_report_status(self, report_id, status, admin_note=None, adjustment_type=None, token_amount=None, resolved_at=None):
         self.cursor.execute(
-            "UPDATE payment_reports SET status=%s WHERE id=%s",
-            (status, report_id)
+            """UPDATE payment_reports 
+            SET status=%s, admin_note=%s, adjustment_type=%s, token_amount=%s, resolved_at=%s 
+            WHERE id=%s""",
+            (status, admin_note, adjustment_type, token_amount, resolved_at, report_id)
         )
+
+    def get_payment_report(self, report_id):
+        query = """
+        SELECT pr.*, u.username, u.email, u.full_name, u.token_balance
+        FROM payment_reports pr
+        JOIN users u ON pr.user_id = u.id
+        WHERE pr.id = %s
+        """
+        self.cursor.execute(query, (report_id,))
+        row = self.cursor.fetchone()
+        return dict(row) if row else None
     def delete_user(self, user_id):
 
         # xóa theo thứ tự FK

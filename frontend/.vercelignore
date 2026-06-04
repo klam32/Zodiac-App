@@ -1,0 +1,10 @@
+# Exclude dependencies and build outputs
+node_modules/
+dist/
+dist-ssr/
+.vercel/
+*.local
+*.log
+
+# Exclude large video guide from Vercel deployment
+public/videos/zodiac-whisper-guide.mp4

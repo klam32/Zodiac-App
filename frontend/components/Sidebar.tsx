@@ -1,4 +1,5 @@
 import React from "react"
+import { useTranslation } from "react-i18next"
 import { User, View, Conversation } from "../types"
 import { api, getImageUrl } from "../api"
 import { Sparkles, DollarSign, Shield, Star, User as UserIcon, Trash, Calendar, Zap, Pin, Edit2, Check, X, Home, Gift } from "lucide-react"
@@ -41,6 +42,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   isVisible = true,
   onToggleVisible,
 }) => {
+  const { t, i18n } = useTranslation()
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi'
   const [imgError, setImgError] = React.useState(false)
   const [logoImgError, setLogoImgError] = React.useState(false)
   const [deleteId, setDeleteId] = React.useState<number | null>(null)
@@ -57,22 +60,22 @@ const Sidebar: React.FC<SidebarProps> = ({
   }, [siteConfig?.logo_url])
 
   const navItems = [
-    { id: "landing" as View, label: "Trang Chủ", icon: Home },
-    { id: "chat" as View, label: "Chiêm Tinh", icon: Star },
-    { id: "calendar" as View, label: "Lịch Cát Tường", icon: Calendar },
-    { id: "prediction" as View, label: "Vận Trình Ngày", icon: Zap },
-    { id: "rewards" as View, label: "Nhận Token", icon: Gift },
-    { id: "payment" as View, label: "Nạp Tokens", icon: DollarSign },
+    { id: "landing" as View, label: t("chat.home"), icon: Home },
+    { id: "chat" as View, label: t("chat.astrology"), icon: Star },
+    { id: "calendar" as View, label: t("chat.calendar"), icon: Calendar },
+    { id: "prediction" as View, label: t("chat.daily"), icon: Zap },
+    { id: "rewards" as View, label: t("chat.buyTokens"), icon: Gift },
+    { id: "payment" as View, label: t("chat.depositTokens"), icon: DollarSign },
     ...(user?.is_admin
       ? [
         {
           id: "admin" as View,
-          label: "ADMIN",
+          label: t("chat.admin"),
           icon: Shield,
         },
       ]
       : []),
-    { id: "profile" as View, label: "Hồ Sơ", icon: UserIcon },
+    { id: "profile" as View, label: t("chat.profile"), icon: UserIcon },
   ]
 
   // =========================
@@ -112,7 +115,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     try {
       await api.toggleConversationPin(convId, !currentPinned)
       window.dispatchEvent(new Event("reload_conversations"))
-      setToastMessage(!currentPinned ? "Đã ghim đoạn chat" : "Đã bỏ ghim đoạn chat")
+      setToastMessage(!currentPinned ? t('chat.pinned') : t('chat.unpinned'))
       setShowToast(true)
       setTimeout(() => setShowToast(false), 2000)
     } catch (err) {
@@ -132,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         await api.updateConversationTitle(convId, editingTitle)
         setEditingId(null)
         window.dispatchEvent(new Event("reload_conversations"))
-        setToastMessage("Đã đổi tên đoạn chat")
+        setToastMessage(t('chat.renamed'))
         setShowToast(true)
         setTimeout(() => setShowToast(false), 2000)
       } catch (err) {
@@ -209,7 +212,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <button
                 onClick={onToggleVisible}
                 className={`p-1.5 text-gray-500 hover:text-white hover:bg-white/5 rounded-md transition-all ${!isVisible ? 'mx-auto' : ''}`}
-                title={isVisible ? "Đóng sidebar" : "Mở sidebar"}
+                title={isVisible ? t('chat.closeSidebar') : t('chat.openSidebar')}
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
@@ -263,10 +266,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                           ? "bg-white/10 text-white font-medium"
                           : "text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"
                           }`}
-                        title={!isVisible ? "Đoạn chat mới" : ""}
+                        title={!isVisible ? t("chat.newChat") : ""}
                       >
                         <Sparkles size={isVisible ? 20 : 24} className={currentView === "chat" && currentConversationId === null ? "text-purple-300" : "text-purple-400 group-hover:text-purple-300"} />
-                        {isVisible && "Đoạn chat mới"}
+                        {isVisible && t("chat.newChat")}
                       </button>
                     )}
                   </React.Fragment>
@@ -279,7 +282,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {isVisible && conversations && conversations.length > 0 && (
             <div className="flex flex-col mt-2">
               <p className="text-[11px] font-semibold tracking-[0.15em] uppercase text-gray-500 px-4 mb-3 shrink-0">
-                Các đoạn chat của bạn
+                {t("chat.chatHistory")}
               </p>
               <div className="flex flex-col space-y-1.5 px-2">
                 {conversations.map((conv) => (
@@ -322,8 +325,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                           {!!conv.is_pinned && <Pin size={12} className="text-yellow-500 fill-yellow-500" />}
                           <span className="truncate">
                             {(() => {
-                              const t = (conv.title || "").trim().toLowerCase()
-                              if (!t || t === "mới") return "Đoạn chat mới"
+                              const ttl = (conv.title || "").trim().toLowerCase()
+                              if (!ttl || ttl === "mới" || ttl === "new") return t('chat.newChatDefault')
                               return conv.title
                             })()}
                           </span>
@@ -334,14 +337,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <button
                               onClick={(e) => handlePin(e, conv.id, !!conv.is_pinned)}
                               className={`${conv.is_pinned ? "text-yellow-500" : "text-gray-500 hover:text-yellow-500"}`}
-                              title={conv.is_pinned ? "Bỏ ghim" : "Ghim"}
+                              title={conv.is_pinned ? t('chat.unpin') : t('chat.pin')}
                             >
                               <Pin size={16} />
                             </button>
                             <button
                               onClick={(e) => startEditing(e, conv)}
                               className="text-gray-500 hover:text-blue-400"
-                              title="Đổi tên"
+                              title={t('chat.rename')}
                             >
                               <Edit2 size={16} />
                             </button>
@@ -351,7 +354,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 setDeleteId(conv.id)
                               }}
                               className="text-gray-500 hover:text-red-500"
-                              title="Xóa"
+                              title={t('common.delete')}
                             >
                               <Trash size={16} />
                             </button>
@@ -412,20 +415,20 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onClick={onLogout}
                   className="w-full py-1.5 text-[11px] font-medium text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20"
                 >
-                  Đăng xuất
+                  {t("chat.logout")}
                 </button>
               )}
             </>
           ) : (
             <div className="text-center p-2">
               <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-3 font-medium">
-                Lưu trữ vận mệnh
+                {t("chat.universeMessage")}
               </p>
               <button
                 onClick={() => onViewChange("profile")}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium py-2.5 rounded-xl text-sm shadow-[0_4px_14px_rgba(168,85,247,0.4)] hover:shadow-[0_6px_20px_rgba(168,85,247,0.6)] hover:-translate-y-0.5 transition-all"
               >
-                Đăng nhập ngay
+                {t("common.login")}
               </button>
             </div>
           )}
@@ -448,7 +451,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           window.dispatchEvent(new Event("reload_conversations"))
 
-          setToastMessage("Đã xóa đoạn chat")
+          setToastMessage(t('chat.deleteSuccess'))
           setShowToast(true)
 
           if (toastTimeout.current) {
@@ -459,8 +462,8 @@ const Sidebar: React.FC<SidebarProps> = ({
             setShowToast(false)
           }, 2500)
         }}
-        title="Xóa lịch sử?"
-        description="Bạn có chắc muốn xóa toàn bộ lịch sử?"
+        title={t('chat.deleteHistory')}
+        description={t('chat.deleteHistoryConfirm')}
       />
       <Toast message={toastMessage} show={showToast} />
     </>

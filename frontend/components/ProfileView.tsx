@@ -1,97 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { api } from '../api';
-import toast from 'react-hot-toast';
-import { promptInput } from '../utils/swal';
-
-interface ProfileViewProps {
-  user: User;
-  onUpdateUser?: (user: User) => void;
-}
-
 import ProfileInfoCard from './profile/ProfileInfoCard';
 import ProfileHistoryTable from './profile/ProfileHistoryTable';
+import EditProfileModal from './profile/EditProfileModal';
+import ChangePasswordModal from './profile/ChangePasswordModal';
 import TransactionDetailModal from './profile/TransactionDetailModal';
 
 interface ProfileViewProps {
-  user: User;
-  onUpdateUser?: (user: User) => void;
+  user: User | null;
+  onUpdateUser: (user: User) => void;
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) => {
-  const [history, setHistory] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Modal states
+  const [editOpen, setEditOpen] = useState(false);
+  const [changePwOpen, setChangePwOpen] = useState(false);
   const [selectedTx, setSelectedTx] = useState<any | null>(null);
 
-  const fetchHistory = async () => {
-    try {
-      const data = await api.getTokenHistory();
-      setHistory(data.history);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchHistory();
-  }, []);
+    loadTransactions();
+  }, [user]);
 
-  const handleUpdateFullName = async () => {
-    const newName = await promptInput('Cập nhật Họ tên', 'Nhập họ tên mới của bạn:', user.full_name || '');
-    if (newName) {
-      try {
-        await api.userProfileUpdate({ full_name: newName });
-        toast.success('Hồ sơ đã được cập nhật.');
-        if (onUpdateUser) {
-           const updatedUser = { ...user, full_name: newName };
-           onUpdateUser(updatedUser);
-        }
-      } catch (err: any) {
-        toast.error(err.message);
-      }
+  const loadTransactions = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const data = await api.getTokenHistory();
+      setTransactions(data.history || []);
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleChangePassword = async () => {
-    const currentPassword = await promptInput('Đổi Mật Khẩu', 'Nhập mật khẩu hiện tại (bỏ trống nếu dùng Google):', '', 'password');
-    const newPassword = await promptInput('Đổi Mật Khẩu', 'Nhập mật khẩu mới (tối thiểu 6 ký tự):', '', 'password');
-    
-    if (newPassword) {
-      try {
-        await api.userProfileUpdate({ current_password: currentPassword, new_password: newPassword });
-        toast.success('Mật khẩu đã được thay đổi thành công.');
-      } catch (err: any) {
-        toast.error(err.message);
-      }
-    }
-  };
+  if (!user) return null;
 
   return (
-    <div className="p-4 md:p-8 max-w-[100%] mx-auto w-full overflow-y-auto pb-24 md:pb-8">
-      <h2 className="text-2xl md:text-3xl font-semibold mb-6 md:mb-8 text-white pb-4 tracking-wide leading-snug border-b border-white/10">Linh Hồn Thức Tỉnh</h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-        <div className="md:col-span-1 space-y-6">
-          <ProfileInfoCard 
-            user={user} 
-            onUpdateFullName={handleUpdateFullName}
-            onChangePassword={handleChangePassword}
-          />
-        </div>
+    <div className="flex-1 overflow-y-auto p-4 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-8">
+        
+        {/* Profile Card containing everything inside */}
+        <ProfileInfoCard
+          user={user}
+          onUpdateName={() => setEditOpen(true)}
+          onChangePassword={() => setChangePwOpen(true)}
+        />
 
-        <div className="md:col-span-2">
-          <ProfileHistoryTable 
-            history={history}
-            isLoading={isLoading}
-            onViewTx={setSelectedTx}
-          />
-        </div>
+        {/* Transaction History Table */}
+        <ProfileHistoryTable
+          transactions={transactions}
+          loading={loading}
+          onViewTx={(tx) => setSelectedTx(tx)}
+        />
       </div>
 
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        open={editOpen}
+        user={user}
+        onClose={() => setEditOpen(false)}
+        onSuccess={onUpdateUser}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        open={changePwOpen}
+        user={user}
+        onClose={() => setChangePwOpen(false)}
+      />
+
+      {/* Transaction Details Modal */}
       {selectedTx && (
-        <TransactionDetailModal 
+        <TransactionDetailModal
           tx={selectedTx}
           onClose={() => setSelectedTx(null)}
         />

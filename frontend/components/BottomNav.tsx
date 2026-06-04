@@ -6,9 +6,11 @@ interface BottomNavProps {
   user: User | null;
   currentView: View;
   onViewChange: (view: View) => void;
+  setCurrentConversationId?: (id: number | null) => void;
+  setChatHistory?: React.Dispatch<any>;
 }
 
-const BottomNav: React.FC<BottomNavProps> = ({ user, currentView, onViewChange }) => {
+const BottomNav: React.FC<BottomNavProps> = ({ user, currentView, onViewChange, setCurrentConversationId, setChatHistory }) => {
   const navItems = [
     { id: 'landing' as View, label: 'Trang Chủ', icon: Star },
     { id: 'chat' as View, label: 'Chiêm Tinh', icon: Sparkles },
@@ -27,7 +29,13 @@ const BottomNav: React.FC<BottomNavProps> = ({ user, currentView, onViewChange }
         return (
           <button
             key={item.id}
-            onClick={() => onViewChange(item.id)}
+            onClick={() => {
+              onViewChange(item.id);
+              if (item.id !== 'chat') {
+                setCurrentConversationId?.(null);
+                setChatHistory?.([]);
+              }
+            }}
             className={`flex flex-col items-center justify-center py-2 px-2 min-w-[60px] flex-shrink-0 transition-colors ${
               isActive ? 'text-purple-400' : 'text-gray-500 hover:text-gray-300'
             }`}

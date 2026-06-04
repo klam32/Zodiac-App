@@ -27,6 +27,15 @@ AGENT_TITLES = {
     "astrology": "Luận giải Bản đồ sao"
 }
 
+AGENT_TITLES_EN = {
+    "career": "Career Orientation",
+    "love": "Love & Relationships",
+    "health": "Health & Well-being",
+    "personality": "Personality & Traits",
+    "daily": "Daily Horoscope",
+    "astrology": "Natal Chart Interpretation"
+}
+
 class AISystem:
     def __init__(
         self,
@@ -226,7 +235,7 @@ Format:
     # =====================================================
     # 🧠 FUSION (LLM)
     # =====================================================
-    def fuse(self, results, question):
+    def fuse(self, results, question, lang="vi"):
         # Thu thập câu trả lời từ các agent kèm theo loại agent
         context_data = []
         for r in results:
@@ -237,9 +246,29 @@ Format:
                 })
         
         if not context_data: 
-            return "Tôi chưa tìm thấy thông tin phù hợp cho câu hỏi này."
+            return "I couldn't find any relevant information." if lang == "en" else "Tôi chưa tìm thấy thông tin phù hợp cho câu hỏi này."
 
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+You are a Senior Astrology Editor AI. Please synthesize the following analyses into a professionally structured, elegant, and easy-to-read report.
+
+USER QUESTION: "{question}"
+
+DATA FROM EXPERTS:
+{json.dumps(context_data, ensure_ascii=False, indent=2)}
+
+FORMATTING REQUIREMENTS (MANDATORY FOR RAG CHUNKING ACCURACY):
+1. **Section Headings**: MANDATORY to use Markdown Heading 2 (##) for main sections and Heading 3 (###) for subsections (e.g. ## Career Vision, ### 1. Motivation and Opportunities).
+   - Absolutely DO NOT use standard bold (**text**) or free list numbers (1. text) as section headings. Use `##` or `###` at the beginning of the line.
+   - Absolutely do not use icons in headings.
+2. **Presentation**: Use flexible Markdown (bullet lists, bold, blockquotes) below headings to highlight main points. Do not just write long paragraphs.
+3. **Smoothness**: Write transition and connection sentences between sections so the report is a unified whole, not disjointed pieces.
+4. **Tone**: Professional, inspiring, and deep.
+
+ANSWER (MARKDOWN IN ENGLISH):
+"""
+        else:
+            prompt = f"""
 Bạn là AI Biên tập viên Chiêm tinh Cao cấp. Hãy tổng hợp các phân tích sau đây thành một bản luận giải có cấu trúc chuyên nghiệp, sang trọng và dễ đọc.
 
 CÂU HỎI CỦA NGƯỜI DÙNG: "{question}"
@@ -313,10 +342,13 @@ TRẢ LỜI (MARKDOWN):
                 guard_task, analyze_task, astro_task
             )
 
+            lang = birth_info.get("language", "vi")
+
             # Kiểm tra Guard sau khi đã có kết quả
             if not guard.get("is_astrology") or guard.get("confidence", 0) < 0.6:
                 print("[Orchestrator] 🛑 Câu hỏi bị từ chối bởi Guard.")
-                return {"mode": "chat", "answer": "XIN LỖI TÔI CHỈ LÀ CHATBOT CHIÊM TINH"}
+                guard_msg = "SORRY, I AM JUST AN ASTROLOGY CHATBOT" if lang == "en" else "XIN LỖI TÔI CHỈ LÀ CHATBOT CHIÊM TINH"
+                return {"mode": "chat", "answer": guard_msg}
 
             print(f"[Orchestrator] ✅ Intents: {intents}, Emotion: {emotion}")
 
@@ -350,13 +382,14 @@ TRẢ LỜI (MARKDOWN):
                 
                 # Chỉ thêm tiêu đề nếu nó chưa có tiêu đề H1/H2/H3
                 if ans and not ans.strip().startswith("#"):
-                    title = AGENT_TITLES.get(res.get("type", "general"), "Luận giải Chiêm tinh")
+                    title_map = AGENT_TITLES_EN if lang == "en" else AGENT_TITLES
+                    title = title_map.get(res.get("type", "general"), "Astrology Interpretation" if lang == "en" else "Luận giải Chiêm tinh")
                     final_answer = f"### {title}\n\n{ans}"
                 else:
                     final_answer = ans
             else:
                 # Chỉ dùng Fusion khi có từ 2 agent trở lên để đảm bảo sự kết nối mượt mà
-                final_answer = await asyncio.to_thread(self.fuse, agent_results, question)
+                final_answer = await asyncio.to_thread(self.fuse, agent_results, question, lang=lang)
 
             return {
                 "mode": "chat",
@@ -366,5 +399,5 @@ TRẢ LỜI (MARKDOWN):
                 "answer": final_answer
             }
         finally:
-            if local_db:
+            if local_db is not None:
                 local_db.close()

@@ -1,43 +1,62 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
-interface HistoryTabProps {
-  history: any[];
-}
+interface HistoryTabProps { history: any[]; }
+
+const PER_PAGE = 20;
 
 const HistoryTab: React.FC<HistoryTabProps> = ({ history }) => {
+  const { t } = useTranslation();
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+
+  const filtered = useMemo(() => {
+    if (!search) return history;
+    const q = search.toLowerCase();
+    return history.filter(h => h.username?.toLowerCase().includes(q) || h.email?.toLowerCase().includes(q) || h.description?.toLowerCase().includes(q));
+  }, [history, search]);
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   return (
-    <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in">
-       <div className="overflow-x-auto">
-         <table className="w-full text-sm text-slate-600">
-            <thead className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest border-b border-slate-100">
-              <tr>
-                <th className="px-6 py-5 text-left">Thời Gian</th>
-                <th className="px-6 py-5 text-left">Người Dùng</th>
-                <th className="px-6 py-5 text-left">Hành động</th>
-                <th className="px-6 py-5 text-right">Lượng</th>
-                <th className="px-6 py-5 text-left">Lý Do</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {history.map((h: any, i: number) => (
-                <tr key={i} className="hover:bg-indigo-50/30 transition-colors">
-                  <td className="px-6 py-4 text-slate-400 text-xs whitespace-nowrap">{new Date(h.created_at).toLocaleString()}</td>
-                  <td className="px-6 py-4">
-                    <span className="font-bold text-slate-700">{h.username}</span>
-                    <p className="text-[10px] text-slate-400">{h.email}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-0.5 rounded-lg text-[10px] uppercase font-bold ${h.type === 'in' ? 'bg-green-50 text-green-600' : 'bg-indigo-50 text-indigo-600'}`}>
-                      {h.type === 'in' ? 'Nhận' : 'Chi'}
-                    </span>
-                  </td>
-                  <td className={`px-6 py-4 text-right font-black ${h.type === 'in' ? 'text-green-600' : 'text-indigo-600'}`}>{h.amount}</td>
-                  <td className="px-6 py-4 text-slate-500 text-xs italic">"{h.description}"</td>
+    <div className="admin-card">
+      <div className="admin-card-header">
+        <div className="admin-card-title">{t('admin.tokenHistoryTitle', 'Lịch sử biến động token')}</div>
+        <div className="admin-search">
+          <svg className="admin-search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input placeholder={t('common.search') + '...'} value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} />
+        </div>
+      </div>
+      <div className="admin-card-body no-padding">
+        <div className="admin-table-wrap">
+          <table className="admin-table">
+            <thead><tr><th>{t('admin.time')}</th><th>{t('common.user')}</th><th>{t('profile.type')}</th><th style={{textAlign:'right'}}>{t('common.amount')}</th><th>{t('profile.description')}</th></tr></thead>
+            <tbody>
+              {paged.length === 0 ? (
+                <tr><td colSpan={5}><div className="admin-empty"><div className="admin-empty-text">{t('common.noData')}</div></div></td></tr>
+              ) : paged.map((h: any, i: number) => (
+                <tr key={i}>
+                  <td style={{ fontSize: 12, color: '#94a3b8', whiteSpace: 'nowrap' }}>{new Date(h.created_at).toLocaleString()}</td>
+                  <td><strong>{h.username}</strong><div style={{ fontSize: 11, color: '#94a3b8' }}>{h.email}</div></td>
+                  <td><span className={`admin-badge ${h.type === 'in' ? 'green' : 'purple'}`}>{h.type === 'in' ? t('admin.receive', 'Nhận') : t('admin.spend', 'Chi')}</span></td>
+                  <td style={{ textAlign: 'right', fontWeight: 700, color: h.type === 'in' ? '#16a34a' : '#6d5dfc' }}>{h.type === 'in' ? '+' : '-'}{h.amount}</td>
+                  <td style={{ fontSize: 12, color: '#64748b', maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.description}</td>
                 </tr>
               ))}
             </tbody>
-         </table>
-       </div>
+          </table>
+        </div>
+        {totalPages > 1 && (
+          <div className="admin-pagination">
+            <span>{t('common.page')} {page}/{totalPages}</span>
+            <div className="admin-pagination-btns">
+              <button className="admin-pagination-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
+              <button className="admin-pagination-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>›</button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

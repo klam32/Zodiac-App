@@ -45,3 +45,6 @@ pytest_cache/
 venv/
 database.db
 memory_store.json
+uploads/
+.env
+frontend/public/videos/

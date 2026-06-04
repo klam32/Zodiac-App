@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { User, Calendar, MapPin, Heart } from "lucide-react"
+import { useTranslation } from "react-i18next"
+import toast from "react-hot-toast"
 
 // =========================
 // TYPES
@@ -42,6 +44,7 @@ const VIETNAM_PROVINCES = [
 // COMPONENT
 // =========================
 const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) => {
+  const { t } = useTranslation();
 
   const [partner, setPartner] = useState<Partner>({
     name: "",
@@ -109,17 +112,17 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
   const handleSubmit = () => {
 
     if (!userData) {
-      alert("⚠️ Bạn phải nhập bản đồ sao trước!")
+      toast.error(t("chat.loveForm.enterChartFirst", "⚠️ Bạn phải nhập bản đồ sao trước!"))
       return
     }
 
     if (!partner.name) {
-      alert("⚠️ Vui lòng nhập tên người kia")
+      toast.error(t("chat.loveForm.enterPartnerName", "⚠️ Vui lòng nhập tên người kia"))
       return
     }
 
     if (!partner.year || !partner.month || !partner.day) {
-      alert("⚠️ Vui lòng chọn ngày sinh hợp lệ")
+      toast.error(t("chat.loveForm.enterValidDate", "⚠️ Vui lòng chọn ngày sinh hợp lệ"))
       return
     }
 
@@ -144,10 +147,10 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
         {/* TITLE */}
         <div className="mb-6 text-center">
           <h3 className="text-xl font-bold text-pink-400 flex items-center justify-center gap-2">
-            <Heart className="w-5 h-5" /> Phân tích tình cảm
+            <Heart className="w-5 h-5" /> {t("chat.loveForm.title", "Phân tích tình cảm")}
           </h3>
           <p className="text-xs text-gray-400 mt-1">
-            Nhập thông tin người còn lại để xem độ tương hợp
+            {t("chat.loveForm.subtitle", "Nhập thông tin người còn lại để xem độ tương hợp")}
           </p>
         </div>
 
@@ -157,11 +160,11 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
           {/* NAME */}
           <div>
             <label className="label-love">
-              <User className="icon-love" /> Tên người kia
+              <User className="icon-love" /> {t("chat.loveForm.partnerNameLabel", "Tên người kia")}
             </label>
             <input
               className="input-love"
-              placeholder="Ví dụ: Nguyễn Văn B"
+              placeholder={t("chat.loveForm.partnerNamePlaceholder", "Ví dụ: Nguyễn Văn B")}
               onChange={e =>
                 setPartner({ ...partner, name: e.target.value })
               }
@@ -171,7 +174,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
           {/* DATE */}
           <div>
             <label className="label-love">
-              <Calendar className="icon-love" /> Ngày sinh
+              <Calendar className="icon-love" /> {t("chat.loveForm.birthDateLabel", "Ngày sinh")}
             </label>
             <input
               type="date"
@@ -183,7 +186,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
           {/* TIME */}
           <div>
             <label className="label-love">
-              🕐 Giờ sinh
+              🕐 {t("chat.loveForm.birthTimeLabel", "Giờ sinh")}
             </label>
 
             <div className="flex gap-3">
@@ -198,7 +201,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
               >
                 {Array.from({ length: 24 }, (_, i) => (
                   <option key={i} value={i}>
-                    {i.toString().padStart(2, "0")} giờ
+                    {i.toString().padStart(2, "0")} {t("chat.loveForm.hours", "giờ")}
                   </option>
                 ))}
               </select>
@@ -213,7 +216,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
               >
                 {Array.from({ length: 60 }, (_, i) => (
                   <option key={i} value={i}>
-                    {i.toString().padStart(2, "0")} phút
+                    {i.toString().padStart(2, "0")} {t("chat.loveForm.minutes", "phút")}
                   </option>
                 ))}
               </select>
@@ -223,7 +226,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
           {/* CITY */}
           <div>
             <label className="label-love">
-              <MapPin className="icon-love" /> Nơi sinh
+              <MapPin className="icon-love" /> {t("chat.loveForm.birthPlaceLabel", "Nơi sinh")}
             </label>
 
             <div className="relative">
@@ -260,7 +263,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
                     }
                   }
                 }}
-                placeholder="Nhập tỉnh/thành..."
+                placeholder={t("chat.loveForm.searchCityPlaceholder", "Nhập tỉnh/thành...")}
                 className="input-love"
               />
 
@@ -269,7 +272,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
 
                   {filteredCities.length === 0 && (
                     <div className="px-4 py-3 text-gray-500 text-sm">
-                      Không tìm thấy
+                      {t("chat.loveForm.cityNotFound", "Không tìm thấy")}
                     </div>
                   )}
 
@@ -307,7 +310,7 @@ const LoveForm: React.FC<LoveFormProps> = ({ onSubmit, isLoading, userData }) =>
           hover:opacity-90 transition-all 
           shadow-lg shadow-pink-500/20"
         >
-          {isLoading ? "Đang phân tích..." : "Phân tích 💘"}
+          {isLoading ? t("chat.loveForm.analyzing", "Đang phân tích...") : t("chat.loveForm.analyze", "Phân tích 💘")}
         </button>
 
       </div>

@@ -125,6 +125,7 @@ def login(request: Request, username: str = Form(...), password: str = Form(...)
         "user": {
             **user,
             "is_admin": bool(user["is_admin"]),
+            "role": "ADMIN" if user["is_admin"] else "USER",
             "token_balance": user.get("token_balance", 0)
         }
     }
@@ -299,6 +300,7 @@ def check_login(user=Depends(get_current_user)):
         "message": "✅ Token hợp lệ, người dùng đang đăng nhập!",
         "user": {
             **user,
+            "role": "ADMIN" if user.get("is_admin") else "USER",
             "token_balance": db_user["token_balance"]
         },
     }

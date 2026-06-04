@@ -22,6 +22,7 @@ class CareerAgent:
     def analyze(self, birth_info: Dict[str, Any], context: str, raw_chart_data: str | None = None) -> Dict[str, Any]:
 
         name = birth_info.get("name", "Người dùng")
+        lang = birth_info.get("language", "vi")
 
         try:
             chart_data_str = ""
@@ -52,16 +53,43 @@ class CareerAgent:
                 houses_str = [f"- {h.name}: {h.sign}" for h in houses_list]
                 asc_sign = getattr(subject.ascendant, 'sign', '') if hasattr(subject, 'ascendant') and subject.ascendant else ''
                 chart_data_str = f"Ascendant: {asc_sign}\nPlanets:\n" + "\n".join(planets_str) + "\nHouses:\n" + "\n".join(houses_str)
-
         except Exception as e:
             return {
-                "interpretation": f"Không thể phân tích sự nghiệp: {str(e)}"
+                "interpretation": f"Could not analyze career: {str(e)}" if lang == "en" else f"Không thể phân tích sự nghiệp: {str(e)}"
             }
 
         # =========================
         # PROMPT
         # =========================
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+You are a career and financial orientation expert based on astrology.
+
+USER INFO:
+- Name: {name}
+- Birthdate: {birth_info.get('day')}/{birth_info.get('month')}/{birth_info.get('year')}
+- Current Date: {birth_info.get('current_date', 'N/A')}
+- Current Psychological State: {birth_info.get('emotion', 'neutral')}
+
+User asks:
+"{context}"
+
+Astrological Data (Must be used as the sole basis):
+{chart_data_str}
+
+⚠️ MANDATORY RULES (LOGIC & ACCURACY):
+1. TONE ADJUSTMENT: Respond in a way that matches the user's psychological state. If they are anxious/sad, be empathetic and encouraging. If they are curious/neutral, be objective and professional.
+2. LOGIC CHECK: Based on the birthdate and current date, determine if the user's question makes sense timeline-wise.
+   - For example: if the user was born in 2003 and asks about "career guidance when 5 years old", recognize that this is a PAST phase and orientation/guidance doesn't make sense.
+   - Always reply based on the user's current age.
+3. DATA-BASED: Absolutely do not fabricate planet positions. Only use the data provided in "Astrological Data".
+4. NO TECHNICAL TERMS: Absolutely DO NOT mention or explain technical astrology terms (planets, houses, zodiac signs, aspects). Focus entirely on practical career guidance and financial aspects.
+5. FORMATTING: Use professional Markdown (##, -). DO NOT overuse bold formatting.
+
+Answer in English:
+"""
+        else:
+            prompt = f"""
  Bạn là chuyên gia định hướng nghề nghiệp và tài chính dựa trên chiêm tinh học.
 
 THÔNG TIN NGƯỜI DÙNG:

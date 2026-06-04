@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Orbit } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { formatText } from '../../utils/formatText'
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 const TICK_MS = 55
 
 const StreamingBotMessage: React.FC<Props> = ({ content, isDone = false, onComplete }) => {
+  const { t } = useTranslation();
   const [displayText, setDisplayText] = useState('')
   const queueRef      = useRef('')
   const displayRef    = useRef('')
@@ -54,7 +56,7 @@ const StreamingBotMessage: React.FC<Props> = ({ content, isDone = false, onCompl
         <div className="w-16 h-16 border border-purple-500/30 rounded-full flex items-center justify-center bg-purple-950/20 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.1)]">
           <Orbit className="animate-spin text-purple-400 w-8 h-8" />
         </div>
-        <span className="text-xs text-purple-300/60 mt-4 tracking-wider uppercase font-medium">Đang kết nối vũ trụ...</span>
+        <span className="text-xs text-purple-300/60 mt-4 tracking-wider uppercase font-medium">{t('chat.message.connectingUniverse', 'Đang kết nối vũ trụ...')}</span>
       </div>
     )
   }
@@ -72,7 +74,7 @@ const StreamingBotMessage: React.FC<Props> = ({ content, isDone = false, onCompl
 
         <div className="flex items-center gap-3 mb-8 opacity-60">
           <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-purple-400" />
-          <span className="text-[10px] uppercase tracking-[0.4em] font-black text-purple-300">Lời nhắn từ Vũ trụ</span>
+          <span className="text-[10px] uppercase tracking-[0.4em] font-black text-purple-300">{t('chat.universeMessage', 'Lời nhắn từ Vũ trụ')}</span>
           <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-purple-400" />
         </div>
 

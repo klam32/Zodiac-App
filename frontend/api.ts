@@ -106,16 +106,17 @@ export const api = {
     city: string,
     country: string,
     field: string,
-    context: string
+    context: string,
+    language?: string
   }): Promise<ChatResponse> {
-
+    const lang = request.language || localStorage.getItem('zodiac_language') || localStorage.getItem('language') || 'vi';
     const response = await fetch(`${BASE_URL}/chat`, {
       method: 'POST',
       headers: {
         ...getHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(request),
+      body: JSON.stringify({ ...request, language: lang }),
     });
 
     if (!response.ok) {
@@ -173,16 +174,17 @@ export const api = {
   async sendChatFollowup(data: {
     conversation_id: number,
     field: string,
-    question?: string
+    question?: string,
+    language?: string
   }) {
-
+    const lang = data.language || localStorage.getItem('zodiac_language') || localStorage.getItem('language') || 'vi';
     const res = await fetch(`${BASE_URL}/chat-followup`, {
       method: "POST",
       headers: {
         ...getHeaders(),
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ ...data, language: lang })
     })
 
     if (!res.ok) {
@@ -198,15 +200,17 @@ export const api = {
   async sendChatFollowupStream(data: {
     conversation_id: number,
     field: string,
-    question?: string
+    question?: string,
+    language?: string
   }): Promise<Response> {
+    const lang = data.language || localStorage.getItem('zodiac_language') || localStorage.getItem('language') || 'vi';
     const res = await fetch(`${BASE_URL}/chat-followup-stream`, {
       method: "POST",
       headers: {
         ...getHeaders(),
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({ ...data, language: lang })
     })
 
     if (!res.ok) {
@@ -305,6 +309,14 @@ export const api = {
   // ADMIN
   // =========================
 
+  async adminGetDashboardStats(): Promise<any> {
+    const response = await fetch(`${BASE_URL}/admin/dashboard/stats`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error('Không thể tải dữ liệu thống kê');
+    return response.json();
+  },
+
   async adminGetUsers(): Promise<{ users: any[] }> {
     const response = await fetch(`${BASE_URL}/admin/users`, {
       headers: getHeaders(),
@@ -313,7 +325,7 @@ export const api = {
     return response.json();
   },
 
-  async adminUpdateUserBalance(userId: number, adjustment: number | { type: string, amount: number }): Promise<any> {
+  async adminUpdateUserBalance(userId: number, adjustment: number | { type: string, amount: number, admin_note?: string }): Promise<any> {
     const body = typeof adjustment === 'number' ? { token_balance: adjustment } : adjustment;
     const response = await fetch(`${BASE_URL}/admin/users/${userId}/balance`, {
       method: 'POST',
@@ -360,6 +372,33 @@ export const api = {
     if (!response.ok) {
       const errData = await response.json();
       throw new Error(errData.detail || 'Cập nhật hồ sơ thất bại');
+    }
+    return response.json();
+  },
+
+  async uploadFile(file: File): Promise<{ filename: string; download_url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${BASE_URL}/upload-file/upload/`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: formData,
+    });
+    if (!response.ok) throw new Error('Tải lên ảnh thất bại');
+    return response.json();
+  },
+
+  async uploadReportEvidence(file: File): Promise<{ url: string; filename: string; content_type: string; size: number }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${BASE_URL}/upload-file/report-evidence`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Tải lên ảnh minh chứng thất bại');
     }
     return response.json();
   },
@@ -492,6 +531,21 @@ export const api = {
     return response.json();
   },
 
+  async adminUploadVideo(file: File): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${BASE_URL}/upload-file/video`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Tải lên video thất bại');
+    }
+    return response.json();
+  },
+
   async adminGetActiveUsers(): Promise<{ logins: any[] }> {
     const response = await fetch(`${BASE_URL}/admin/active-users`, {
       headers: getHeaders(),
@@ -505,6 +559,22 @@ export const api = {
       headers: getHeaders(),
     });
     if (!response.ok) throw new Error('Không thể tải danh sách báo cáo thanh toán');
+    return response.json();
+  },
+
+  async adminResolvePaymentReport(
+    reportId: number, 
+    data: { action: 'approve' | 'reject'; token_amount?: number; adjustment_type?: 'add' | 'subtract' | 'none'; admin_note?: string }
+  ): Promise<any> {
+    const response = await fetch(`${BASE_URL}/admin/payment-reports/${reportId}/resolve`, {
+      method: 'PATCH',
+      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Xử lý báo cáo thất bại');
+    }
     return response.json();
   },
   
@@ -558,14 +628,18 @@ export const api = {
     return response.json();
   },
 
-  async createPaymentReport(description: string): Promise<{ message: string }> {
-    const formData = new FormData();
-    formData.append('description', description);
-
-    const response = await fetch(`${BASE_URL}/payment/report`, {
+  async createPaymentReport(data: {
+    title: string;
+    report_type: string;
+    invoice_code?: string;
+    transaction_code?: string;
+    description: string;
+    attachment_url?: string;
+  }): Promise<{ success: boolean; message: string; report?: any }> {
+    const response = await fetch(`${BASE_URL}/payment-reports`, {
       method: 'POST',
-      headers: getHeaders(),
-      body: formData,
+      headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -661,7 +735,8 @@ export const api = {
     year: number,
     field: string,
     birth_info?: any,
-    conversation_id?: number
+    conversation_id?: number,
+    language?: string
   }): Promise<{
     days: { day: number, quality: 'good' | 'bad' | 'neutral', reason: string }[],
     user_token_balance: number,
@@ -669,13 +744,14 @@ export const api = {
     summary: string,
     chart_svg: string
   }> {
+    const lang = data.language || localStorage.getItem('zodiac_language') || localStorage.getItem('language') || 'vi';
     const response = await fetch(`${BASE_URL}/calendar/good-bad-days`, {
       method: 'POST',
       headers: {
         ...getHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, language: lang }),
     });
     if (!response.ok) {
       const err = await response.json();
@@ -688,20 +764,22 @@ export const api = {
     date: string,
     field: string,
     birth_info: any,
-    conversation_id?: number
+    conversation_id?: number,
+    language?: string
   }): Promise<{
     prediction: { score: number, content: string, cosmic_message: string },
     user_token_balance: number,
     tokens_charged: number,
     chart_svg?: string
   }> {
+    const lang = data.language || localStorage.getItem('zodiac_language') || localStorage.getItem('language') || 'vi';
     const response = await fetch(`${BASE_URL}/prediction/daily`, {
       method: 'POST',
       headers: {
         ...getHeaders(),
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, language: lang }),
     });
     if (!response.ok) {
       const err = await response.json();

@@ -1,8 +1,12 @@
 import React from 'react';
 import { formatText } from "../../utils/formatText";
 import { Download, Star, Orbit } from "lucide-react";
+import VoiceOutButton from '../VoiceOutButton';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
+  id?: string;
+  isStreaming?: boolean;
   content?: string;
   analysis?: string;
   answer?: string;
@@ -28,6 +32,8 @@ const zodiacFullName: Record<string, string> = {
 };
 
 const AstrologyInterpretationResult: React.FC<Props> = ({
+  id,
+  isStreaming,
   content,
   analysis,
   answer,
@@ -35,6 +41,8 @@ const AstrologyInterpretationResult: React.FC<Props> = ({
   chartSummary,
   isFollowUp: isFollowUpProp
 }) => {
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
 
   let safeContent = analysis || content || "";
   let safeAnswer = answer || "";
@@ -96,9 +104,9 @@ const AstrologyInterpretationResult: React.FC<Props> = ({
           <div className="w-full max-w-4xl space-y-3">
 
             {[
-              { label: "Mặt Trời", value: chartSummary.sun },
-              { label: "Mặt Trăng", value: chartSummary.moon },
-              { label: "Cung Mọc", value: chartSummary.ascendant }
+              { label: t("chat.sun", "Mặt Trời"), value: chartSummary.sun },
+              { label: t("chat.moon", "Mặt Trăng"), value: chartSummary.moon },
+              { label: t("chat.ascendant", "Cung Mọc"), value: chartSummary.ascendant }
             ].map((item, i) => (
               <div
                 key={i}
@@ -126,13 +134,19 @@ const AstrologyInterpretationResult: React.FC<Props> = ({
                           transition duration-500 hover:shadow-[0_0_100px_rgba(120,0,255,0.1)]
                           relative overflow-hidden group">
             
+            <VoiceOutButton
+              id={`answer-${id || 'tts'}`}
+              text={safeAnswer}
+              disabled={isStreaming}
+            />
+            
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-500/10 blur-[60px] rounded-full group-hover:bg-blue-500/20 transition-all duration-700"></div>
             <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-purple-500/10 blur-[60px] rounded-full group-hover:bg-purple-500/20 transition-all duration-700"></div>
 
             <div className="flex items-center gap-3 mb-8 opacity-60">
               <div className="h-[1px] w-8 bg-gradient-to-r from-transparent to-purple-400"></div>
               <span className="text-[10px] uppercase tracking-[0.4em] font-black text-purple-300">
-                Lời nhắn từ Vũ trụ
+                {t("chat.universeMessage", "Lời nhắn từ Vũ trụ")}
               </span>
               <div className="h-[1px] w-8 bg-gradient-to-l from-transparent to-purple-400"></div>
             </div>
@@ -143,16 +157,20 @@ const AstrologyInterpretationResult: React.FC<Props> = ({
           </div>
         )}
 
-        {/* 🟣 ANALYSIS (CHỈ HIỆN Ở CÂU ĐẦU, FOLLOWUP ẨN) */}
         {!isFollowUp && (
-          <div className="w-full max-w-5xl mx-auto p-8 md:p-12 rounded-[2.5rem] border border-white/5 bg-[#050508]/60 backdrop-blur-xl transition-all duration-1000">
+          <div className="w-full max-w-5xl mx-auto p-8 md:p-12 rounded-[2.5rem] border border-white/5 bg-[#050508]/60 backdrop-blur-xl transition-all duration-1000 relative">
+            <VoiceOutButton
+              id={`analysis-${id || 'tts'}`}
+              text={safeContent}
+              disabled={isStreaming}
+            />
 
             <div className="flex items-center gap-4 mb-10">
                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
                   <Star className="w-5 h-5 text-white fill-white" />
                </div>
                <div>
-                  <h3 className="text-xl font-bold text-white tracking-tight">Giải Mã Bản Đồ Sao</h3>
+                  <h3 className="text-xl font-bold text-white tracking-tight">{t("chat.decodeChart", "Giải Mã Bản Đồ Sao")}</h3>
                   <div className="h-1 w-12 bg-purple-500 mt-1 rounded-full opacity-50"></div>
                </div>
             </div>
@@ -169,10 +187,10 @@ const AstrologyInterpretationResult: React.FC<Props> = ({
             <div className="mt-12 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-2 text-[11px] text-white/30 uppercase tracking-[0.2em] font-medium">
                 <Orbit className="w-3 h-3" />
-                Dữ liệu dựa trên vị trí thực của các hành tinh
+                {t("chat.planetaryPositionData", "Dữ liệu dựa trên vị trí thực của các hành tinh")}
               </div>
               <div className="text-[11px] text-white/20 italic">
-                Cập nhật lần cuối: {new Date().toLocaleDateString('vi-VN')}
+                {t("chat.lastUpdated", "Cập nhật lần cuối")}: {currentLang === 'en' ? new Date().toLocaleDateString('en-US') : new Date().toLocaleDateString('vi-VN')}
               </div>
             </div>
           </div>

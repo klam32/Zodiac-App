@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface PackagesTabProps {
   packages: any[];
@@ -7,39 +8,44 @@ interface PackagesTabProps {
   onDeletePackage: (id: number) => void;
 }
 
-const PackagesTab: React.FC<PackagesTabProps> = ({ 
-  packages, 
-  onCreatePackage, 
-  onUpdatePackage, 
-  onDeletePackage 
-}) => {
+const PackagesTab: React.FC<PackagesTabProps> = ({ packages, onCreatePackage, onUpdatePackage, onDeletePackage }) => {
+  const { t } = useTranslation();
   return (
-    <div className="space-y-8 animate-in fade-in">
-      <div className="flex justify-between items-center">
-          <h3 className="text-xl font-serif font-bold text-slate-800 italic">Quản lý Gói Tokens</h3>
-          <button onClick={onCreatePackage} className="bg-indigo-600 text-white px-6 py-2.5 rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all uppercase tracking-widest text-xs">Tạo Gói Nạp Mới</button>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {packages.map((p: any) => (
-          <div key={p.id} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm relative group hover:shadow-xl transition-all">
-            <div className="absolute top-4 right-4 flex gap-2">
-              <button onClick={() => onUpdatePackage(p)} className="text-slate-400 hover:text-indigo-600 font-bold transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-              </button>
-              <button onClick={() => onDeletePackage(p.id)} className="text-slate-400 hover:text-red-500 font-bold transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-              </button>
+    <div>
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <div className="admin-card-title">{t('admin.packageList')}</div>
+          <button className="admin-btn admin-btn-primary" onClick={onCreatePackage}>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4"/></svg>
+            {t('admin.createPackage')}
+          </button>
+        </div>
+        <div className="admin-card-body">
+          {packages.length === 0 ? (
+            <div className="admin-empty"><div className="admin-empty-text">{t('admin.noPackages')}</div></div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
+              {packages.map((p: any) => (
+                <div key={p.id} style={{ background: '#f8fafc', borderRadius: 12, padding: 20, border: '1px solid #e2e8f0', position: 'relative' }}>
+                  <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: 6 }}>
+                    <button className="admin-btn admin-btn-sm admin-btn-outline" onClick={() => onUpdatePackage(p)} title={t('common.edit')}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                    </button>
+                    <button className="admin-btn admin-btn-sm admin-btn-danger" onClick={() => onDeletePackage(p.id)} title={t('common.delete')}>
+                      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                  </div>
+                  <div style={{ width: 40, height: 40, borderRadius: 10, background: '#ede9fe', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12, color: '#7c3aed', fontWeight: 700, fontSize: 18 }}>✦</div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginBottom: 4 }}>{p.name}</div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: '#6d5dfc', marginBottom: 8 }}>
+                    {p.tokens.toLocaleString()} <span style={{ fontSize: 12, fontWeight: 400, color: '#64748b' }}>tokens</span>
+                  </div>
+                  <span className="admin-badge blue">{p.amount_vnd.toLocaleString()} VNĐ</span>
+                </div>
+              ))}
             </div>
-            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center mb-4 text-indigo-600 font-bold text-xl font-title">✦</div>
-            <h4 className="font-bold text-slate-800 mb-1">{p.name}</h4>
-            <div className="text-3xl font-black text-indigo-600 mb-4">{p.tokens.toLocaleString()} <span className="text-xs font-normal text-slate-500 capitalize">tokens</span></div>
-            <div className="bg-slate-50 py-2 px-3 rounded-xl inline-block text-xs font-bold text-slate-700">{p.amount_vnd.toLocaleString()} VNĐ</div>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   showCloseButton?: boolean;
+  className?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({ 
@@ -15,7 +16,8 @@ const Modal: React.FC<ModalProps> = ({
   onClose, 
   title, 
   children, 
-  showCloseButton = true 
+  showCloseButton = true,
+  className = ''
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -32,7 +34,7 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className={`modal-container ${className}`} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           {title && <h2 className="modal-title">{title}</h2>}
           {showCloseButton && (

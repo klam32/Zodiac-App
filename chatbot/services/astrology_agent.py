@@ -127,18 +127,82 @@ class AstrologyChatAgent:
         except Exception as e:
             raise Exception(f"Lỗi tính toán bản đồ sao: {str(e)}")
 
-        field_map = {
-            "general": "Tổng quan vận mệnh",
-            "personality": "Tính cách & Phẩm chất",
-            "love": "Tình cảm & Mối quan hệ",
-            "career": "Sự nghiệp & Công danh",
-            "health": "Sức khỏe & Bình an"
-        }
+        lang = birth_info.get("language", "vi")
+        if lang == "en":
+            field_map = {
+                "general": "General Destiny Overview",
+                "personality": "Personality & Traits",
+                "love": "Love & Relationships",
+                "career": "Career & Finance",
+                "health": "Health & Well-being"
+            }
+        else:
+            field_map = {
+                "general": "Tổng quan vận mệnh",
+                "personality": "Tính cách & Phẩm chất",
+                "love": "Tình cảm & Mối quan hệ",
+                "career": "Sự nghiệp & Công danh",
+                "health": "Sức khỏe & Bình an"
+            }
         display_field = field_map.get(field, field)
 
         if not context or context.strip() == "":
             # 🟢 PROMPT CONFIGURATION (MERGED WITH VALIDATOR RULES)
-            prompt = f"""
+            if lang == "en":
+                prompt = f"""
+You are a professional Master Astrologer (Astrologer).
+
+TASK: Interpret the personal natal chart deeply and present it in the most elegant, professional way.
+
+========================
+USER INFO
+========================
+Name: {name}  
+Area of Interest: {display_field}
+
+========================
+NATAL CHART DATA
+========================
+{chart_data_str}
+
+========================
+CONTENT REQUIREMENTS (IN-DEPTH)
+========================
+👉 If field == "general" or "astrology": Fully analyze Personality, Love, Career, Health.
+👉 If other field: Only focus deeply on "{display_field}".
+
+========================
+PRESENTATION RULES (UX WRITING) - MANDATORY
+========================
+1. HIERARCHY:
+   - Use # for the main title at the beginning (e.g. # NATAL CHART INTERPRETATION - {name}).
+   - Use ## for main sections. Do NOT use icons in section titles.
+   - Use ### for sub-sections.
+2. MINIMALISM:
+   - Present text NATURALLY, clean, and elegant.
+   - Do NOT overuse bold (**). Only use it for extremely important keywords.
+   - Use lists (-) for clear information.
+3. NO METADATA: 
+   - Absolutely DO NOT return markdown JSON code blocks (```json).
+   - DO NOT start with {{"chart": ...}}. RETURN DIRECT TEXT CONTENT.
+4. ASTROLOGICAL EXPLANATION: NEED to explain in detail the meanings of planets, signs, and houses in the data so the user understands the basis of interpretations.
+
+========================
+RESPONSE STRUCTURE
+========================
+1. OVERVIEW (##) (If general)
+2. DETAILED ANALYSIS (##)
+   (If general, MANDATORY to split into sub-sections with ### as follows:)
+   - ### Personality
+   - ### Love
+   - ### Career
+   - ### Health
+3. ADVICE & DIRECTION (##)
+
+ENGLISH 100%. ONLY RETURN MARKDOWN TEXT, NO JSON STRUCTURE.
+"""
+            else:
+                prompt = f"""
 Bạn là một bậc thầy Chiêm tinh (Astrologer) chuyên nghiệp.
 
 NHIỆM VỤ: Luận giải bản đồ sao cá nhân một cách sâu sắc và trình bày nó một cách thanh lịch, chuyên nghiệp nhất.
@@ -199,7 +263,26 @@ TIẾNG VIỆT 100%. CHỈ TRẢ VỀ VĂN BẢN MARKDOWN, KHÔNG CÓ CẤU TRÚ
         else:
             # ⚡ CHAT MODE (Q&A)
             # Trả lời các câu hỏi cụ thể của người dùng dựa trên dữ liệu bản đồ sao
-            chat_prompt = f"""
+            if lang == "en":
+                chat_prompt = f"""
+You are an expert Astrologer. Please answer the user's question based on the natal chart data below.
+
+USER INFO: {name}
+QUESTION: "{context}"
+
+NATAL CHART DATA:
+{chart_data_str}
+
+REQUIREMENTS:
+1. Answer to the point, concisely and clearly.
+2. Absolutely do not mention dry technical astrology terms unless necessary.
+3. Present in clean Markdown.
+4. If the user asks about zodiac signs (Sun Sign), briefly explain its meaning.
+
+ANSWER:
+"""
+            else:
+                chat_prompt = f"""
 Bạn là chuyên gia Chiêm tinh học. Hãy trả lời câu hỏi của người dùng dựa trên dữ liệu bản đồ sao bên dưới.
 
 THÔNG TIN NGƯỜI DÙNG: {name}
@@ -221,7 +304,7 @@ TRẢ LỜI:
                 chat_answer = res.content if hasattr(res, "content") else str(res)
                 chat_answer = re.sub(r"<think>.*?</think>", "", chat_answer, flags=re.DOTALL).strip()
             except:
-                chat_answer = "Tôi xin lỗi, có lỗi xảy ra khi phân tích bản đồ sao."
+                chat_answer = "I am sorry, an error occurred while analyzing the natal chart." if lang == "en" else "Tôi xin lỗi, có lỗi xảy ra khi phân tích bản đồ sao."
 
             return {
                 "type": "astrology",
