@@ -6,7 +6,7 @@
 class AppConfig {
   // ── BASE URLs ──────────────────────────────────────────────
   /// URL backend FastAPI (không có dấu / ở cuối)
-  static const String apiBaseUrl = 'https://railcar-frostbite-alumni.ngrok-free.dev/api/v1';
+  static const String apiBaseUrl = 'https://new-seals-strive.loca.lt/api/v1';
 
   /// URL frontend web (không có dấu / ở cuối)
   static const String webBaseUrl = 'https://frontend-omega-pink-49.vercel.app';

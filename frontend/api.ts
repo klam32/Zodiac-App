@@ -9,7 +9,7 @@ const getApiRoot = (): string => {
     return 'http://localhost:2643';
   }
   // Cho tất cả các môi trường khác (Vercel deploy, điện thoại khác mạng, v.v.), gọi thẳng tới ngrok
-  return 'https://railcar-frostbite-alumni.ngrok-free.dev';
+  return 'https://new-seals-strive.loca.lt';
 };
 
 export const API_ROOT = getApiRoot().trim();
