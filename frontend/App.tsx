@@ -46,6 +46,7 @@ const App: React.FC = () => {
     typeof window !== 'undefined' && (
       ((window as any).Capacitor?.isNativePlatform?.()) ||
       ((window as any).FlutterBridge !== undefined) ||
+      document.cookie.includes('viewappmobie=true') ||
       window.innerWidth <= 768
     )
   );
@@ -59,6 +60,7 @@ const App: React.FC = () => {
       setIsMobileSize(
         ((window as any).Capacitor?.isNativePlatform?.()) ||
         ((window as any).FlutterBridge !== undefined) ||
+        document.cookie.includes('viewappmobie=true') ||
         window.innerWidth <= 768
       );
     };
@@ -354,6 +356,14 @@ const App: React.FC = () => {
     setConversations([])
 
     setCurrentConversationId(null)
+
+    if (typeof window !== 'undefined' && (window as any).FlutterBridge) {
+      try {
+        (window as any).FlutterBridge.postMessage('LOGOUT');
+      } catch (err) {
+        console.error('Failed to post LOGOUT message to FlutterBridge', err);
+      }
+    }
 
   }
 
