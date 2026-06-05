@@ -212,7 +212,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
               <img
                 src={getImageUrl(siteConfig.logo_url)}
                 alt="Logo"
-                className="w-9 h-9 object-contain rounded-xl drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]"
+                className="h-9 w-auto object-contain rounded-xl drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]"
                 onError={() => setLogoImgError(true)}
               />
             ) : (

@@ -5,6 +5,8 @@ import MobileSidebar from '../components/mobile/MobileSidebar';
 import BottomNav from '../components/BottomNav';
 import SupportChatWidget from '../components/support/SupportChatWidget';
 
+import { getImageUrl } from '../api';
+
 interface MobileAppLayoutProps {
   user: User | null;
   currentView: View;
@@ -34,8 +36,21 @@ const MobileAppLayout: React.FC<MobileAppLayoutProps> = ({
 }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const bgStyle = siteConfig?.background_url
+    ? {
+        backgroundImage: `url("${getImageUrl(siteConfig.background_url)}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      }
+    : {};
+
   return (
-    <div className="flex flex-col min-h-screen w-full bg-[#05050c] text-slate-200 overflow-x-hidden relative">
+    <div 
+      className={`flex flex-col min-h-screen w-full ${!siteConfig?.background_url ? 'bg-[#05050c]' : ''} text-slate-200 overflow-x-hidden relative`}
+      style={bgStyle}
+    >
       {/* Header */}
       <MobileHeader
         user={user}

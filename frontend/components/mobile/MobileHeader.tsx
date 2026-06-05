@@ -43,7 +43,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             <img
               src={getImageUrl(siteConfig.logo_url)}
               alt="Logo"
-              className="h-8 w-8 object-contain rounded-lg drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]"
+              className="h-8 w-auto object-contain rounded-lg drop-shadow-[0_0_8px_rgba(168,85,247,0.4)]"
               onError={() => setLogoImgError(true)}
             />
           ) : (

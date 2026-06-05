@@ -144,8 +144,21 @@ const MobileLandingPage: React.FC<MobileLandingPageProps> = ({
     }
   };
 
+  const bgStyle = siteConfig.background_url
+    ? {
+        backgroundImage: `url("${getImageUrl(siteConfig.background_url)}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      }
+    : {};
+
   return (
-    <div className="flex flex-col w-full text-white bg-[#05050c] select-none">
+    <div 
+      className={`flex flex-col w-full text-white ${!siteConfig.background_url ? 'bg-[#05050c]' : ''} select-none`}
+      style={bgStyle}
+    >
       {/* 1. HERO SECTION */}
       <section className="relative px-5 py-8 overflow-hidden flex flex-col items-center">
         {/* Starry background effect */}
@@ -157,7 +170,7 @@ const MobileLandingPage: React.FC<MobileLandingPageProps> = ({
           <img
             src={siteConfig.hero_chart_image_url ? getImageUrl(siteConfig.hero_chart_image_url) : "/zodiac-wheel.png"}
             alt="Zodiac Wheel"
-            className="w-full h-full object-contain animate-[spin_40s_linear_infinite] opacity-45 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+            className="w-full h-full object-cover rounded-full animate-[spin_40s_linear_infinite] opacity-45 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#05050c] via-transparent to-transparent" />
         </div>
