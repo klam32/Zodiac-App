@@ -144,19 +144,41 @@ const MobileLandingPage: React.FC<MobileLandingPageProps> = ({
     }
   };
 
-  const bgStyle = siteConfig.background_url
-    ? {
-        backgroundImage: `url("${getImageUrl(siteConfig.background_url)}")`,
+  const getMobileBackgroundStyle = () => {
+    const useAppBg = siteConfig?.use_app_background === '1' || siteConfig?.use_app_background === 1 || siteConfig?.use_app_background === true;
+    const appBgUrl = siteConfig?.background_app_url;
+    const webBgUrl = siteConfig?.background_url;
+
+    if (useAppBg && appBgUrl) {
+      return {
+        backgroundImage: `url("${getImageUrl(appBgUrl)}")`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         backgroundAttachment: 'fixed',
-      }
-    : {};
+      };
+    }
+
+    if (webBgUrl) {
+      return {
+        backgroundImage: `linear-gradient(rgba(10, 8, 28, 0.84), rgba(7, 5, 20, 0.94)), url("${getImageUrl(webBgUrl)}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      };
+    }
+
+    return {
+      background: 'radial-gradient(circle at 50% 15%, #0d0921 0%, #040308 100%)',
+    };
+  };
+
+  const bgStyle = getMobileBackgroundStyle();
 
   return (
     <div 
-      className={`flex flex-col w-full text-white ${!siteConfig.background_url ? 'bg-[#05050c]' : ''} select-none`}
+      className="flex flex-col w-full text-white select-none"
       style={bgStyle}
     >
       {/* 1. HERO SECTION */}

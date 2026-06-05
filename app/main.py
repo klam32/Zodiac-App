@@ -41,7 +41,7 @@ origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://frontend-omega-pink-49.vercel.app",
-    "https://railcar-frostbite-alumni.ngrok-free.dev",
+    "https://huddle-imperial-chewable.ngrok-free.dev",
 ]
 
 if settings.ALLOW_ORIGINS:

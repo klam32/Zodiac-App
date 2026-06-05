@@ -268,7 +268,7 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
   const handleUpload = async (file: File, field: string) => {
     try {
       const loadingToast = toast.loading(t('admin.uploading'));
-      const res = await api.adminUploadLogo(file);
+      const res = await api.adminUploadLogo(file, field);
       toast.dismiss(loadingToast);
       toast.success(t('admin.uploadSuccess'));
       setData(prev => ({ ...prev, [field]: res.logo_url }));
@@ -309,6 +309,7 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
             onUploadLogo={(f) => handleUpload(f, 'logo_url')}
             onUploadFavicon={(f) => handleUpload(f, 'favicon_url')}
             onUploadBackground={(f) => handleUpload(f, 'background_url')}
+            onUploadAppBackground={(f) => handleUpload(f, 'background_app_url')}
             onUploadHeroBg={(f) => handleUpload(f, 'hero_background_url')}
             onUploadHeroChartImg={(f) => handleUpload(f, 'hero_chart_image_url')}
             onUploadVideoGuide={(f) => handleUploadVideo(f, 'guide_video_url')}

@@ -55,7 +55,15 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onClose }) => {
 
   const handleGoogleLogin = async () => {
     if (isWebView) {
-      setError("Không thể kết nối Google trong ứng dụng. Vui lòng dùng đăng nhập tài khoản thường hoặc mở bằng trình duyệt.");
+      if ((window as any).FlutterBridge) {
+        try {
+          (window as any).FlutterBridge.postMessage('GOOGLE_LOGIN');
+          return;
+        } catch (err) {
+          console.error("Failed to post GOOGLE_LOGIN to FlutterBridge", err);
+        }
+      }
+      setError("Đang mở trang đăng nhập Google an toàn...");
       return;
     }
     try {
@@ -159,8 +167,8 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onClose }) => {
           {t("auth.continueWithGoogle")}
         </button>
         {isWebView && (
-          <p className="mt-2 text-center text-xs text-amber-400/80 px-2 leading-relaxed">
-            ⚠️ Không thể kết nối Google trong ứng dụng. Vui lòng dùng đăng nhập tài khoản thường hoặc mở bằng trình duyệt.
+          <p className="mt-2 text-center text-xs text-purple-300/80 px-2 leading-relaxed">
+            🔒 Đăng nhập Google an toàn qua trình duyệt hệ thống.
           </p>
         )}
 

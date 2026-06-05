@@ -34,6 +34,22 @@ const GuideVideoSection: React.FC<GuideVideoSectionProps> = ({ siteConfig, curre
   const videoUrl = siteConfig?.guide_video_url || "/videos/zodiac-whisper-guide.mp4";
   const posterUrl = siteConfig?.guide_video_poster_url ? getImageUrl(siteConfig.guide_video_poster_url) : undefined;
 
+  // Convert Google Drive link to preview embed link
+  const getGoogleDriveEmbed = (url: string): string | null => {
+    if (!url || !url.includes('drive.google.com')) return null;
+    if (url.includes('/file/d/')) {
+      const match = url.match(/\/file\/d\/([^/]+)/);
+      if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    if (url.includes('id=')) {
+      const match = url.match(/id=([^&]+)/);
+      if (match) return `https://drive.google.com/file/d/${match[1]}/preview`;
+    }
+    return null;
+  };
+
+  const gdEmbedUrl = getGoogleDriveEmbed(videoUrl);
+
   return (
     <section id="guide-video" className="guide-video-section reveal active">
       <div className="guide-video-container">
@@ -48,15 +64,26 @@ const GuideVideoSection: React.FC<GuideVideoSectionProps> = ({ siteConfig, curre
         </p>
 
         <div className="video-wrapper">
-          <video
-            controls
-            preload="metadata"
-            src={getImageUrl(videoUrl)}
-            poster={posterUrl}
-            className="guide-video-player"
-          >
-            {t('landing.video.unsupported', 'Trình duyệt của bạn không hỗ trợ phát video.')}
-          </video>
+          {gdEmbedUrl ? (
+            <iframe
+              src={gdEmbedUrl}
+              className="guide-video-player"
+              width="100%"
+              style={{ border: 'none', borderRadius: '12px', minHeight: '360px', background: '#000' }}
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+            />
+          ) : (
+            <video
+              controls
+              preload="metadata"
+              src={getImageUrl(videoUrl)}
+              poster={posterUrl}
+              className="guide-video-player"
+            >
+              {t('landing.video.unsupported', 'Trình duyệt của bạn không hỗ trợ phát video.')}
+            </video>
+          )}
           <div className="video-glow-shadow"></div>
         </div>
       </div>

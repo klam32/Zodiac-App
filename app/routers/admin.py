@@ -35,6 +35,8 @@ ALL_SETTINGS_DEFAULTS = {
     "rate_per_1000": "1.0",
     "logo_url": "",
     "background_url": "",
+    "use_app_background": "0",
+    "background_app_url": "",
     "site_title": "Zodiac Whisper",
     "seo_description": "Zodiac Whisper - Chiêm tinh AI hàng đầu",
     "seo_keywords": "chiem tinh, ai, zodiac, horoscope, ban do sao",
@@ -70,7 +72,7 @@ ALL_SETTINGS_DEFAULTS = {
     "guide_video_label": "VIDEO HƯỚNG DẪN",
     "guide_video_title": "Hướng dẫn sử dụng Zodiac Whisper",
     "guide_video_subtitle": "Xem video ngắn để biết cách tạo bản đồ sao và trò chuyện với AI chuyên gia.",
-    "guide_video_url": "/videos/zodiac-whisper-guide.mp4",
+    "guide_video_url": "https://drive.google.com/uc?export=download&id=1nkfZKIXIi4sLGg55Bp5GaE4eHItHfu7k",
     "guide_video_poster_url": "",
     "guide_video_enabled": "true",
 
@@ -672,24 +674,44 @@ async def get_public_settings():
 @router.post("/upload-logo")
 async def upload_logo(
     file: UploadFile = File(...),
+    field: Optional[str] = None,
     admin: dict = Depends(get_current_admin)
 ):
     try:
-        # Ngăn chặn Path Traversal
         safe_filename = os.path.basename(file.filename or "file")
         file_extension = os.path.splitext(safe_filename)[1]
+        
+        # Clean up old file for this setting field to prevent junk file accumulation
+        if field:
+            db = UserDB()
+            try:
+                old_val = db.get_setting(field, "")
+                if old_val and "/upload-file/view/" in old_val:
+                    old_filename = old_val.split("/upload-file/view/")[-1]
+                    old_filename = os.path.basename(old_filename)
+                    old_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads", old_filename))
+                    if os.path.exists(old_path):
+                        try:
+                            os.remove(old_path)
+                        except Exception as delete_err:
+                            import logging
+                            logging.getLogger(__name__).error(f"[CLEANUP ERROR] Failed to delete old file {old_path}: {delete_err}")
+            except Exception as db_err:
+                import logging
+                logging.getLogger(__name__).error(f"[CLEANUP ERROR] DB error: {db_err}")
+            finally:
+                db.close()
+                
         unique_filename = f"logo_{uuid4().hex}{file_extension}"
         
-        folder_path = os.path.join(settings.DIR_ROOT, "utils", "download")
+        folder_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads"))
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, unique_filename)
 
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        # Trả về URL xem file (re-use /upload-file router logic)
         view_url = f"/api/v1/upload-file/view/{unique_filename}"
-        
         return {"logo_url": view_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi tải lên logo: {str(e)}")
@@ -704,7 +726,7 @@ async def upload_blog_image(
         file_extension = os.path.splitext(safe_filename)[1]
         unique_filename = f"blog_{uuid4().hex}{file_extension}"
         
-        folder_path = os.path.join(settings.DIR_ROOT, "utils", "download")
+        folder_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads"))
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, unique_filename)
 

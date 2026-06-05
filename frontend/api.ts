@@ -12,7 +12,7 @@ const getApiRoot = (): string => {
 
   // Nếu là môi trường native mobile (Capacitor), dùng public URL ngrok
   if (isNative) {
-    return 'https://railcar-frostbite-alumni.ngrok-free.dev';
+    return 'https://huddle-imperial-chewable.ngrok-free.dev';
   }
 
   // Fallback cho local development trên web browser
@@ -21,7 +21,7 @@ const getApiRoot = (): string => {
   }
 
   // Mặc định gọi đến domain ngrok public
-  return 'https://railcar-frostbite-alumni.ngrok-free.dev';
+  return 'https://huddle-imperial-chewable.ngrok-free.dev';
 };
 
 export const API_ROOT = getApiRoot().trim();
@@ -533,15 +533,16 @@ export const api = {
     return response.json();
   },
 
-  async adminUploadLogo(file: File): Promise<{ logo_url: string }> {
+  async adminUploadLogo(file: File, field?: string): Promise<{ logo_url: string }> {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${BASE_URL}/admin/upload-logo`, {
+    const url = field ? `${BASE_URL}/admin/upload-logo?field=${field}` : `${BASE_URL}/admin/upload-logo`;
+    const response = await fetch(url, {
       method: 'POST',
       headers: getHeaders(),
       body: formData,
     });
-    if (!response.ok) throw new Error('Tải lên logo thất bại');
+    if (!response.ok) throw new Error('Tải lên thất bại');
     return response.json();
   },
 

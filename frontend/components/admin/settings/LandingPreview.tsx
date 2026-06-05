@@ -752,17 +752,41 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
             <div className="mini-badge">{getVal('guide_video_label', 'VIDEO HƯỚNG DẪN', 'VIDEO GUIDE')}</div>
             <h3>{getVal('guide_video_title', 'Video Hướng dẫn sử dụng', 'Video User Guide')}</h3>
             <p style={{ fontSize: '8px', color: '#64748b' }}>{getVal('guide_video_subtitle', 'Thấu hiểu chỉ trong 2 phút', 'Understand in just 2 minutes')}</p>
-            {settings.guide_video_url && (
-              <video
-                src={resolveImage(settings.guide_video_url)}
-                poster={resolveImage(settings.guide_video_poster_url)}
-                className="mini-video-player"
-                muted
-                playsInline
-                loop
-                autoPlay
-              />
-            )}
+            {(() => {
+              if (!settings.guide_video_url) return null;
+              const url = settings.guide_video_url;
+              let gdEmbedUrl = null;
+              if (url.includes('drive.google.com')) {
+                if (url.includes('/file/d/')) {
+                  const match = url.match(/\/file\/d\/([^/]+)/);
+                  if (match) gdEmbedUrl = `https://drive.google.com/file/d/${match[1]}/preview`;
+                } else if (url.includes('id=')) {
+                  const match = url.match(/id=([^&]+)/);
+                  if (match) gdEmbedUrl = `https://drive.google.com/file/d/${match[1]}/preview`;
+                }
+              }
+              if (gdEmbedUrl) {
+                return (
+                  <iframe
+                    src={gdEmbedUrl}
+                    className="mini-video-player"
+                    style={{ border: 'none', background: '#000' }}
+                    allowFullScreen
+                  />
+                );
+              }
+              return (
+                <video
+                  src={resolveImage(settings.guide_video_url)}
+                  poster={resolveImage(settings.guide_video_poster_url)}
+                  className="mini-video-player"
+                  muted
+                  playsInline
+                  loop
+                  autoPlay
+                />
+              );
+            })()}
           </div>
         )}
 

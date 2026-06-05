@@ -9,11 +9,14 @@ import 'config.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Thiết lập giao diện hệ thống (Status Bar)
+  // Thiết lập giao diện hệ thống (Status Bar / Navigation Bar)
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Color(0xFF07070C),
+      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
 
@@ -150,10 +153,10 @@ class _WebViewScreenState extends State<WebViewScreen> {
     
     switch (data) {
       case 'LOGOUT': _processLogout(); break;
+      case 'GOOGLE_LOGIN': _triggerNativeGoogleLogin(); break;
       default:
         if (data.startsWith('GOOGLE_LOGIN:')) {
-          final sessionId = data.split(':')[1];
-          _triggerNativeGoogleLogin(sessionId);
+          _triggerNativeGoogleLogin();
         }
         break;
     }
@@ -161,26 +164,36 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
   // --- Core Logic ---
 
-  int _cctOpenCount = 0;
-
-  Future<void> _triggerNativeGoogleLogin(String sessionId) async {
+  Future<void> _triggerNativeGoogleLogin() async {
     if (_isAuthenticating) return;
     _isAuthenticating = true;
-    
-    _cctOpenCount++;
-    debugPrint('==> 🚀 [CCT] Mở Tab login cho Session: $sessionId - Lần: $_cctOpenCount');
 
     try {
-      final loginUrl = '${AppConfig.apiBaseUrl}/auth/google/login/flutter?session_id=$sessionId';
-      
-      // Mở CCT. Ở luồng mới này, App chỉ cần mở Tab. 
-      // Người dùng login xong Server cập nhật DB, Web sẽ tự Polling thấy Token.
-      await FlutterWebAuth2.authenticate(
+      final loginUrl = '${AppConfig.apiBaseUrl}/auth/google/login/flutter?callback_scheme=${AppConfig.callbackScheme}';
+      debugPrint('==> 🚀 [CCT] Mở Tab login Google: $loginUrl');
+
+      // Mở Custom Chrome Tab / Safari View Controller
+      final result = await FlutterWebAuth2.authenticate(
         url: loginUrl,
-        callbackUrlScheme: 'none', // Không dùng callback scheme nữa
+        callbackUrlScheme: AppConfig.callbackScheme,
       );
+
+      debugPrint('==> 🚀 [CCT] Result URL: $result');
+      
+      // Parse token từ redirect URL: zodiacchatbot://?token=xxx
+      final uri = Uri.parse(result);
+      final token = uri.queryParameters['token'];
+
+      if (token != null && token.isNotEmpty) {
+        debugPrint('==> 🔑 [CCT] Đăng nhập thành công! Token: $token');
+        await _saveToken(token);
+        await _injectTokenToWeb(token);
+        _loadAppUrl(token);
+      } else {
+        debugPrint('==> ❌ [CCT] Không tìm thấy token trong callback URL');
+      }
     } catch (e) {
-      debugPrint('==> CCT closed/cancelled');
+      debugPrint('==> CCT closed/cancelled or error: $e');
     } finally {
       _isAuthenticating = false;
     }

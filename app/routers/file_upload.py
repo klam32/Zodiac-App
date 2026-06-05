@@ -23,7 +23,7 @@ async def upload_file(
         safe_filename = os.path.basename(file.filename or "file")
         file_extension = os.path.splitext(safe_filename)[1]
         unique_filename = f"{uuid4()}{file_extension}"
-        folder_path = os.path.join(settings.DIR_ROOT, "utils", "download")
+        folder_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads"))
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, unique_filename)
 
@@ -75,7 +75,7 @@ async def upload_video(
 
     try:
         unique_filename = f"zodiac-guide-{uuid4().hex}.mp4"
-        folder_path = os.path.join(settings.DIR_ROOT, "utils", "download", "videos")
+        folder_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads", "videos"))
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, unique_filename)
 
@@ -160,7 +160,7 @@ async def download_file(filename: str):
     - Nếu tệp tồn tại, trả về tệp dưới dạng phản hồi tải xuống.
     - Nếu tệp không tồn tại, trả về lỗi 404 với thông báo "File not found".
     """
-    file_path = os.path.join(os.path.join(settings.DIR_ROOT, "utils", "download"), filename)
+    file_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads", filename))
     if os.path.exists(file_path):
         return FileResponse(path=file_path, filename=filename, media_type="application/octet-stream")
     raise HTTPException(status_code=404, detail="File not found")
@@ -184,9 +184,9 @@ async def view_file(filename: str):
     if filename.startswith("report_evidence/"):
         file_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads", "report_evidence", safe_filename))
     elif filename.startswith("videos/"):
-        file_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "utils", "download", "videos", safe_filename))
+        file_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads", "videos", safe_filename))
     else:
-        file_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "utils", "download", safe_filename))
+        file_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads", safe_filename))
 
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")

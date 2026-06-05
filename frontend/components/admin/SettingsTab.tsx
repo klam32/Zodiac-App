@@ -13,6 +13,7 @@ interface SettingsTabProps {
     onUploadLogo: (file: File) => Promise<void>;
     onUploadFavicon: (file: File) => Promise<void>;
     onUploadBackground: (file: File) => Promise<void>;
+    onUploadAppBackground: (file: File) => Promise<void>;
     onUploadHeroBg: (file: File) => Promise<void>;
     onUploadHeroChartImg: (file: File) => Promise<void>;
     onUploadVideoGuide: (file: File) => Promise<void>;
@@ -29,6 +30,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     onUploadLogo,
     onUploadFavicon,
     onUploadBackground,
+    onUploadAppBackground,
     onUploadHeroBg,
     onUploadHeroChartImg,
     onUploadVideoGuide,
@@ -55,7 +57,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 
         const baseKeys = [
             'site_title', 'seo_description', 'seo_keywords', 'seo_author', 'logo_url',
-            'favicon_url', 'background_url', 'hero_title', 'hero_highlight_text', 'hero_subtitle',
+            'favicon_url', 'background_url', 'use_app_background', 'background_app_url', 'hero_title', 'hero_highlight_text', 'hero_subtitle',
             'hero_primary_button_text', 'hero_secondary_button_text', 'hero_background_url',
             'hero_chart_image_url', 'stat_users_label', 'stat_users_value', 'stat_charts_label',
             'stat_charts_value', 'stat_accuracy_label', 'stat_accuracy_value', 'stat_support_label',
@@ -426,6 +428,39 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                         </label>
                                     </div>
                                     {data.background_url && <img src={getImageUrl(data.background_url)} style={{ width: 120, height: 60, borderRadius: 6, objectFit: 'cover', border: '1px solid #cbd5e1' }} alt="Background Preview" />}
+                                </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16 }}>
+                                <label className="admin-input-label">Cấu hình nền App Mobile</label>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    <div>
+                                        <label className="admin-input-label" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 'normal' }}>
+                                            <input 
+                                                type="checkbox" 
+                                                name="use_app_background" 
+                                                checked={data.use_app_background === '1' || data.use_app_background === 1 || data.use_app_background === true} 
+                                                onChange={(e) => {
+                                                    const val = e.target.checked ? '1' : '0';
+                                                    onChange({ target: { name: 'use_app_background', value: val } } as any);
+                                                }} 
+                                            />
+                                            Sử dụng hình nền riêng biệt cho App Mobile (khác với Web)
+                                        </label>
+                                    </div>
+                                    
+                                    {(data.use_app_background === '1' || data.use_app_background === 1 || data.use_app_background === true) && (
+                                        <div style={{ display: 'flex', gap: 16, alignItems: 'start', marginTop: 4 }}>
+                                            <div style={{ flex: 1 }}>
+                                                <input className="admin-input" name="background_app_url" value={data.background_app_url || ''} onChange={onChange} placeholder="Đường dẫn ảnh nền riêng cho app mobile..." />
+                                                <label className="admin-btn admin-btn-sm admin-btn-outline" style={{ marginTop: 8, cursor: 'pointer', display: 'inline-flex' }}>
+                                                    Tải ảnh nền mobile lên
+                                                    <input type="file" style={{ display: 'none' }} accept="image/*" onChange={e => { const f = e.target.files?.[0]; if (f) onUploadAppBackground(f); }} />
+                                                </label>
+                                            </div>
+                                            {data.background_app_url && <img src={getImageUrl(data.background_app_url)} style={{ width: 120, height: 60, borderRadius: 6, objectFit: 'cover', border: '1px solid #cbd5e1' }} alt="Mobile Background Preview" />}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

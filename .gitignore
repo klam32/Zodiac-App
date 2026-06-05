@@ -47,5 +47,6 @@ database.db
 memory_store.json
 uploads/
 .env
-frontend/public/videos/
-app/utils/download/videos/
+app/utils/download/*
+!app/utils/download/videos/
+app/utils/download/videos/*

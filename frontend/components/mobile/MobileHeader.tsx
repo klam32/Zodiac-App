@@ -24,7 +24,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const [logoImgError, setLogoImgError] = React.useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-[#07070c]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 z-[99] box-border select-none" style={{ height: 'calc(64px + env(safe-area-inset-top))', paddingTop: 'env(safe-area-inset-top)' }}>
+    <header className="fixed top-0 left-0 right-0 bg-[#07070c]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 z-[99] box-border select-none" style={{ height: 'calc(64px + max(20px, env(safe-area-inset-top)))', paddingTop: 'max(20px, env(safe-area-inset-top))' }}>
       {/* Left: Hamburger menu, Logo & Title */}
       <div className="flex items-center gap-3">
         <button

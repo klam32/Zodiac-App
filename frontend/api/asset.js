@@ -1,4 +1,4 @@
-const DEFAULT_API_ROOT = 'https://railcar-frostbite-alumni.ngrok-free.dev';
+const DEFAULT_API_ROOT = 'https://huddle-imperial-chewable.ngrok-free.dev';
 
 const getApiRoot = () => (
   process.env.API_ROOT ||

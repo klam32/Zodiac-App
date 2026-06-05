@@ -146,8 +146,26 @@ async def google_login(request: Request):
     return {"auth_url": f"https://accounts.google.com/o/oauth2/v2/auth?{query_string}"}
 
 
+@router.get("/google/login/flutter")
+async def google_login_flutter(request: Request, callback_scheme: str = "zodiacchatbot"):
+    from fastapi.responses import RedirectResponse
+    redirect_uri = get_google_redirect_uri(request)
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "access_type": "offline",
+        "prompt": "consent",
+        "state": f"flutter:{callback_scheme}"
+    }
+    query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+    auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{query_string}"
+    return RedirectResponse(url=auth_url)
+
+
 @router.get("/google/callback")
-async def google_callback(request: Request, code: str = Query(...)):
+async def google_callback(request: Request, code: str = Query(...), state: str = Query(None)):
     redirect_uri = get_google_redirect_uri(request)
     # 1. Trao đổi code lấy access_token từ Google
     async with httpx.AsyncClient() as client:
@@ -197,6 +215,13 @@ async def google_callback(request: Request, code: str = Query(...)):
     
     # 5. Redirect về Frontend kèm token
     from fastapi.responses import RedirectResponse
+    
+    # Check if the state is from Flutter / native app
+    if state and state.startswith("flutter:"):
+        scheme = state.split(":", 1)[1]
+        target_url = f"{scheme}://?token={token}"
+        logger.info(f"Flutter sign-in detected. Redirecting via Custom URI Scheme: {target_url}")
+        return RedirectResponse(url=target_url)
     
     # --- LOGIC DYNAMIC FRONTEND REDIRECT ---
     scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
