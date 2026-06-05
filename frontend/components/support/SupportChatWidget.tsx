@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, API_ROOT } from '../../api';
-import { MessageSquare, X, Send, ShieldAlert, Cpu } from 'lucide-react';
+import { MessageSquare, X, Send, Cpu, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface Message {
@@ -26,20 +26,57 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
   const [inputText, setInputText] = useState('');
   const [adminOnline, setAdminOnline] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
-  
+
+  // Draggable position state (offset from bottom-right corner)
+  const [pos, setPos] = useState({ right: 20, bottom: 20 });
+  const isDragging = useRef(false);
+  const dragStart = useRef({ x: 0, y: 0, right: 20, bottom: 20 });
+  const fabRef = useRef<HTMLButtonElement>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<any>(null);
   const heartbeatIntervalRef = useRef<any>(null);
 
-  // Initialize or fetch conversation
+  // ── Draggable FAB logic ────────────────────────────────────────────
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    isDragging.current = false;
+    dragStart.current = {
+      x: e.clientX,
+      y: e.clientY,
+      right: pos.right,
+      bottom: pos.bottom,
+    };
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }, [pos]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      isDragging.current = true;
+    }
+    if (!isDragging.current) return;
+
+    const newRight = Math.max(8, Math.min(window.innerWidth - 68, dragStart.current.right - dx));
+    const newBottom = Math.max(8, Math.min(window.innerHeight - 68, dragStart.current.bottom + dy));
+    setPos({ right: newRight, bottom: newBottom });
+  }, []);
+
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current) {
+      setIsOpen(true); // treat as tap
+    }
+    isDragging.current = false;
+  }, []);
+
+  // ── Conversation init ──────────────────────────────────────────────
   const initConversation = async () => {
     try {
       const res = await api.getSupportConversation();
       setConversationId(res.conversation_id);
       setAdminOnline(res.admin_online);
-      
-      // Fetch messages
       const msgs = await api.getSupportMessages(res.conversation_id);
       setMessages(msgs || []);
     } catch (err: any) {
@@ -48,351 +85,245 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
   };
 
   useEffect(() => {
-    if (user) {
-      initConversation();
-    }
+    if (user) initConversation();
   }, [user]);
 
-  // Connect to WebSocket
+  // ── WebSocket ──────────────────────────────────────────────────────
   const connectWebSocket = () => {
     if (!conversationId) return;
-
     const token = localStorage.getItem('access_token');
     if (!token) return;
 
     const wsProto = API_ROOT.startsWith('https') ? 'wss' : 'ws';
     const cleanHost = API_ROOT.replace(/^https?:\/\//, '');
     const wsUrl = `${wsProto}://${cleanHost}/api/v1/ws/support?token=${token}`;
-
     const ws = new WebSocket(wsUrl);
     socketRef.current = ws;
 
     ws.onopen = () => {
-      console.log('[WS Support] Connected');
       if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
       heartbeatIntervalRef.current = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: 'ping' }));
-        }
-      }, 10000); // Send ping every 10 seconds to keep connection alive
+        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'ping' }));
+      }, 10000);
     };
 
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-
         if (data.type === 'presence_update') {
           setAdminOnline(data.admin_online);
         } else if (data.type === 'message') {
-          // If we receive our own message back or an admin/AI message
           setMessages((prev) => {
-            const existingIndex = prev.findIndex((m) => {
-              if (m.id === data.id) return true;
-              if (m.id >= 1000000000000 && m.sender_type === data.sender_type && m.message === data.message) return true;
-              return false;
-            });
-            if (existingIndex !== -1) {
-              return prev.map((m, idx) => idx === existingIndex ? data : m);
-            }
+            const idx = prev.findIndex((m) =>
+              m.id === data.id ||
+              (m.id >= 1000000000000 && m.sender_type === data.sender_type && m.message === data.message)
+            );
+            if (idx !== -1) return prev.map((m, i) => (i === idx ? data : m));
             return [...prev, data];
           });
-          
-          if (data.sender_type === 'ai') {
-            setIsAiTyping(false);
-          }
+          if (data.sender_type === 'ai') setIsAiTyping(false);
         } else if (data.type === 'status') {
-          if (data.status === 'ai_typing') {
-            setIsAiTyping(true);
-          } else {
-            setIsAiTyping(false);
-          }
+          setIsAiTyping(data.status === 'ai_typing');
         } else if (data.type === 'conversation_resolved') {
-          toast.success(t('support.resolved', 'Cuộc trò chuyện đã được đánh dấu giải quyết bởi admin.'));
-          // Reload conversation history
+          toast.success(t('support.resolved', 'Cuộc trò chuyện đã được giải quyết.'));
           initConversation();
         }
       } catch (e) {
-        console.error('[WS Support] Error parsing message', e);
+        console.error('[WS Support] parse error', e);
       }
     };
 
     ws.onclose = (event) => {
-      console.log('[WS Support] Closed with code:', event.code);
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-        heartbeatIntervalRef.current = null;
-      }
-      if (event.code === 4001) {
-        console.warn('[WS Support] Closed due to expired or invalid token. Stopping reconnect loop.');
-        return;
-      }
-      // Reconnect after 5 seconds
-      reconnectTimeoutRef.current = setTimeout(() => {
-        connectWebSocket();
-      }, 5000);
+      if (heartbeatIntervalRef.current) { clearInterval(heartbeatIntervalRef.current); heartbeatIntervalRef.current = null; }
+      if (event.code === 4001) return;
+      reconnectTimeoutRef.current = setTimeout(() => connectWebSocket(), 5000);
     };
   };
 
   useEffect(() => {
-    if (conversationId) {
-      connectWebSocket();
-    }
+    if (conversationId) connectWebSocket();
     return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
+      socketRef.current?.close();
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
     };
   }, [conversationId]);
 
-  // Polling fallback when WebSocket is not connected
+  // ── Polling fallback ───────────────────────────────────────────────
   useEffect(() => {
-    let intervalId: any = null;
-
+    let id: any = null;
     if (isOpen && conversationId) {
-      intervalId = setInterval(async () => {
-        const isWsConnected = socketRef.current && socketRef.current.readyState === WebSocket.OPEN;
-        if (!isWsConnected) {
-          try {
-            const msgs = await api.getSupportMessages(conversationId);
-            setMessages(msgs || []);
-          } catch (e) {
-            console.error('[WS Support] Polling messages failed', e);
-          }
+      id = setInterval(async () => {
+        if (!(socketRef.current && socketRef.current.readyState === WebSocket.OPEN)) {
+          try { setMessages((await api.getSupportMessages(conversationId)) || []); } catch {}
         }
-      }, 4000); // Poll every 4 seconds
+      }, 4000);
     }
-
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
+    return () => { if (id) clearInterval(id); };
   }, [isOpen, conversationId]);
 
-  // Scroll to bottom
+  // ── Auto-scroll ────────────────────────────────────────────────────
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    }
+    if (isOpen) setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
   }, [messages, isOpen, isAiTyping]);
 
+  // ── Send message ───────────────────────────────────────────────────
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputText.trim() || !conversationId) return;
-
-    const messageText = inputText.trim();
+    const text = inputText.trim();
     setInputText('');
 
-    // If WebSocket is open, send via WebSocket
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({
-        message: messageText,
-        language: i18n.language || 'vi'
-      }));
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({ message: text, language: i18n.language || 'vi' }));
     } else {
-      // Fallback to HTTP API
       try {
-        const tempMsg: Message = {
-          id: Date.now(),
-          conversation_id: conversationId,
-          sender_type: 'user',
-          sender_id: user.id,
-          message: messageText,
-          created_at: new Date().toISOString(),
-          is_read: 0
-        };
-        setMessages(prev => [...prev, tempMsg]);
-        
-        const res = await api.sendSupportMessage(conversationId, messageText, i18n.language || 'vi');
-        
-        if (res && res.status === 'ai_replied' && res.message) {
-          const aiMsg: Message = {
-            id: Date.now() + 1,
-            conversation_id: conversationId,
-            sender_type: 'ai',
-            sender_id: null,
-            message: res.message,
-            created_at: new Date().toISOString(),
-            is_read: 0
-          };
-          setMessages(prev => [...prev, aiMsg]);
+        const temp: Message = { id: Date.now(), conversation_id: conversationId, sender_type: 'user', sender_id: user.id, message: text, created_at: new Date().toISOString(), is_read: 0 };
+        setMessages((p) => [...p, temp]);
+        const res = await api.sendSupportMessage(conversationId, text, i18n.language || 'vi');
+        if (res?.status === 'ai_replied' && res.message) {
+          const ai: Message = { id: Date.now() + 1, conversation_id: conversationId, sender_type: 'ai', sender_id: null, message: res.message, created_at: new Date().toISOString(), is_read: 0 };
+          setMessages((p) => [...p, ai]);
         }
-      } catch (err: any) {
-        toast.error(err.message || t('support.sendFailed', 'Gửi tin thất bại'));
-      }
+      } catch (err: any) { toast.error(err.message || t('support.sendFailed', 'Gửi tin thất bại')); }
     }
   };
 
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const fmt = (d: string) => new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  // ── Dialog dimensions (responsive) ─────────────────────────────────
+  const isMobile = window.innerWidth <= 480;
+  const dialogW = isMobile ? Math.min(340, window.innerWidth - 32) : 380;
+  const dialogH = isMobile ? 420 : 520;
+
+  // ── Dialog position (keep inside screen) ───────────────────────────
+  const fabSize = 60;
+  // dialog sits above the FAB
+  const dialogBottom = pos.bottom + fabSize + 12;
+  const dialogRight = Math.max(8, Math.min(pos.right, window.innerWidth - dialogW - 8));
 
   return (
-    <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000, fontFamily: 'system-ui, sans-serif' }}>
-      {/* Floating Action Button */}
+    <>
+      {/* ── Keyframe styles ── */}
+      <style>{`
+        @keyframes scw-in { from { opacity:0; transform:translateY(16px) scale(.95) } to { opacity:1; transform:none } }
+        @keyframes scw-dot { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-4px) } }
+      `}</style>
+
+      {/* ── FAB (draggable) ── */}
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
+          ref={fabRef}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
           style={{
-            width: '60px',
-            height: '60px',
+            position: 'fixed',
+            right: pos.right,
+            bottom: pos.bottom,
+            zIndex: 9999,
+            width: fabSize,
+            height: fabSize,
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+            background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)',
             color: '#fff',
             border: 'none',
-            cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
+            cursor: 'grab',
+            boxShadow: '0 4px 20px rgba(59,130,246,.45)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-            outline: 'none',
+            touchAction: 'none',
+            userSelect: 'none',
+            transition: 'box-shadow .2s',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          aria-label="Mở hỗ trợ"
         >
           <MessageSquare size={26} />
         </button>
       )}
 
-      {/* Expanded Widget */}
+      {/* ── Expanded dialog ── */}
       {isOpen && (
         <div
           style={{
-            width: '380px',
-            height: '520px',
-            borderRadius: '20px',
-            background: 'rgba(15, 23, 42, 0.95)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 12px 40px rgba(0, 0, 0, 0.5)',
+            position: 'fixed',
+            right: dialogRight,
+            bottom: dialogBottom,
+            zIndex: 9999,
+            width: dialogW,
+            height: dialogH,
+            borderRadius: 20,
+            background: 'rgba(15,23,42,.97)',
+            border: '1px solid rgba(255,255,255,.1)',
+            boxShadow: '0 16px 48px rgba(0,0,0,.6)',
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            backdropFilter: 'blur(12px)',
-            animation: 'widget-slide-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            backdropFilter: 'blur(16px)',
+            animation: 'scw-in .3s cubic-bezier(.16,1,.3,1)',
           }}
         >
           {/* Header */}
-          <div
-            style={{
-              padding: '16px 20px',
-              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(30, 41, 59, 0.4) 100%)',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ padding: '14px 16px', background: 'linear-gradient(135deg,rgba(59,130,246,.2),rgba(30,41,59,.4))', borderBottom: '1px solid rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ position: 'relative' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Cpu size={20} color="#3b82f6" />
+                <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Cpu size={19} color="#3b82f6" />
                 </div>
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    background: adminOnline ? '#10b981' : '#f59e0b',
-                    border: '2px solid #0f172a'
-                  }}
-                />
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 10, height: 10, borderRadius: '50%', background: adminOnline ? '#10b981' : '#f59e0b', border: '2px solid #0f172a' }} />
               </div>
               <div>
-                <h4 style={{ margin: 0, color: '#f3f4f6', fontSize: '15px', fontWeight: '600' }}>
-                  {t('support.title', 'Hỗ trợ trực tuyến')}
-                </h4>
-                <span style={{ fontSize: '11px', color: adminOnline ? '#10b981' : '#9ca3af' }}>
+                <h4 style={{ margin: 0, color: '#f3f4f6', fontSize: 14, fontWeight: 600 }}>{t('support.title', 'Hỗ trợ trực tuyến')}</h4>
+                <span style={{ fontSize: 11, color: adminOnline ? '#10b981' : '#9ca3af' }}>
                   {adminOnline ? t('support.adminOnline', 'Admin trực tuyến') : t('support.aiMode', 'Trợ lý AI hỗ trợ')}
                 </span>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#9ca3af',
-                cursor: 'pointer',
-                padding: '4px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; }}
-            >
-              <X size={18} />
-            </button>
+
+            {/* Drag hint + close */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: '#4b5563', fontSize: 10, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <GripVertical size={12} /> kéo FAB
+              </span>
+              <button
+                onClick={() => setIsOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 4, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              >
+                <X size={17} />
+              </button>
+            </div>
           </div>
 
-          {/* Messages scroll content */}
-          <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Messages */}
+          <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
             {messages.length === 0 ? (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', gap: '10px', textAlign: 'center', padding: '0 20px' }}>
-                <Cpu size={36} style={{ opacity: 0.5, color: '#3b82f6' }} />
-                <span style={{ fontSize: '13px' }}>
-                  {t('support.welcome', 'Xin chào! Hãy gửi câu hỏi nếu bạn gặp bất kỳ sự cố nào. Admin hoặc Trợ lý AI sẽ hỗ trợ bạn ngay.')}
-                </span>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', gap: 10, textAlign: 'center', padding: '0 16px' }}>
+                <Cpu size={34} style={{ opacity: .5, color: '#3b82f6' }} />
+                <span style={{ fontSize: 12 }}>{t('support.welcome', 'Xin chào! Hãy gửi câu hỏi nếu bạn gặp sự cố.')}</span>
               </div>
             ) : (
               messages.map((msg) => {
                 const isUser = msg.sender_type === 'user';
                 const isAi = msg.sender_type === 'ai';
                 return (
-                  <div
-                    key={msg.id}
-                    style={{
-                      alignSelf: isUser ? 'flex-end' : 'flex-start',
-                      maxWidth: '75%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: isUser ? 'flex-end' : 'flex-start'
-                    }}
-                  >
-                    <div
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                        background: isUser ? 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)' : 'rgba(255, 255, 255, 0.05)',
-                        color: '#fff',
-                        fontSize: '13px',
-                        lineHeight: '1.45',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        border: isAi ? '1px dashed rgba(59, 130, 246, 0.3)' : 'none',
-                        wordBreak: 'break-word',
-                        whiteSpace: 'pre-wrap'
-                      }}
-                    >
+                  <div key={msg.id} style={{ alignSelf: isUser ? 'flex-end' : 'flex-start', maxWidth: '78%', display: 'flex', flexDirection: 'column', alignItems: isUser ? 'flex-end' : 'flex-start' }}>
+                    <div style={{ padding: '9px 13px', borderRadius: isUser ? '14px 14px 2px 14px' : '14px 14px 14px 2px', background: isUser ? 'linear-gradient(135deg,#2563eb,#1d4ed8)' : 'rgba(255,255,255,.05)', color: '#fff', fontSize: 13, lineHeight: 1.45, border: isAi ? '1px dashed rgba(59,130,246,.3)' : 'none', wordBreak: 'break-word', whiteSpace: 'pre-wrap' }}>
                       {msg.message}
                     </div>
-                    <span style={{ fontSize: '9px', color: '#6b7280', marginTop: '3px', padding: '0 2px' }}>
-                      {formatTime(msg.created_at)}
-                    </span>
+                    <span style={{ fontSize: 9, color: '#6b7280', marginTop: 3, padding: '0 2px' }}>{fmt(msg.created_at)}</span>
                   </div>
                 );
               })
             )}
 
             {isAiTyping && (
-              <div style={{ alignSelf: 'flex-start', maxWidth: '75%', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ padding: '10px 14px', borderRadius: '14px 14px 14px 2px', background: 'rgba(255, 255, 255, 0.05)', color: '#9ca3af', fontSize: '13px' }}>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', animation: 'typing-dots 1s infinite' }} />
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', animation: 'typing-dots 1s infinite 0.2s' }} />
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3b82f6', animation: 'typing-dots 1s infinite 0.4s' }} />
+              <div style={{ alignSelf: 'flex-start' }}>
+                <div style={{ padding: '9px 13px', borderRadius: '14px 14px 14px 2px', background: 'rgba(255,255,255,.05)' }}>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[0, .2, .4].map((delay, i) => (
+                      <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6', animation: `scw-dot 1s infinite ${delay}s` }} />
+                    ))}
                   </div>
                 </div>
               </div>
@@ -400,78 +331,57 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input Area */}
-          <form
-            onSubmit={handleSend}
-            style={{
-              padding: '16px 20px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-              display: 'flex',
-              gap: '10px',
-              alignItems: 'center'
-            }}
-          >
+          {/* Input */}
+          <form onSubmit={handleSend} style={{ padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,.05)', display: 'flex', gap: 8, alignItems: 'center' }}>
             <input
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={t('support.placeholder', 'Nhập câu hỏi tại đây...')}
-              style={{
-                flex: 1,
-                padding: '10px 14px',
-                borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                color: '#fff',
-                fontSize: '13px',
-                outline: 'none'
-              }}
+              placeholder={t('support.placeholder', 'Nhập câu hỏi...')}
+              style={{ flex: 1, padding: '9px 12px', borderRadius: 10, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.1)', color: '#fff', fontSize: 13, outline: 'none' }}
             />
             <button
               type="submit"
               disabled={!inputText.trim()}
-              style={{
-                width: '36px',
-                height: '36px',
-                borderRadius: '10px',
-                background: inputText.trim() ? '#3b82f6' : 'rgba(255, 255, 255, 0.05)',
-                color: '#fff',
-                border: 'none',
-                cursor: inputText.trim() ? 'pointer' : 'default',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'background 0.2s'
-              }}
+              style={{ width: 34, height: 34, borderRadius: 10, background: inputText.trim() ? '#3b82f6' : 'rgba(255,255,255,.05)', color: '#fff', border: 'none', cursor: inputText.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             >
-              <Send size={16} />
+              <Send size={15} />
             </button>
           </form>
         </div>
       )}
 
-      {/* Local keyframe animations style */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes widget-slide-in {
-          from {
-            opacity: 0;
-            transform: translateY(20px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-        @keyframes typing-dots {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-4px);
-          }
-        }
-      ` }} />
-    </div>
+      {/* ── FAB shown behind dialog (to allow close) ── */}
+      {isOpen && (
+        <button
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={(e) => { if (!isDragging.current) setIsOpen(false); isDragging.current = false; }}
+          style={{
+            position: 'fixed',
+            right: pos.right,
+            bottom: pos.bottom,
+            zIndex: 9999,
+            width: fabSize,
+            height: fabSize,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg,#ef4444,#dc2626)',
+            color: '#fff',
+            border: 'none',
+            cursor: 'grab',
+            boxShadow: '0 4px 20px rgba(239,68,68,.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            touchAction: 'none',
+            userSelect: 'none',
+          }}
+          aria-label="Đóng hỗ trợ"
+        >
+          <X size={24} />
+        </button>
+      )}
+    </>
   );
 };
 

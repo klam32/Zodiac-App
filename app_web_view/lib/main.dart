@@ -180,9 +180,11 @@ class _WebViewScreenState extends State<WebViewScreen> {
 
       debugPrint('==> 🚀 [CCT] Result URL: $result');
       
-      // Parse token từ redirect URL: zodiacchatbot://?token=xxx
+      // Parse token từ redirect URL: zodiacchatbot://callback?token=xxx
       final uri = Uri.parse(result);
-      final token = uri.queryParameters['token'];
+      // Try queryParameters first (zodiacchatbot://callback?token=xxx)
+      // then fragment params as fallback
+      String? token = uri.queryParameters['token'];
 
       if (token != null && token.isNotEmpty) {
         debugPrint('==> 🔑 [CCT] Đăng nhập thành công! Token: $token');

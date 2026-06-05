@@ -218,9 +218,10 @@ async def google_callback(request: Request, code: str = Query(...), state: str =
     
     # Check if the state is from Flutter / native app
     if state and state.startswith("flutter:"):
-        scheme = state.split(":", 1)[1]
-        target_url = f"{scheme}://?token={token}"
-        logger.info(f"Flutter sign-in detected. Redirecting via Custom URI Scheme: {target_url}")
+        app_scheme = state.split(":", 1)[1]
+        # Use zodiacchatbot://callback?token=... format - needs a host component for Android
+        target_url = f"{app_scheme}://callback?token={token}"
+        logger.info(f"Flutter sign-in detected. Redirecting via URI Scheme: {target_url}")
         return RedirectResponse(url=target_url)
     
     # --- LOGIC DYNAMIC FRONTEND REDIRECT ---

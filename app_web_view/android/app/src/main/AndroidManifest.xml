@@ -39,8 +39,8 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Chỉ để scheme để Chrome dễ bắt link và tự đóng tab hơn -->
-                <data android:scheme="zodiacchatbot" />
+                <!-- zodiacchatbot://callback?token=... -->
+                <data android:scheme="zodiacchatbot" android:host="callback" />
             </intent-filter>
         </activity>
     </application>
