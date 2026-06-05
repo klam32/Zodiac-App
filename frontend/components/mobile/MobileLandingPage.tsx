@@ -43,7 +43,7 @@ const MobileLandingPage: React.FC<MobileLandingPageProps> = ({
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
 
   // Helper to fetch localized config values
-  const getVal = (key: string, defaultVal: string) => {
+  const getVal = (key: string, defaultVal: string = '') => {
     const localizedKey = `${key}_${currentLang}`;
     if (currentLang === 'en') {
       return siteConfig[localizedKey] || defaultVal || siteConfig[key];
