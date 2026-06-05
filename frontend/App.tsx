@@ -24,6 +24,11 @@ import SupportChatWidget from './components/support/SupportChatWidget';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
 import { useTranslation } from 'react-i18next';
 
+// Mobile/App Layout & Components
+import LanguageWelcomeScreen from './components/mobile/LanguageWelcomeScreen';
+import MobileLandingPage from './components/mobile/MobileLandingPage';
+import MobileAppLayout from './layouts/MobileAppLayout';
+
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
 const App: React.FC = () => {
@@ -37,12 +42,31 @@ const App: React.FC = () => {
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   
-  // Detect Native App (Capacitor / Flutter WebView) or just Mobile Screen
-  const isNative = typeof window !== 'undefined' && (
-    ((window as any).Capacitor?.isNativePlatform?.()) ||
-    ((window as any).FlutterBridge !== undefined) ||
-    window.innerWidth <= 768
+  const [isMobileSize, setIsMobileSize] = useState(() => 
+    typeof window !== 'undefined' && (
+      ((window as any).Capacitor?.isNativePlatform?.()) ||
+      ((window as any).FlutterBridge !== undefined) ||
+      window.innerWidth <= 768
+    )
   );
+
+  const [languageSelected, setLanguageSelected] = useState(() => 
+    localStorage.getItem("zodiac_language_selected") === "true"
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileSize(
+        ((window as any).Capacitor?.isNativePlatform?.()) ||
+        ((window as any).FlutterBridge !== undefined) ||
+        window.innerWidth <= 768
+      );
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isNative = isMobileSize;
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
@@ -376,6 +400,16 @@ const App: React.FC = () => {
 
   }
 
+  if (isMobileSize && !languageSelected) {
+    return (
+      <LanguageWelcomeScreen
+        onLanguageSelected={() => setLanguageSelected(true)}
+        logoUrl={siteConfig.logo_url}
+        siteTitle={siteConfig.site_title}
+      />
+    );
+  }
+
   if (currentView === 'contact') {
     return <div key="contact" className="view-transition"><ContactPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} /></div>;
   }
@@ -413,6 +447,90 @@ const App: React.FC = () => {
         />
       </div>
     );
+  }
+
+  // ===== MOBILE/APP EXPERIENCE =====
+  if (isMobileSize) {
+    const isStandaloneSubpage = [
+      'contact', 'terms', 'privacy', 'faq', 'guide', 'details', 'blog_detail', 'admin'
+    ].includes(currentView);
+
+    if (!isStandaloneSubpage) {
+      return (
+        <MobileAppLayout
+          user={user}
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          onLogout={handleLogout}
+          siteConfig={siteConfig}
+          conversations={conversations}
+          setChatHistory={setChatHistory}
+          setCurrentConversationId={setCurrentConversationId}
+          currentConversationId={currentConversationId}
+          createNewChat={createNewChat}
+        >
+          {currentView === 'landing' ? (
+            <MobileLandingPage
+              user={user}
+              onViewChange={setCurrentView}
+              onLoginClick={() => {
+                if (!user) {
+                  setCurrentView('profile');
+                } else {
+                  setCurrentView('chat');
+                }
+              }}
+              siteConfig={siteConfig}
+            />
+          ) : !user ? (
+            <AuthView onSuccess={handleLoginSuccess} />
+          ) : (
+            <>
+              {currentView === 'chat' && (
+                <ChatView
+                  user={user}
+                  onAuthRequired={() => setCurrentView('chat')}
+                  history={chatHistory}
+                  setHistory={setChatHistory}
+                  onBalanceUpdate={updateBalance}
+                  siteConfig={siteConfig}
+                  conversationId={currentConversationId}
+                  setConversationId={setCurrentConversationId}
+                />
+              )}
+              {currentView === 'payment' && (
+                <PaymentView user={user} onBalanceUpdate={updateBalance} />
+              )}
+              {currentView === 'profile' && (
+                <ProfileView user={user} onUpdateUser={setUser} />
+              )}
+              {currentView === 'calendar' && (
+                <CalendarFortune
+                  user={user}
+                  onBalanceUpdate={updateBalance}
+                  conversationId={currentConversationId}
+                  history={chatHistory}
+                />
+              )}
+              {currentView === 'prediction' && (
+                <DailyPrediction
+                  user={user}
+                  onBalanceUpdate={updateBalance}
+                  conversationId={currentConversationId}
+                  history={chatHistory}
+                />
+              )}
+              {currentView === 'rewards' && (
+                <RewardsView
+                  user={user}
+                  onBalanceUpdate={updateBalance}
+                />
+              )}
+            </>
+          )}
+        </MobileAppLayout>
+      );
+    }
   }
 
   // ===== ADMIN: Full-screen standalone layout =====
