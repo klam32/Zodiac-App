@@ -37,38 +37,55 @@ app = FastAPI(
 )
 
 # Cấu hình CORS
-origins = []
-allow_origin_regex = None
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://frontend-omega-pink-49.vercel.app",
+    "https://railcar-frostbite-alumni.ngrok-free.dev",
+]
 
 if settings.ALLOW_ORIGINS:
     import json
     try:
-        # Hỗ trợ định dạng JSON trong .env (ví dụ: ["*"] hoặc ["http://localhost:3000"])
+        # Hỗ trợ định dạng JSON trong .env
         parsed = json.loads(settings.ALLOW_ORIGINS)
         if isinstance(parsed, list):
-            origins = parsed
+            env_origins = parsed
         else:
-            origins = [str(parsed)]
+            env_origins = [str(parsed)]
     except Exception:
         # Hỗ trợ định dạng phân tách bằng dấu phẩy
         if "," in settings.ALLOW_ORIGINS:
-            origins = [o.strip() for o in settings.ALLOW_ORIGINS.split(",")]
+            env_origins = [o.strip() for o in settings.ALLOW_ORIGINS.split(",")]
         else:
-            origins = [settings.ALLOW_ORIGINS.strip()]
+            env_origins = [settings.ALLOW_ORIGINS.strip()]
+            
+    for o in env_origins:
+        o_str = str(o).strip()
+        if o_str and o_str != "*" and o_str not in origins:
+            origins.append(o_str)
 
-# Nếu cấu hình là wildcard "*" hoặc chứa "*", ta dùng allow_origin_regex để tương thích với allow_credentials=True
-if "*" in origins:
-    allow_origin_regex = r"https?://.*"
-    origins = []
+logger.info(f"CORS Allowed Origins: {origins}")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+from fastapi import Request
+
+@app.middleware("http")
+async def log_cors_and_headers(request: Request, call_next):
+    origin = request.headers.get("origin")
+    host = request.headers.get("host")
+    x_forwarded_proto = request.headers.get("x-forwarded-proto")
+    logger.info(f"[CORS LOG] Request URL: {request.url.path} | Method: {request.method} | Origin: {origin} | Host: {host} | Forwarded Proto: {x_forwarded_proto}")
+    response = await call_next(request)
+    return response
 
 
 # Include các router vào ứng dụng chính

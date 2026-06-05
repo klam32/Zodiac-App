@@ -1,5 +1,5 @@
 from chatbot.utils.response_cleaner import clean_text
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from app.security.security import get_current_user
@@ -1594,15 +1594,23 @@ async def delete_chat_history(current_user: dict = Depends(get_current_user)):
 # ============================================
 
 @router.get("/config")
-async def get_site_config():
+async def get_site_config(request: Request):
+    from fastapi import Request
     from app.routers.admin import ALL_SETTINGS_DEFAULTS
     db = UserDB()
     try:
         res = {}
+        scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+        host = request.headers.get("host", "localhost:2643")
+        base_url = f"{scheme}://{host}"
+        
         for key, default in ALL_SETTINGS_DEFAULTS.items():
             if key == "rate_per_1000":
                 continue
-            res[key] = db.get_setting(key, default)
+            val = db.get_setting(key, default)
+            if isinstance(val, str):
+                val = val.replace("http://localhost:2643", base_url).replace("http://127.0.0.1:2643", base_url)
+            res[key] = val
         res["blog_posts"] = db.get_blog_posts()
         return res
     finally:

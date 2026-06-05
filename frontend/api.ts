@@ -4,15 +4,28 @@ import { AuthResponse, ChatResponse, PaymentPackage, PaymentInvoice, PaymentStat
 const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
 
 const getApiRoot = (): string => {
-  // Nếu chạy trên localhost (Dev mode) thì gọi về máy chủ local
+  // Ưu tiên lấy từ biến môi trường Vite (hỗ trợ cả VITE_API_BASE_URL và VITE_API_URL)
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    return envUrl.trim().replace(/\/$/, '');
+  }
+
+  // Nếu là môi trường native mobile (Capacitor), dùng public URL ngrok
+  if (isNative) {
+    return 'https://railcar-frostbite-alumni.ngrok-free.dev';
+  }
+
+  // Fallback cho local development trên web browser
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return 'http://localhost:2643';
   }
-  // Cho tất cả các môi trường khác (Vercel deploy, điện thoại khác mạng, v.v.), gọi thẳng tới ngrok
-  return 'https://new-seals-strive.loca.lt';
+
+  // Mặc định gọi đến domain ngrok public
+  return 'https://railcar-frostbite-alumni.ngrok-free.dev';
 };
 
 export const API_ROOT = getApiRoot().trim();
+console.log('[API ROOT] Resolved API root domain:', API_ROOT);
 const BASE_URL = `${API_ROOT}/api/v1`;
 
 const isApiAssetPath = (path: string): boolean =>
@@ -48,6 +61,7 @@ const getHeaders = () => {
   return {
     'Authorization': token ? `Bearer ${token}` : '',
     'ngrok-skip-browser-warning': '69420', // Bypass ngrok warning page
+    'bypass-tunnel-reminder': 'true',     // Bypass localtunnel warning page
   };
 };
 
@@ -152,10 +166,10 @@ export const api = {
     return response.json();
   },
 
-  async getSiteConfig(): Promise<{ 
-    logo_url: string, 
-    site_title: string, 
-    background_url: string, 
+  async getSiteConfig(): Promise<{
+    logo_url: string,
+    site_title: string,
+    background_url: string,
     favicon_url?: string,
     hero_title?: string,
     hero_subtitle?: string,
@@ -218,7 +232,7 @@ export const api = {
       try {
         const err = await res.json()
         errMsg = err.detail || errMsg
-      } catch {}
+      } catch { }
       throw new Error(errMsg)
     }
 
@@ -563,7 +577,7 @@ export const api = {
   },
 
   async adminResolvePaymentReport(
-    reportId: number, 
+    reportId: number,
     data: { action: 'approve' | 'reject'; token_amount?: number; adjustment_type?: 'add' | 'subtract' | 'none'; admin_note?: string }
   ): Promise<any> {
     const response = await fetch(`${BASE_URL}/admin/payment-reports/${reportId}/resolve`, {
@@ -577,7 +591,7 @@ export const api = {
     }
     return response.json();
   },
-  
+
   // BLOG
   async adminGetBlogPosts(): Promise<{ posts: any[] }> {
     const response = await fetch(`${BASE_URL}/admin/blog`, {

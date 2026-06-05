@@ -1,6 +1,7 @@
 {
   "env": {
-    "VITE_API_URL": "https://railcar-frostbite-alumni.ngrok-free.dev"
+    "VITE_API_URL": "https://railcar-frostbite-alumni.ngrok-free.dev",
+    "VITE_API_BASE_URL": "https://railcar-frostbite-alumni.ngrok-free.dev"
   },
   "rewrites": [
     {

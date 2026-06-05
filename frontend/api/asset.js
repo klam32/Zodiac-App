@@ -2,6 +2,7 @@ const DEFAULT_API_ROOT = 'https://railcar-frostbite-alumni.ngrok-free.dev';
 
 const getApiRoot = () => (
   process.env.API_ROOT ||
+  process.env.VITE_API_BASE_URL ||
   process.env.VITE_API_URL ||
   DEFAULT_API_ROOT
 ).replace(/\/$/, '');

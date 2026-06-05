@@ -62,7 +62,7 @@ class Settings:
 
     SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key")
 
-    ALLOW_ORIGINS = os.getenv("ALLOW_ORIGINS", "*")
+    ALLOW_ORIGINS = os.getenv("ALLOWED_ORIGINS") or os.getenv("ALLOW_ORIGINS") or "*"
 
     # ====================
     # APP INFO

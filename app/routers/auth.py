@@ -220,7 +220,7 @@ async def google_callback(request: Request, code: str = Query(...)):
     logger.info(f"Redirecting back to Frontend: {target_url}")
     return RedirectResponse(url=target_url)
 
-
+# Trigger reload config change
 @router.get("/tokens/history")
 def get_tokens_history(user=Depends(get_current_user)):
     user_db = UserDB()

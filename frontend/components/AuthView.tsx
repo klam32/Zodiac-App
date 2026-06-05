@@ -47,7 +47,17 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onClose }) => {
     }
   };
 
+  const isWebView = typeof window !== 'undefined' && (
+    (window as any).FlutterBridge !== undefined ||
+    document.cookie.includes('viewappmobie=true') ||
+    /wv|WebView|FBAN|FBAV/i.test(navigator.userAgent)
+  );
+
   const handleGoogleLogin = async () => {
+    if (isWebView) {
+      setError("Không thể kết nối Google trong ứng dụng. Vui lòng dùng đăng nhập tài khoản thường hoặc mở bằng trình duyệt.");
+      return;
+    }
     try {
       const url = await api.getGoogleLoginUrl();
       window.location.href = url;
@@ -148,6 +158,11 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onClose }) => {
           </svg>
           {t("auth.continueWithGoogle")}
         </button>
+        {isWebView && (
+          <p className="mt-2 text-center text-xs text-amber-400/80 px-2 leading-relaxed">
+            ⚠️ Không thể kết nối Google trong ứng dụng. Vui lòng dùng đăng nhập tài khoản thường hoặc mở bằng trình duyệt.
+          </p>
+        )}
 
         {/* SWITCH LOGIN */}
         <p className="text-center mt-6 text-sm text-gray-400">
