@@ -841,5 +841,79 @@ export const api = {
       throw new Error(err.detail || 'Nhận thưởng thất bại');
     }
     return response.json();
+  },
+
+  // ---------------- SUPPORT SYSTEM ----------------
+  async getSupportConversation(): Promise<any> {
+    const response = await fetch(`${BASE_URL}/support/conversation`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error('Không thể khởi tạo hội thoại hỗ trợ');
+    return response.json();
+  },
+
+  async getSupportMessages(conversationId: number): Promise<any> {
+    const response = await fetch(`${BASE_URL}/support/conversations/${conversationId}/messages`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error('Không thể tải tin nhắn hỗ trợ');
+    return response.json();
+  },
+
+  async sendSupportMessage(conversationId: number, message: string, language: string = 'vi'): Promise<any> {
+    const response = await fetch(`${BASE_URL}/support/messages`, {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ conversation_id: conversationId, message, language }),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Không thể gửi tin nhắn');
+    }
+    return response.json();
+  },
+
+  async adminGetSupportConversations(): Promise<any> {
+    const response = await fetch(`${BASE_URL}/admin/support/conversations`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error('Không thể lấy danh sách hội thoại hỗ trợ');
+    return response.json();
+  },
+
+  async adminGetSupportMessages(conversationId: number): Promise<any> {
+    const response = await fetch(`${BASE_URL}/admin/support/conversations/${conversationId}/messages`, {
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error('Không thể tải tin nhắn của hội thoại này');
+    return response.json();
+  },
+
+  async adminSendSupportMessage(conversationId: number, message: string): Promise<any> {
+    const response = await fetch(`${BASE_URL}/admin/support/messages`, {
+      method: 'POST',
+      headers: {
+        ...getHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ conversation_id: conversationId, message }),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Không thể gửi tin nhắn admin');
+    }
+    return response.json();
+  },
+
+  async adminResolveSupportConversation(conversationId: number): Promise<any> {
+    const response = await fetch(`${BASE_URL}/admin/support/conversations/${conversationId}/resolve`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+    });
+    if (!response.ok) throw new Error('Không thể đánh dấu hoàn thành hội thoại');
+    return response.json();
   }
 };

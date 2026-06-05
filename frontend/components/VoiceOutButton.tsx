@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 import { Volume2, Square } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface VoiceOutButtonProps {
   text: string;
@@ -16,6 +17,7 @@ export const VoiceOutButton: React.FC<VoiceOutButtonProps> = ({
   className = '',
 }) => {
   const { isSupported, currentSpeakingId, isSpeaking, speak, stop } = useTextToSpeech();
+  const { t } = useTranslation();
 
   if (!isSupported) {
     return null;
@@ -37,10 +39,10 @@ export const VoiceOutButton: React.FC<VoiceOutButtonProps> = ({
   };
 
   const tooltipText = disabled
-    ? 'Vui lòng đợi câu trả lời hoàn tất'
+    ? t('chat.voiceWait', 'Vui lòng đợi câu trả lời hoàn tất')
     : isPlaying
-    ? 'Dừng đọc (Stop)'
-    : 'Đọc thành tiếng (Voice Out)';
+    ? t('chat.voiceStop', 'Dừng đọc (Stop)')
+    : t('chat.voiceStart', 'Đọc thành tiếng (Voice Out)');
 
   return (
     <button

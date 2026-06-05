@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './SubPage.css';
 import { User } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface FAQPageProps {
   onBack: () => void;
@@ -10,9 +11,40 @@ interface FAQPageProps {
 }
 
 const FAQPage: React.FC<FAQPageProps> = ({ onBack, onLogin, onContact, user }) => {
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language?.startsWith('en');
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  const faqs = [
+  const faqs = isEn ? [
+    {
+      q: 'How do I generate a birth chart?',
+      a: 'To generate a birth chart, you need to provide your birth date, time, and location. With this information, the system will automatically generate a detailed chart for you.'
+    },
+    {
+      q: 'What does the Ascendant sign mean?',
+      a: 'The Ascendant (Rising sign) is a vital element of your natal chart. It represents your outer personality, the first impression you make on others, and how you initiate action in life. The Ascendant also determines the house placement distribution, so the more accurate your birth time, the more precise the Ascendant calculation will be.'
+    },
+    {
+      q: 'Can I look up birth charts for free?',
+      a: 'Yes. You can generate birth charts completely free on this site. Every new account is gifted 10 free tokens upon registration. Once birth details are entered, the system calculates and displays the chart in seconds.'
+    },
+    {
+      q: 'What can a birth chart tell me?',
+      a: 'A birth chart helps you understand your personality, behavioral tendencies, strengths, challenges, and growth potential. Through planetary positions and aspects, it provides deep insights into relationships, career, and personal development.'
+    },
+    {
+      q: 'Can I generate a birth chart if I do not know my exact birth time?',
+      a: 'Yes, you can still generate a birth chart without an exact birth time. However, some factors will be less accurate, especially the Ascendant and house distribution. While planetary zodiac signs remain mostly correct, detailed analysis of specific life areas may be limited.'
+    },
+    {
+      q: 'Why are there conflicting details in my birth chart, and how should I analyze them?',
+      a: 'In a birth chart, planets, zodiac signs, and aspects represent different facets of your personality and life. Therefore, they might sometimes produce seemingly contradictory tendencies. This is not a system error, but rather reflects the natural complexity of human nature, where multiple psychological traits coexist and should be understood within the overall context of your chart.'
+    },
+    {
+      q: 'How do I top up tokens?',
+      a: 'You can top up tokens via Momo or Bank Transfer in the Top Up section. Tokens will be credited automatically within 1-3 minutes.'
+    }
+  ] : [
     {
       q: 'Làm thế nào để tạo bản đồ sao?',
       a: 'Để tạo bản đồ sao, bạn cần cung cấp ngày, giờ và nơi sinh. Chỉ với những thông tin này, hệ thống sẽ tự động tạo biểu đồ chi tiết cho bạn.'
@@ -56,14 +88,16 @@ const FAQPage: React.FC<FAQPageProps> = ({ onBack, onLogin, onContact, user }) =
         {user ? (
           <button className="btn btn-outline" onClick={onBack}>Hi, {user.full_name || user.username}</button>
         ) : (
-          <button className="btn btn-primary" onClick={onLogin}>Đăng nhập</button>
+          <button className="btn btn-primary" onClick={onLogin}>{isEn ? 'Login' : 'Đăng nhập'}</button>
         )}
       </header>
 
       <main className="subpage-content">
         <div className="subpage-card">
-          <h1 className="subpage-title">Câu hỏi thường gặp</h1>
-          <p className="subpage-subtitle">Giải đáp mọi thắc mắc của bạn về Chiêm tinh & Hệ thống</p>
+          <h1 className="subpage-title">{isEn ? 'Frequently Asked Questions' : 'Câu hỏi thường gặp'}</h1>
+          <p className="subpage-subtitle">
+            {isEn ? 'Find answers to all your questions about Astrology & the Platform' : 'Giải đáp mọi thắc mắc của bạn về Chiêm tinh & Hệ thống'}
+          </p>
 
           <div className="faq-accordion">
             {faqs.map((faq, index) => (
@@ -88,19 +122,19 @@ const FAQPage: React.FC<FAQPageProps> = ({ onBack, onLogin, onContact, user }) =
           </div>
 
           <div className="faq-footer-cta">
-            <h3>Vẫn còn thắc mắc khác?</h3>
-            <p>Đội ngũ hỗ trợ của chúng tôi luôn sẵn sàng giúp đỡ bạn 24/7.</p>
-            <button className="btn btn-primary" onClick={onContact}>Liên hệ ngay ✦</button>
+            <h3>{isEn ? 'Still have questions?' : 'Vẫn còn thắc mắc khác?'}</h3>
+            <p>{isEn ? 'Our support team is always ready to assist you 24/7.' : 'Đội ngũ hỗ trợ của chúng tôi luôn sẵn sàng giúp đỡ bạn 24/7.'}</p>
+            <button className="btn btn-primary" onClick={onContact}>{isEn ? 'Contact Us Now ✦' : 'Liên hệ ngay ✦'}</button>
           </div>
         </div>
       </main>
 
       <footer className="subpage-footer">
-        <div>© 2026 Zodiac Whisper. Professional Astrology AI System.</div>
+        <div>{isEn ? '© 2026 Zodiac Whisper. All rights reserved.' : '© 2026 Zodiac Whisper. Đã đăng ký bản quyền. BETA'}</div>
         <div style={{ marginTop: '1.5rem' }}>
-          <span onClick={onBack} style={{ cursor: 'pointer', color: '#6e2cf2' }}>Trang chủ</span>
+          <span onClick={onBack} style={{ cursor: 'pointer', color: '#6e2cf2' }}>{isEn ? 'Home' : 'Trang chủ'}</span>
           <span style={{ margin: '0 1rem', opacity: 0.3 }}>|</span>
-          <span onClick={onContact} style={{ cursor: 'pointer', color: '#6e2cf2' }}>Hỗ trợ</span>
+          <span onClick={onContact} style={{ cursor: 'pointer', color: '#6e2cf2' }}>{isEn ? 'Support' : 'Hỗ trợ'}</span>
         </div>
       </footer>
     </div>

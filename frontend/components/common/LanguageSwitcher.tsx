@@ -42,11 +42,11 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = 'dark' })
     <button
       onClick={toggleLanguage}
       className={`language-toggle-btn ${isLight ? 'light' : ''}`}
-      title={currentLang === 'vi' ? 'Tiếng Việt — Click to switch to English' : 'English — Click to switch to Vietnamese'}
+      title={currentLang === 'vi' ? 'Switch to English / Chuyển sang Tiếng Anh' : 'Switch to Vietnamese / Chuyển sang Tiếng Việt'}
       aria-label="Toggle Language"
     >
       <span className="flag-wrapper">
-        {currentLang === 'vi' ? <VietnamFlag /> : <UKFlag />}
+        {currentLang === 'vi' ? <UKFlag /> : <VietnamFlag />}
       </span>
     </button>
   );

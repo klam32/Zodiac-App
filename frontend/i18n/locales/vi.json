@@ -296,7 +296,24 @@
       "contactSupport": "💬 Liên hệ hỗ trợ",
       "copyright": "© 2026 Zodiac Whisper - Một sản phẩm của Tiên Phong Tech.",
       "address": "Địa chỉ",
-      "workingTime": "Thời gian"
+      "workingTime": "Thời gian",
+      "payment": "Chính sách thanh toán"
+    },
+    "contact": {
+      "btn_send": "Gửi ngay",
+      "error_fill": "Vui lòng điền đầy đủ thông tin.",
+      "field_message": "Lời nhắn",
+      "field_name": "Họ tên",
+      "intro_desc": "Hãy liên hệ qua các cổng thông tin chính thức của chúng tôi hoặc gửi trực tiếp lời nhắn bên cạnh để nhận giải đáp.",
+      "label": "KẾT NỐI VỚI VŨ TRỤ",
+      "message_title": "Gửi lời nhắn",
+      "placeholder_email": "Nhập địa chỉ email...",
+      "placeholder_message": "Bạn cần hỗ trợ gì từ Zodiac Whisper...",
+      "placeholder_name": "Nhập họ tên của bạn...",
+      "sending": "Đang gửi...",
+      "subtitle": "Đội ngũ hỗ trợ của Zodiac Whisper luôn sẵn sàng lắng nghe và đồng hành cùng bạn.",
+      "success_send": "Lời nhắn của bạn đã được gửi thành công!",
+      "title": "Liên hệ với chúng tôi"
     }
   },
   "auth": {
@@ -425,7 +442,10 @@
       "noChartData": "Không có dữ liệu biểu đồ",
       "detailedAnalysis": "Phân tích chi tiết",
       "basisInfo": "Phân tích dựa trên vị trí tương đối giữa hai bản đồ sao"
-    }
+    },
+    "voiceStart": "Đọc thành tiếng (Voice Out)",
+    "voiceStop": "Dừng đọc (Stop)",
+    "voiceWait": "Vui lòng đợi câu trả lời hoàn tất"
   },
   "daily": {
     "title": "Vận Trình Ngày Mới",
@@ -510,7 +530,15 @@
       "health": "Sức khỏe & Bình an",
       "wealth": "Tài lộc & Kinh doanh"
     },
-    "weekdays": ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]
+    "weekdays": [
+      "CN",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6",
+      "T7"
+    ]
   },
   "payment": {
     "title": "Nạp Tokens",
@@ -539,7 +567,67 @@
     "contactAdmin": "Liên hệ Admin",
     "rewardTitle": "Nhận Token Miễn Phí",
     "dailyCheckIn": "Điểm danh hàng ngày",
-    "claimTokens": "Nhận Token"
+    "claimTokens": "Nhận Token",
+    "checkButton": "Kiểm tra thanh toán",
+    "checkError": "Lỗi khi kiểm tra thanh toán",
+    "checkingTransaction": "Đang kiểm tra giao dịch...",
+    "invoiceError": "Lỗi tạo hóa đơn",
+    "loadingPackages": "Đang tải danh sách gói nạp...",
+    "memo": "Nội dung:",
+    "noExpiry": "Không giới hạn thời gian",
+    "orderId": "Mã đơn hàng:",
+    "paymentMotto": "\"Kết nối năng lượng, khơi nguồn vận mệnh\"",
+    "paymentTitle": "Thanh Toán",
+    "priorityResponse": "Tốc độ trả lời ưu tiên",
+    "report": {
+      "account": "Tài khoản",
+      "balance": "Số dư",
+      "cancelButton": "Hủy Bỏ",
+      "deleteImage": "Xóa ảnh",
+      "descriptionLabel": "Mô tả chi tiết sự cố",
+      "descriptionLengthNote": "Tối thiểu 10 ký tự. Đã nhập: {{count}} ký tự.",
+      "descriptionMinLength": "Mô tả sự cố phải dài ít nhất 10 ký tự.",
+      "descriptionPlaceholder": "Vui lòng cung cấp thêm thông tin chi tiết (thời gian, hình thức thanh toán, số tiền chuyển khoản...)",
+      "descriptionRequired": "Vui lòng nhập mô tả chi tiết.",
+      "dragDropHint": "Hỗ trợ JPG, PNG, WEBP. Tối đa 5MB.",
+      "dragDropText": "Bấm để chọn ảnh hoặc kéo thả ảnh vào đây",
+      "evidenceSubtitle": "Bạn có thể tải lên ảnh chụp màn hình giao dịch hoặc biên lai thanh toán.",
+      "invalidSize": "Ảnh minh chứng không được vượt quá 5MB.",
+      "invalidType": "Chỉ hỗ trợ ảnh JPG, PNG hoặc WEBP.",
+      "invoiceCode": "Mã hóa đơn (nếu có)",
+      "invoicePlaceholder": "Ví dụ: #71",
+      "issueTitle": "Tiêu đề sự cố",
+      "issueType": "Loại sự cố / Yêu cầu",
+      "modalSubtitle": "Cung cấp chi tiết sự cố để ban quản trị xử lý nhanh nhất.",
+      "modalTitle": "Báo cáo sự cố & thanh toán",
+      "sendError": "Không thể gửi báo cáo",
+      "sendSuccess": "Gửi báo cáo thành công! Ban quản trị sẽ kiểm tra sớm và gửi email phản hồi.",
+      "sending": "Đang gửi báo cáo sự cố...",
+      "submitButton": "Gửi Báo Cáo",
+      "submittingText": "Đang gửi...",
+      "titlePlaceholder": "Ví dụ: Đã chuyển khoản nhưng chưa nhận token...",
+      "titleRequired": "Vui lòng nhập tiêu đề sự cố.",
+      "transactionCode": "Mã giao dịch / Transaction",
+      "transactionPlaceholder": "Ví dụ: FT260529...",
+      "typeDuplicate": "Thanh toán bị trùng lặp giao dịch",
+      "typeFailed": "Thanh toán thất bại / Lỗi cổng thanh toán",
+      "typeNotReceived": "Đã thanh toán nhưng chưa nhận token",
+      "typeOther": "Vấn đề khác",
+      "typeWrongAmount": "Sai số token nhận được",
+      "uploadError": "Lỗi tải lên ảnh minh chứng.",
+      "uploadSuccess": "Tải lên ảnh minh chứng thành công!",
+      "uploadedStatus": "Đã tải lên",
+      "uploadingStatus": "Đang tải lên...",
+      "waitUpload": "Vui lòng đợi ảnh minh chứng tải lên xong."
+    },
+    "reportIssue": "Bạn gặp sự cố nạp tiền? Nhấn vào đây để báo cáo",
+    "successMsg": "Chúc mừng! Bạn đã nạp thành công {{tokens}} tokens!",
+    "successStatus": "Nạp thành công {{tokens}} tokens!",
+    "summonEnergy": "Triệu Hồi Năng Lượng",
+    "summonSubtitle": "Tiếp thêm năng lượng vũ trụ để tiếp tục hành trình khai mở những bí mật của vạn mệnh.",
+    "tokenReceived": "Hệ thống đã ghi nhận token!",
+    "topUpVietQR": "Nạp ngay qua VietQR",
+    "transactionNotFound": "Giao dịch chưa được tìm thấy hoặc đang xử lý."
   },
   "profile": {
     "title": "Hồ Sơ",
@@ -861,7 +949,7 @@
       "videoSubtitleVi": "Mô tả ngắn dưới tiêu đề (Tiếng Việt)",
       "videoSubtitleEn": "Mô tả ngắn dưới tiêu đề (English)",
       "videoUrl": "Đường dẫn Video (.mp4)",
-      "uploadVideo": "Tải Video .mp4 lên (tối đa 100MB)",
+      "uploadVideo": "Tải Video .mp4 lên (tối đa 500MB)",
       "videoPreview": "Xem trước video:",
       "videoPoster": "Ảnh bìa video (Video Poster Image)",
       "uploadPoster": "Tải ảnh bìa lên",
@@ -925,6 +1013,127 @@
       "aiErrorFallbackEn": "Câu trả lời mặc định khi AI lỗi (English)",
       "expandedPreview": "✨ Chế độ xem trước mở rộng (Realtime)",
       "unsavedChangesShort": "Có thay đổi chưa lưu"
+    },
+    "adjustBalance": "Điều chỉnh số dư",
+    "chatInputPlaceholder": "Nhập câu trả lời...",
+    "chatResolvedDisabled": "Hội thoại đã hoàn thành. Hãy mở lại để chat tiếp.",
+    "imageUrlPlaceholder": "URL ảnh...",
+    "liveSupport": "Hỗ trợ trực tuyến",
+    "loginLogsTitle": "Lịch sử đăng nhập",
+    "markResolved": "Đánh dấu đã xử lý",
+    "noConversations": "Không có hội thoại nào",
+    "noLogins": "Chưa có lượt đăng nhập",
+    "noMessages": "Chưa có tin nhắn",
+    "receive": "Nhận",
+    "resolvedSuccess": "Đã đánh dấu giải quyết!",
+    "searchUser": "Tìm người dùng...",
+    "selectConvToStart": "Chọn một hội thoại bên trái để bắt đầu hỗ trợ",
+    "send": "Gửi",
+    "spend": "Chi",
+    "statusAll": "Tất cả",
+    "statusOpen": "Chưa xử lý",
+    "statusResolved": "Đã xử lý",
+    "tokenHistoryTitle": "Lịch sử biến động token",
+    "updatePackageSuccess": "Cập nhật gói nạp thành công."
+  },
+  "astrology": {
+    "ascendant": "Cung Mọc",
+    "moon": "Mặt Trăng",
+    "sun": "Mặt Trời"
+  },
+  "support": {
+    "adminOnline": "Admin trực tuyến",
+    "aiMode": "Trợ lý AI hỗ trợ",
+    "placeholder": "Nhập câu hỏi tại đây...",
+    "resolved": "Cuộc trò chuyện đã được đánh dấu giải quyết bởi admin.",
+    "sendFailed": "Gửi tin thất bại",
+    "title": "Hỗ trợ trực tuyến",
+    "welcome": "Xin chào! Hãy gửi câu hỏi nếu bạn gặp bất kỳ sự cố nào. Admin hoặc Trợ lý AI sẽ hỗ trợ bạn ngay."
+  },
+  "quests": {
+    "checkin": {
+      "title": "Điểm danh hôm nay",
+      "description": "Mở đầu ngày mới và nhận năng lượng vũ trụ.",
+      "actionLabel": "Điểm danh",
+      "label": "Điểm danh",
+      "value": "+1 token"
+    },
+    "cosmic-chest": {
+      "title": "Mở rương vũ trụ",
+      "description": "Mở rương bí ẩn để nhận phần thưởng ngẫu nhiên.",
+      "actionLabel": "Mở rương"
+    },
+    "chest": {
+      "label": "Rương vũ trụ",
+      "value": "Quà ngẫu nhiên"
+    },
+    "completed": "Đã hoàn thành",
+    "inProgress": "Đang thực hiện",
+    "notStarted": "Chưa thực hiện",
+    "unlocked": "Đã mở khóa",
+    "locked": "Đang khóa",
+    "chestInfo": "Rương chỉ mở một lần mỗi ngày. Phần thưởng sẽ hiện sau khi bạn bấm mở.",
+    "openingChest": "Đang mở rương",
+    "openChest": "Mở rương",
+    "progressTracking": "Theo dõi tiến độ",
+    "progressPercent": "{{percent}}% hoàn thành",
+    "remainingCount": "{{count}} nhiệm vụ còn lại",
+    "rewardUnlocked": "Phần thưởng đã mở khóa",
+    "openCosmicChest": "Mở Rương Vũ Trụ",
+    "chestDesc": "Một phần thưởng bí ẩn từ vũ trụ đang chờ bạn.",
+    "chestOpeningProgress": "Rương đang rung lên, tinh quang bắt đầu tràn ra...",
+    "received": "Đã nhận",
+    "chestOpenCondition": "Chỉ mở một lần trong ngày. Nhiệm vụ sẽ hoàn thành sau khi rương hé mở và phần thưởng được ghi nhận.",
+    "opening": "Đang mở",
+    "openNow": "Mở ngay",
+    "pleaseLogin": "Vui lòng đăng nhập để nhận token nhiệm vụ.",
+    "dailyQuestTitle": "Nhiệm vụ hằng ngày: {{title}}",
+    "successToast": "{{title}}: +{{amount}} token",
+    "failToast": "Không thể hoàn thành nhiệm vụ lúc này.",
+    "checkinSuccessText": "Đã điểm danh và nhận năng lượng vũ trụ.",
+    "loginToReceive": "Đăng nhập để nhận nhiệm vụ",
+    "loginDesc": "Hành trình nhiệm vụ hằng ngày cần tài khoản để cộng token và lưu tiến độ riêng của bạn.",
+    "journeyTitle": "Hành Trình Vũ Trụ Hôm Nay",
+    "journeyDesc": "Điểm danh và mở rương vũ trụ mỗi ngày để tích lũy token cùng phần thưởng bí ẩn.",
+    "progressToday": "Tiến độ hôm nay",
+    "listTitle": "Danh sách nhiệm vụ",
+    "dailyCount": "2 nhiệm vụ hằng ngày",
+    "dailyReset": "Reset mỗi ngày mới",
+    "milestones": {
+      "checkin": "Điểm danh: +1 token",
+      "chest": "Rương vũ trụ: Quà ngẫu nhiên"
+    }
+  },
+  "rewards": {
+    "token-1": {
+      "name": "+1 Token",
+      "description": "Một đồng năng lượng vũ trụ được cộng vào ví của bạn.",
+      "message": "Bạn đã nhận được +1 Token!"
+    },
+    "token-2": {
+      "name": "+2 Tokens",
+      "description": "Một luồng tinh quang hiếm đã nhân đôi phần thưởng nhiệm vụ.",
+      "message": "Bạn đã nhận được +2 Tokens!"
+    },
+    "fortune-ticket": {
+      "name": "Vé quay vận mệnh",
+      "description": "Một tấm vé tượng trưng cho may mắn và cơ hội mới.",
+      "message": "Bạn đã nhận được Vé quay vận mệnh!"
+    },
+    "lucky-message": {
+      "name": "Thông điệp may mắn",
+      "description": "Một lời nhắn nhỏ từ bầu trời: hãy tin vào nhịp đi của bạn.",
+      "message": "Bạn đã nhận được Thông điệp may mắn!"
+    },
+    "mystery-gift": {
+      "name": "Quà bí ẩn",
+      "description": "Một món quà huyền bí đang chờ được giải mã trong hành trình tiếp theo.",
+      "message": "Bạn đã nhận được Quà bí ẩn!"
+    },
+    "badge-fragment": {
+      "name": "Mảnh huy hiệu Cosmic",
+      "description": "Một mảnh ánh sáng nhỏ ghép vào huy hiệu vũ trụ của bạn.",
+      "message": "Bạn đã nhận được mảnh huy hiệu Cosmic!"
     }
   }
 }

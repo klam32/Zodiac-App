@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 load_dotenv()
 
-from app.routers import auth, file_upload, payment, chatbot, admin, calendar, prediction, format_text, rewards
+from app.routers import auth, file_upload, payment, chatbot, admin, calendar, prediction, format_text, rewards, support
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from fastapi.staticfiles import StaticFiles
@@ -83,6 +83,8 @@ app.include_router(calendar.router, prefix=api_prefix)
 app.include_router(prediction.router, prefix=api_prefix)
 app.include_router(format_text.router, prefix=api_prefix)
 app.include_router(rewards.router, prefix=api_prefix)
+app.include_router(support.router, prefix=api_prefix)
+app.add_api_websocket_route("/ws/support", support.websocket_support)
 
 
 @app.get(f"{api_prefix}/")

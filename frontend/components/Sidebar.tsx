@@ -98,9 +98,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       // 🔥 KIỂM TRA TIÊU ĐỀ ĐỂ CHỌN VIEW PHÙ HỢP
       const conv = conversations?.find(c => c.id === convId)
-      if (conv?.title?.startsWith("[Lịch Cát Tường]")) {
+      const ttl = conv?.title || ""
+      if (ttl.startsWith("[Lịch Cát Tường]") || ttl.startsWith("[Auspicious Calendar]")) {
         onViewChange("calendar")
-      } else if (conv?.title?.startsWith("[Vận Trình Ngày]")) {
+      } else if (ttl.startsWith("[Vận Trình Ngày]") || ttl.startsWith("[Daily Forecast]") || ttl.startsWith("[Daily Cosmic Quest]")) {
         onViewChange("prediction")
       } else {
         onViewChange("chat")
@@ -325,8 +326,23 @@ const Sidebar: React.FC<SidebarProps> = ({
                           {!!conv.is_pinned && <Pin size={12} className="text-yellow-500 fill-yellow-500" />}
                           <span className="truncate">
                             {(() => {
-                              const ttl = (conv.title || "").trim().toLowerCase()
-                              if (!ttl || ttl === "mới" || ttl === "new") return t('chat.newChatDefault')
+                              const ttl = (conv.title || "").trim()
+                              const ttlLower = ttl.toLowerCase()
+                              if (!ttl || ttlLower === "mới" || ttlLower === "new" || ttlLower === "đoạn chat mới" || ttlLower === "new chat") {
+                                return t('chat.newChatDefault')
+                              }
+                              if (ttl.startsWith("[Lịch Cát Tường]")) {
+                                return ttl.replace("[Lịch Cát Tường]", `[${t('chat.calendar')}]`)
+                              }
+                              if (ttl.startsWith("[Auspicious Calendar]")) {
+                                return ttl.replace("[Auspicious Calendar]", `[${t('chat.calendar')}]`)
+                              }
+                              if (ttl.startsWith("[Vận Trình Ngày]")) {
+                                return ttl.replace("[Vận Trình Ngày]", `[${t('chat.daily')}]`)
+                              }
+                              if (ttl.startsWith("[Daily Forecast]")) {
+                                return ttl.replace("[Daily Forecast]", `[${t('chat.daily')}]`)
+                              }
                               return conv.title
                             })()}
                           </span>

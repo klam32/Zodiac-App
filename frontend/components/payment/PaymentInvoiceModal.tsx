@@ -2,6 +2,7 @@ import React from 'react';
 import { PaymentInvoice } from '../../types';
 import { api } from '../../api';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 interface PaymentInvoiceModalProps {
   invoice: PaymentInvoice;
@@ -16,19 +17,21 @@ const PaymentInvoiceModal: React.FC<PaymentInvoiceModalProps> = ({
   onSuccess,
   statusMsg 
 }) => {
+  const { t } = useTranslation();
+
   const handleCheck = async () => {
-    const loadingToast = toast.loading('Đang kiểm tra giao dịch...');
+    const loadingToast = toast.loading(t('payment.checkingTransaction', 'Đang kiểm tra giao dịch...'));
     try {
       const res = await api.getPaymentStatus(invoice.payment_id);
       if (res.status === 'completed') {
-        toast.success('Hệ thống đã ghi nhận token!');
+        toast.success(t('payment.tokenReceived', 'Hệ thống đã ghi nhận token!'));
         // Trigger reload in parent
         onSuccess(res.tokens);
       } else {
-        toast.error('Giao dịch chưa được tìm thấy hoặc đang xử lý.', { icon: '⏳' });
+        toast.error(t('payment.transactionNotFound', 'Giao dịch chưa được tìm thấy hoặc đang xử lý.'), { icon: '⏳' });
       }
     } catch (err) {
-      toast.error('Lỗi khi kiểm tra thanh toán');
+      toast.error(t('payment.checkError', 'Lỗi khi kiểm tra thanh toán'));
     } finally {
       toast.dismiss(loadingToast);
     }
@@ -40,14 +43,17 @@ const PaymentInvoiceModal: React.FC<PaymentInvoiceModalProps> = ({
         <button 
             onClick={onClose}
             className="absolute top-4 right-4 text-stone-400 hover:text-stone-600"
+            title={t('common.close', 'Đóng')}
         >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>
         
-        <h3 className="text-xl font-bold text-amber-900 mb-1">Thanh Toán</h3>
-        <p className="text-sm text-black/60 mb-6 italic tracking-wide">"Kết nối năng lượng, khơi nguồn vận mệnh"</p>
+        <h3 className="text-xl font-bold text-amber-900 mb-1">{t('payment.paymentTitle', 'Thanh Toán')}</h3>
+        <p className="text-sm text-black/60 mb-6 italic tracking-wide">
+          {t('payment.paymentMotto', '"Kết nối năng lượng, khơi nguồn vận mệnh"')}
+        </p>
         
         <div className="bg-stone-50 p-4 rounded-2xl mb-6 inline-block shadow-inner">
             <img src={invoice.qr_url} alt="QR Code" className="w-full h-auto rounded-lg" />
@@ -55,15 +61,15 @@ const PaymentInvoiceModal: React.FC<PaymentInvoiceModalProps> = ({
 
         <div className="text-left space-y-2 mb-6 text-sm">
             <div className="flex justify-between">
-                <span className="text-stone-400">Mã đơn hàng:</span>
+                <span className="text-stone-400">{t('payment.orderId', 'Mã đơn hàng:')}</span>
                 <span className="font-bold text-stone-800">#{invoice.payment_id}</span>
             </div>
             <div className="flex justify-between">
-                <span className="text-stone-400">Số tiền:</span>
+                <span className="text-stone-400">{t('payment.amount', 'Số tiền:')}</span>
                 <span className="font-bold text-stone-800">{invoice.amount_vnd.toLocaleString('vi-VN')} VNĐ</span>
             </div>
             <div className="flex justify-between">
-                <span className="text-stone-400">Nội dung:</span>
+                <span className="text-stone-400">{t('payment.memo', 'Nội dung:')}</span>
                 <span className="font-bold text-amber-600">{invoice.note}</span>
             </div>
         </div>
@@ -73,7 +79,7 @@ const PaymentInvoiceModal: React.FC<PaymentInvoiceModalProps> = ({
             onClick={handleCheck}
             className="w-full bg-amber-600 text-white font-bold py-3 rounded-xl hover:bg-amber-700 transition-all shadow-lg active:scale-95"
           >
-            Kiểm tra thanh toán
+            {t('payment.checkButton', 'Kiểm tra thanh toán')}
           </button>
         </div>
         

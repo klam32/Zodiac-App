@@ -15,6 +15,7 @@ import ChatLogsTab from './admin/ChatLogsTab';
 import SettingsTab from './admin/SettingsTab';
 import LoginsTab from './admin/LoginsTab';
 import ReportsTab from './admin/ReportsTab';
+import SupportTab from './admin/SupportTab';
 import ChatLogDetailModal from './admin/ChatLogDetailModal';
 import UserDetailModal from './admin/UserDetailModal';
 import BlogTab from './admin/BlogTab';
@@ -41,6 +42,7 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
     logins: t('admin.loginLogs'),
     reports: t('admin.reports'),
     blog: t('admin.blogs'),
+    support: t('admin.liveSupport', 'Hỗ trợ trực tuyến'),
   };
 
   const [activePage, setActivePage] = useState<AdminPage>(
@@ -317,6 +319,8 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
         return <LoginsTab logins={data.logins} />;
       case 'reports':
         return <ReportsTab reports={data.reports} onRefresh={fetchData} />;
+      case 'support':
+        return <SupportTab adminUser={user} />;
       case 'blog':
         return <BlogTab onShowToast={(msg, type) => type === 'success' ? toast.success(msg) : toast.error(msg)} />;
       default:

@@ -323,6 +323,35 @@ class BaseDB:
         )
         """)
 
+        # support_conversations
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS support_conversations (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT,
+            status VARCHAR(20) DEFAULT 'open',
+            assigned_admin_id INT NULL,
+            last_message TEXT NULL,
+            last_message_at TIMESTAMP NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """)
+
+        # support_messages
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS support_messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            conversation_id INT,
+            sender_type VARCHAR(20),
+            sender_id INT NULL,
+            message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            is_read TINYINT(1) DEFAULT 0,
+            FOREIGN KEY (conversation_id) REFERENCES support_conversations(id) ON DELETE CASCADE
+        )
+        """)
+
 
     def reconnect(self):
         """Ensure the database connection is alive."""
@@ -1088,6 +1117,72 @@ class UserDB(BaseDB):
                 (email,)
             )
             return self.cursor.fetchone()
+
+    # ---------------- SUPPORT SYSTEM ----------------
+
+    def get_or_create_support_conversation(self, user_id):
+        self.cursor.execute(
+            "SELECT * FROM support_conversations WHERE user_id = %s AND status = 'open'",
+            (user_id,)
+        )
+        row = self.cursor.fetchone()
+        if row:
+            return dict(row)
+        
+        # Create new conversation
+        self.cursor.execute(
+            "INSERT INTO support_conversations (user_id, status) VALUES (%s, 'open')",
+            (user_id,)
+        )
+        conv_id = self.cursor.lastrowid
+        self.cursor.execute(
+            "SELECT * FROM support_conversations WHERE id = %s",
+            (conv_id,)
+        )
+        new_row = self.cursor.fetchone()
+        return dict(new_row) if new_row else None
+
+    def get_support_messages(self, conversation_id):
+        self.cursor.execute(
+            "SELECT * FROM support_messages WHERE conversation_id = %s ORDER BY created_at ASC",
+            (conversation_id,)
+        )
+        return self.cursor.fetchall()
+
+    def add_support_message(self, conversation_id, sender_type, sender_id, message):
+        self.cursor.execute(
+            """INSERT INTO support_messages (conversation_id, sender_type, sender_id, message)
+               VALUES (%s, %s, %s, %s)""",
+            (conversation_id, sender_type, sender_id, message)
+        )
+        message_id = self.cursor.lastrowid
+        
+        # Update last_message and last_message_at in conversation
+        import datetime
+        now = datetime.datetime.now()
+        self.cursor.execute(
+            """UPDATE support_conversations
+               SET last_message = %s, last_message_at = %s, status = 'open'
+               WHERE id = %s""",
+            (message, now, conversation_id)
+        )
+        return message_id
+
+    def get_all_support_conversations(self):
+        query = """
+            SELECT sc.*, u.username, u.email, u.full_name, u.picture_url
+            FROM support_conversations sc
+            JOIN users u ON sc.user_id = u.id
+            ORDER BY sc.last_message_at DESC, sc.created_at DESC
+        """
+        self.cursor.execute(query)
+        return self.cursor.fetchall()
+
+    def resolve_support_conversation(self, conversation_id):
+        self.cursor.execute(
+            "UPDATE support_conversations SET status = 'resolved' WHERE id = %s",
+            (conversation_id,)
+        )
 
 class ChatHistoryDB(BaseDB):
     def add_message(self, conversation_id, role, content, tokens_charged=0):

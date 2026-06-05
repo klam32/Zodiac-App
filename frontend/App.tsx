@@ -1,4 +1,3 @@
-//APP.TSX
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, View, ChatMessage, Conversation } from './types';
 import { api, getImageUrl } from './api';
@@ -21,12 +20,15 @@ import GuidePage from './components/GuidePage';
 import PrivacyPage from './components/PrivacyPage';
 import BlogDetailPage from './components/BlogDetailPage';
 import AstrologyDetailsPage from './components/AstrologyDetailsPage';
+import SupportChatWidget from './components/support/SupportChatWidget';
 import { useTextToSpeech } from './hooks/useTextToSpeech';
+import { useTranslation } from 'react-i18next';
 
 import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
 const App: React.FC = () => {
   const { stop } = useTextToSpeech();
+  const { t } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -366,8 +368,8 @@ const App: React.FC = () => {
 
     return (
 
-      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0f]">
-        Loading...
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0f] text-stone-400 font-serif italic">
+        {t('common.loading', 'Đang tải...')}
       </div>
 
     )
@@ -453,6 +455,7 @@ const App: React.FC = () => {
             }
           }}
         />
+        {user && <SupportChatWidget user={user} />}
       </div>
     );
   }
@@ -569,6 +572,9 @@ const App: React.FC = () => {
         />
       )}
 
+      {user && (
+        <SupportChatWidget user={user} />
+      )}
     </div>
   );
 

@@ -19,6 +19,7 @@ import {
 import toast from 'react-hot-toast';
 import { api } from '../api';
 import { User } from '../types';
+import { useTranslation } from 'react-i18next';
 
 type QuestId = 'checkin' | 'cosmic-chest';
 type QuestAccent = 'purple' | 'fuchsia' | 'blue' | 'amber' | 'emerald';
@@ -285,6 +286,7 @@ interface QuestCardProps {
 }
 
 const QuestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, onAction }) => {
+  const { t } = useTranslation();
   const QuestIcon = quest.icon;
   const completed = status === 'completed';
   const inProgress = status === 'in-progress';
@@ -318,13 +320,13 @@ const QuestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, onAction
             ) : (
               <CircleDot className="w-3.5 h-3.5" />
             )}
-            {completed ? 'Đã hoàn thành' : inProgress ? 'Đang thực hiện' : 'Chưa thực hiện'}
+            {completed ? t('quests.completed', 'Đã hoàn thành') : inProgress ? t('quests.inProgress', 'Đang thực hiện') : t('quests.notStarted', 'Chưa thực hiện')}
           </span>
         </div>
 
         <div>
-          <h3 className="text-lg font-black text-white leading-snug">{quest.title}</h3>
-          <p className="text-sm text-gray-400 leading-relaxed mt-2">{quest.description}</p>
+          <h3 className="text-lg font-black text-white leading-snug">{t(`quests.${quest.id}.title`, quest.title)}</h3>
+          <p className="text-sm text-gray-400 leading-relaxed mt-2">{t(`quests.${quest.id}.description`, quest.description)}</p>
         </div>
       </div>
 
@@ -341,15 +343,15 @@ const QuestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, onAction
         {inProgress ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Đang thực hiện
+            {t('quests.inProgress', 'Đang thực hiện')}
           </>
         ) : completed ? (
           <>
             <CheckCircle2 className="w-4 h-4" />
-            Đã hoàn thành
+            {t('quests.completed', 'Đã hoàn thành')}
           </>
         ) : (
-          quest.actionLabel
+          t(`quests.${quest.id}.actionLabel`, quest.actionLabel)
         )}
       </button>
     </article>
@@ -439,6 +441,7 @@ const CosmicChestVisual: React.FC<CosmicChestVisualProps> = ({ stage, size = 'mo
 };
 
 const CosmicChestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, onAction }) => {
+  const { t } = useTranslation();
   const completed = status === 'completed';
   const inProgress = status === 'in-progress';
 
@@ -460,8 +463,8 @@ const CosmicChestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, on
               <Sparkles className="h-3.5 w-3.5" />
               Mystic Reward
             </div>
-            <h3 className="text-xl font-black text-white">{quest.title}</h3>
-            <p className="mt-2 max-w-sm text-sm leading-relaxed text-purple-100/70">{quest.description}</p>
+            <h3 className="text-xl font-black text-white">{t(`quests.${quest.id}.title`, quest.title)}</h3>
+            <p className="mt-2 max-w-sm text-sm leading-relaxed text-purple-100/70">{t(`quests.${quest.id}.description`, quest.description)}</p>
           </div>
           <span
             className={`shrink-0 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-black ${
@@ -479,13 +482,13 @@ const CosmicChestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, on
             ) : (
               <Lock className="h-3.5 w-3.5" />
             )}
-            {completed ? 'Đã hoàn thành' : inProgress ? 'Đang thực hiện' : 'Chưa thực hiện'}
+            {completed ? t('quests.completed', 'Đã hoàn thành') : inProgress ? t('quests.inProgress', 'Đang thực hiện') : t('quests.notStarted', 'Chưa thực hiện')}
           </span>
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-3 rounded-2xl border border-white/10 bg-black/15 p-3">
           <div className="text-xs font-bold leading-relaxed text-gray-300">
-            Rương chỉ mở một lần mỗi ngày. Phần thưởng sẽ hiện sau khi bạn bấm mở.
+            {t('quests.chestInfo', 'Rương chỉ mở một lần mỗi ngày. Phần thưởng sẽ hiện sau khi bạn bấm mở.')}
           </div>
           <div className="justify-self-end pr-1">
             <CosmicChestVisual stage={completed ? 'opened' : inProgress ? 'opening' : 'closed'} size="card" />
@@ -505,17 +508,17 @@ const CosmicChestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, on
           {inProgress ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Đang mở rương
+              {t('quests.openingChest', 'Đang mở rương')}
             </>
           ) : completed ? (
             <>
               <CheckCircle2 className="h-4 w-4" />
-              Đã hoàn thành
+              {t('quests.completed', 'Đã hoàn thành')}
             </>
           ) : (
             <>
               <Gift className="h-4 w-4" />
-              Mở rương
+              {t('quests.openChest', 'Mở rương')}
             </>
           )}
         </button>
@@ -525,13 +528,15 @@ const CosmicChestCard: React.FC<QuestCardProps> = ({ quest, status, disabled, on
 };
 
 interface RewardMilestoneProps {
-  title: string;
+  translationKey: string;
+  defaultTitle: string;
   unlocked: boolean;
   icon: React.ElementType;
   tone: string;
 }
 
-const RewardMilestone: React.FC<RewardMilestoneProps> = ({ title, unlocked, icon: Icon, tone }) => {
+const RewardMilestone: React.FC<RewardMilestoneProps> = ({ translationKey, defaultTitle, unlocked, icon: Icon, tone }) => {
+  const { t } = useTranslation();
   return (
     <div
       className={`bg-[#0d0d16]/65 backdrop-blur-xl rounded-[1.5rem] border p-5 transition-all duration-300 ${
@@ -545,7 +550,7 @@ const RewardMilestone: React.FC<RewardMilestoneProps> = ({ title, unlocked, icon
           {unlocked ? <Icon className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-black text-white leading-snug">{title}</p>
+          <p className="text-sm font-black text-white leading-snug">{t(translationKey, defaultTitle)}</p>
           <span
             className={`inline-flex items-center gap-1.5 text-[11px] font-black mt-2 rounded-full border px-2.5 py-1 ${
               unlocked
@@ -554,7 +559,7 @@ const RewardMilestone: React.FC<RewardMilestoneProps> = ({ title, unlocked, icon
             }`}
           >
             {unlocked ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-            {unlocked ? 'Đã mở khóa' : 'Đang khóa'}
+            {unlocked ? t('quests.unlocked', 'Đã mở khóa') : t('quests.locked', 'Đang khóa')}
           </span>
         </div>
       </div>
@@ -569,16 +574,17 @@ interface ProgressPanelProps {
 }
 
 const ProgressPanel: React.FC<ProgressPanelProps> = ({ completedCount, progressPercent, questState }) => {
+  const { t } = useTranslation();
   const panelMilestones = [
-    { label: 'Điểm danh', value: '+1 token', unlocked: questState.milestones.checkinRewardUnlocked },
-    { label: 'Rương vũ trụ', value: 'Quà ngẫu nhiên', unlocked: questState.milestones.chestRewardUnlocked },
+    { label: t('quests.checkin.label', 'Điểm danh'), value: t('quests.checkin.value', '+1 token'), unlocked: questState.milestones.checkinRewardUnlocked },
+    { label: t('quests.chest.label', 'Rương vũ trụ'), value: t('quests.chest.value', 'Quà ngẫu nhiên'), unlocked: questState.milestones.chestRewardUnlocked },
   ];
 
   return (
     <aside className="lg:sticky lg:top-6 bg-[#0d0d16]/70 backdrop-blur-xl border border-purple-500/20 rounded-[2rem] p-5 md:p-6 shadow-[0_0_38px_rgba(124,58,237,0.14)]">
       <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/10">
         <div>
-          <p className="text-xs uppercase font-black tracking-[0.18em] text-purple-300">Theo dõi tiến độ</p>
+          <p className="text-xs uppercase font-black tracking-[0.18em] text-purple-300">{t('quests.progressTracking', 'Theo dõi tiến độ')}</p>
           <h2 className="text-2xl font-black text-white mt-1">{completedCount}/{QUESTS.length}</h2>
         </div>
         <Trophy className="w-9 h-9 text-amber-300" />
@@ -586,8 +592,8 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ completedCount, progressP
 
       <div className="mt-5 space-y-3">
         <div className="flex justify-between text-xs font-bold text-gray-400">
-          <span>{progressPercent}% hoàn thành</span>
-          <span>{QUESTS.length - completedCount} nhiệm vụ còn lại</span>
+          <span>{t('quests.progressPercent', '{{percent}}% hoàn thành', { percent: progressPercent })}</span>
+          <span>{t('quests.remainingCount', '{{count}} nhiệm vụ còn lại', { count: QUESTS.length - completedCount })}</span>
         </div>
         <div className="h-3 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
           <div
@@ -617,7 +623,7 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ completedCount, progressP
               }`}
             >
               {milestone.unlocked ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-              {milestone.unlocked ? 'Đã mở khóa' : 'Đang khóa'}
+              {milestone.unlocked ? t('quests.unlocked', 'Đã mở khóa') : t('quests.locked', 'Đang khóa')}
             </span>
           </div>
         ))}
@@ -639,10 +645,10 @@ const ProgressPanel: React.FC<ProgressPanelProps> = ({ completedCount, progressP
               </div>
               <div className="min-w-0">
                 <span className={completed ? 'text-gray-200 font-bold' : 'text-gray-500'}>
-                  {quest.title}
+                  {t(`quests.${quest.id}.title`, quest.title)}
                 </span>
                 <p className={`text-[10px] font-black ${completed ? 'text-green-300' : 'text-gray-600'}`}>
-                  {completed ? 'Đã hoàn thành' : 'Chưa thực hiện'}
+                  {completed ? t('quests.completed', 'Đã hoàn thành') : t('quests.notStarted', 'Chưa thực hiện')}
                 </p>
               </div>
             </div>
@@ -658,6 +664,7 @@ interface RewardRevealProps {
 }
 
 const RewardReveal: React.FC<RewardRevealProps> = ({ reward }) => {
+  const { t } = useTranslation();
   const RewardIcon = reward.icon;
 
   return (
@@ -665,11 +672,11 @@ const RewardReveal: React.FC<RewardRevealProps> = ({ reward }) => {
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-[0_0_30px_rgba(251,191,36,0.18)]">
         <RewardIcon className={`h-8 w-8 ${reward.tone}`} />
       </div>
-      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">Phần thưởng đã mở khóa</p>
-      <h4 className="mt-2 text-2xl font-black text-white">{reward.name}</h4>
-      <p className="mt-2 text-sm leading-relaxed text-gray-300">{reward.description}</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-200">{t('quests.rewardUnlocked', 'Phần thưởng đã mở khóa')}</p>
+      <h4 className="mt-2 text-2xl font-black text-white">{t(`rewards.${reward.id}.name`, reward.name)}</h4>
+      <p className="mt-2 text-sm leading-relaxed text-gray-300">{t(`rewards.${reward.id}.description`, reward.description)}</p>
       <div className="mt-5 rounded-2xl border border-amber-200/20 bg-black/25 px-4 py-3 text-sm font-black text-amber-100">
-        {reward.message}
+        {t(`rewards.${reward.id}.message`, reward.message)}
       </div>
     </div>
   );
@@ -683,6 +690,7 @@ interface CosmicChestModalProps {
 }
 
 const CosmicChestModal: React.FC<CosmicChestModalProps> = ({ modal, busy, onOpen, onClose }) => {
+  const { t } = useTranslation();
   const opened = modal.stage === 'opened' && modal.reward;
   const opening = modal.stage === 'opening';
 
@@ -698,7 +706,7 @@ const CosmicChestModal: React.FC<CosmicChestModalProps> = ({ modal, busy, onOpen
           onClick={onClose}
           disabled={busy}
           className="absolute right-4 top-4 z-20 rounded-full border border-white/10 bg-white/5 p-2 text-gray-400 transition hover:text-white disabled:opacity-50"
-          aria-label="Đóng"
+          aria-label={t('common.close', 'Đóng')}
         >
           <X className="h-4 w-4" />
         </button>
@@ -709,9 +717,9 @@ const CosmicChestModal: React.FC<CosmicChestModalProps> = ({ modal, busy, onOpen
             Cosmic Reward
           </div>
 
-          <h3 className="text-2xl font-black text-white md:text-3xl">Mở Rương Vũ Trụ</h3>
+          <h3 className="text-2xl font-black text-white md:text-3xl">{t('quests.openCosmicChest', 'Mở Rương Vũ Trụ')}</h3>
           <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-purple-100/75">
-            Một phần thưởng bí ẩn từ vũ trụ đang chờ bạn.
+            {t('quests.chestDesc', 'Một phần thưởng bí ẩn từ vũ trụ đang chờ bạn.')}
           </p>
 
           <div className="relative mt-1">
@@ -723,7 +731,7 @@ const CosmicChestModal: React.FC<CosmicChestModalProps> = ({ modal, busy, onOpen
 
           {opening && (
             <div className="mx-auto -mt-1 mb-4 max-w-sm rounded-2xl border border-blue-300/20 bg-blue-500/10 px-4 py-3 text-sm font-bold text-blue-100">
-              Rương đang rung lên, tinh quang bắt đầu tràn ra...
+              {t('quests.chestOpeningProgress', 'Rương đang rung lên, tinh quang bắt đầu tràn ra...')}
             </div>
           )}
 
@@ -735,13 +743,13 @@ const CosmicChestModal: React.FC<CosmicChestModalProps> = ({ modal, busy, onOpen
                 onClick={onClose}
                 className="w-full rounded-2xl bg-gradient-to-r from-amber-400 via-fuchsia-500 to-blue-500 px-5 py-4 text-sm font-black text-white shadow-[0_0_30px_rgba(217,70,239,0.22)] transition hover:brightness-110"
               >
-                Đã nhận
+                {t('quests.received', 'Đã nhận')}
               </button>
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
               <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-xs font-bold leading-relaxed text-gray-300">
-                Chỉ mở một lần trong ngày. Nhiệm vụ sẽ hoàn thành sau khi rương hé mở và phần thưởng được ghi nhận.
+                {t('quests.chestOpenCondition', 'Chỉ mở một lần trong ngày. Nhiệm vụ sẽ hoàn thành sau khi rương hé mở và phần thưởng được ghi nhận.')}
               </div>
               <button
                 type="button"
@@ -752,10 +760,10 @@ const CosmicChestModal: React.FC<CosmicChestModalProps> = ({ modal, busy, onOpen
                 {opening ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang mở
+                    {t('quests.opening', 'Đang mở')}
                   </span>
                 ) : (
-                  'Mở ngay'
+                  t('quests.openNow', 'Mở ngay')
                 )}
               </button>
             </div>
@@ -767,6 +775,7 @@ const CosmicChestModal: React.FC<CosmicChestModalProps> = ({ modal, busy, onOpen
 };
 
 const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpdate }) => {
+  const { t } = useTranslation();
   const [todayKey, setTodayKey] = useState(() => getVietnamDateKey());
   const storageKey = useMemo(
     () => `dailyCosmicQuest:${user?.id ?? 'guest'}`,
@@ -809,7 +818,7 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
   const completeQuest = async (questId: QuestId, resultText: string, tokenAmount = 1) => {
     const quest = getQuestById(questId);
     if (!user || !quest) {
-      toast.error('Vui lòng đăng nhập để nhận token nhiệm vụ.');
+      toast.error(t('quests.pleaseLogin', 'Vui lòng đăng nhập để nhận token nhiệm vụ.'));
       return false;
     }
 
@@ -820,7 +829,7 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
     try {
       const res = await api.createTokenTransaction(
         tokenAmount,
-        `Nhiệm vụ hằng ngày: ${quest.title}`,
+        t('quests.dailyQuestTitle', 'Nhiệm vụ hằng ngày: {{title}}', { title: t(`quests.${quest.id}.title`, quest.title) }),
         'in'
       );
 
@@ -835,7 +844,7 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
       saveQuestState(storageKey, nextState);
       onBalanceUpdate(Number(res.new_balance));
 
-      toast.success(`${quest.title}: +${tokenAmount} token`);
+      toast.success(t('quests.successToast', '{{title}}: +{{amount}} token', { title: t(`quests.${quest.id}.title`, quest.title), amount: tokenAmount }));
       if (unlockedMessages.length > 0) {
         const latestMessage = unlockedMessages[unlockedMessages.length - 1];
         setAnnouncement(latestMessage);
@@ -844,7 +853,7 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
 
       return true;
     } catch (err: any) {
-      toast.error(err.message || 'Không thể hoàn thành nhiệm vụ lúc này.');
+      toast.error(err.message || t('quests.failToast', 'Không thể hoàn thành nhiệm vụ lúc này.'));
       return false;
     } finally {
       setCompletingQuestId(null);
@@ -857,7 +866,7 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
 
     if (quest.id === 'checkin') {
       setActiveQuestId(quest.id);
-      await completeQuest(quest.id, 'Đã điểm danh và nhận năng lượng vũ trụ.');
+      await completeQuest(quest.id, t('quests.checkinSuccessText', 'Đã điểm danh và nhận năng lượng vũ trụ.'));
       return;
     }
 
@@ -882,7 +891,7 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
 
     window.setTimeout(async () => {
       const reward = pickRandom(CHEST_REWARDS);
-      const completed = await completeQuest('cosmic-chest', reward.message, reward.tokenAmount);
+      const completed = await completeQuest('cosmic-chest', t(`rewards.${reward.id}.message`, reward.message), reward.tokenAmount);
       setQuestModal(completed ? { type: 'chest', stage: 'opened', reward } : { type: 'chest', stage: 'closed' });
     }, 1500);
   };
@@ -899,13 +908,15 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
 
   const rewardCards = [
     {
-      title: 'Điểm danh: +1 token',
+      translationKey: 'quests.milestones.checkin',
+      defaultTitle: 'Điểm danh: +1 token',
       icon: Coins,
       unlocked: questState.milestones.checkinRewardUnlocked,
       tone: 'text-amber-300',
     },
     {
-      title: 'Rương vũ trụ: Quà ngẫu nhiên',
+      translationKey: 'quests.milestones.chest',
+      defaultTitle: 'Rương vũ trụ: Quà ngẫu nhiên',
       icon: Gift,
       unlocked: questState.milestones.chestRewardUnlocked,
       tone: 'text-purple-300',
@@ -917,9 +928,9 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
       <div className="min-h-[calc(100vh-120px)] flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-[#0d0d16]/70 backdrop-blur-xl border border-purple-500/20 rounded-[2rem] p-8 text-center shadow-[0_0_40px_rgba(124,58,237,0.18)]">
           <Lock className="w-10 h-10 text-purple-300 mx-auto mb-4" />
-          <h2 className="text-xl font-black text-white mb-2">Đăng nhập để nhận nhiệm vụ</h2>
+          <h2 className="text-xl font-black text-white mb-2">{t('quests.loginToReceive', 'Đăng nhập để nhận nhiệm vụ')}</h2>
           <p className="text-sm text-gray-400 leading-relaxed">
-            Hành trình nhiệm vụ hằng ngày cần tài khoản để cộng token và lưu tiến độ riêng của bạn.
+            {t('quests.loginDesc', 'Hành trình nhiệm vụ hằng ngày cần tài khoản để cộng token và lưu tiến độ riêng của bạn.')}
           </p>
         </div>
       </div>
@@ -937,15 +948,15 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
               </div>
               <div className="min-w-0">
                 <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-                  Hành Trình Vũ Trụ Hôm Nay
+                  {t('quests.journeyTitle', 'Hành Trình Vũ Trụ Hôm Nay')}
                 </h1>
                 <p className="text-sm md:text-base text-purple-100/75 mt-2 leading-relaxed max-w-3xl">
-                  Điểm danh và mở rương vũ trụ mỗi ngày để tích lũy token cùng phần thưởng bí ẩn.
+                  {t('quests.journeyDesc', 'Điểm danh và mở rương vũ trụ mỗi ngày để tích lũy token cùng phần thưởng bí ẩn.')}
                 </p>
               </div>
             </div>
             <div className="shrink-0 bg-black/25 border border-white/10 rounded-2xl px-4 py-3">
-              <p className="text-[11px] uppercase font-black tracking-wider text-gray-400">Tiến độ hôm nay</p>
+              <p className="text-[11px] uppercase font-black tracking-wider text-gray-400">{t('quests.progressToday', 'Tiến độ hôm nay')}</p>
               <p className="text-2xl font-black text-white mt-1">{completedCount}/{QUESTS.length}</p>
             </div>
           </div>
@@ -954,8 +965,9 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {rewardCards.map((reward) => (
             <RewardMilestone
-              key={reward.title}
-              title={reward.title}
+              key={reward.translationKey}
+              translationKey={reward.translationKey}
+              defaultTitle={reward.defaultTitle}
               unlocked={reward.unlocked}
               icon={reward.icon}
               tone={reward.tone}
@@ -973,12 +985,12 @@ const DailyCosmicQuest: React.FC<DailyCosmicQuestProps> = ({ user, onBalanceUpda
           <section className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase font-black tracking-[0.18em] text-purple-300">Danh sách nhiệm vụ</p>
-                <h2 className="text-xl font-black text-white mt-1">2 nhiệm vụ hằng ngày</h2>
+                <p className="text-xs uppercase font-black tracking-[0.18em] text-purple-300">{t('quests.listTitle', 'Danh sách nhiệm vụ')}</p>
+                <h2 className="text-xl font-black text-white mt-1">{t('quests.dailyCount', '2 nhiệm vụ hằng ngày')}</h2>
               </div>
               <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-gray-400 bg-white/5 border border-white/10 rounded-full px-3 py-2">
                 <CircleDot className="w-4 h-4 text-blue-300" />
-                Reset mỗi ngày mới
+                {t('quests.dailyReset', 'Reset mỗi ngày mới')}
               </div>
             </div>
 

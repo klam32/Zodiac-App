@@ -672,7 +672,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                     <div style={{ flex: 1 }}>
                                         <input className="admin-input" name="guide_video_url" value={data.guide_video_url || ''} onChange={onChange} placeholder="Ví dụ: /videos/guide.mp4 hoặc link URL..." />
                                         <label className="admin-btn admin-btn-sm admin-btn-outline" style={{ marginTop: 8, cursor: 'pointer', display: 'inline-flex' }}>
-                                            {t('admin.settings.uploadVideo', 'Tải Video .mp4 lên (tối đa 100MB)')}
+                                            {t('admin.settings.uploadVideo', 'Tải Video .mp4 lên (tối đa 500MB)')}
                                             <input type="file" style={{ display: 'none' }} accept="video/mp4" onChange={e => { const f = e.target.files?.[0]; if (f) onUploadVideoGuide(f); }} />
                                         </label>
                                     </div>

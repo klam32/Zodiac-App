@@ -1,6 +1,6 @@
 import React from 'react';
 import './SubPage.css';
-import { View } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface GuidePageProps {
   onBack: () => void;
@@ -9,7 +9,31 @@ interface GuidePageProps {
 }
 
 const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
-  const steps = [
+  const { t, i18n } = useTranslation();
+  const isEn = i18n.language?.startsWith('en');
+
+  const steps = isEn ? [
+    {
+      title: 'Register & Get Free Tokens',
+      description: 'Simply register a new account and receive 10 free tokens immediately to experience all Zodiac Whisper AI features.'
+    },
+    {
+      title: 'Choose Astrology Feature',
+      description: 'On the main dashboard, choose your feature of interest: birth chart generation, love compatibility check, dream interpretation, or daily forecasts.'
+    },
+    {
+      title: 'Enter Personal Details',
+      description: 'Provide your precise birth date, time, and location. This is the crucial data used by AI to compute planetary coordinates at the exact moment of your birth.'
+    },
+    {
+      title: 'Receive Insights from AI Expert',
+      description: 'The system analyzes astronomical positions to deliver highly detailed, easy-to-understand, and hyper-personalized interpretations.'
+    },
+    {
+      title: 'Save & Share',
+      description: 'All reports are automatically saved under History. You can review them anytime or download a PDF to share with friends.'
+    }
+  ] : [
     {
       title: 'Đăng ký & Nhận Token miễn phí',
       description: 'Chỉ cần đăng ký tài khoản mới, bạn sẽ nhận ngay 10 Token miễn phí để trải nghiệm toàn bộ tính năng của hệ thống Zodiac Whisper AI.'
@@ -38,13 +62,13 @@ const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
         <div className="subpage-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
           <span>✨</span> Zodiac Whisper
         </div>
-        <button className="btn btn-primary" onClick={onLogin}>Đăng nhập</button>
+        <button className="btn btn-primary" onClick={onLogin}>{isEn ? 'Login' : 'Đăng nhập'}</button>
       </header>
 
       <main className="subpage-content">
         <div className="subpage-card">
-          <h1 className="subpage-title">Hướng dẫn sử dụng toàn hệ thống</h1>
-          <p className="subpage-subtitle">Khám phá hành trình thấu hiểu bản thân cùng Zodiac Whisper</p>
+          <h1 className="subpage-title">{isEn ? 'User Guide & System Navigation' : 'Hướng dẫn sử dụng toàn hệ thống'}</h1>
+          <p className="subpage-subtitle">{isEn ? 'Explore the journey of self-discovery with Zodiac Whisper' : 'Khám phá hành trình thấu hiểu bản thân cùng Zodiac Whisper'}</p>
 
           <div style={{ marginTop: '4rem' }}>
             {steps.map((step, index) => (
@@ -59,18 +83,21 @@ const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '4rem', padding: '3rem', background: '#f8faff', borderRadius: '24px' }}>
-            <h2 style={{ marginBottom: '1.5rem' }}>Bắt đầu hành trình của bạn ngay bây giờ</h2>
+            <h2 style={{ marginBottom: '1.5rem' }}>{isEn ? 'Start your journey right now' : 'Bắt đầu hành trình của bạn ngay bây giờ'}</h2>
             <button className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.1rem' }} onClick={onStart}>
-              Khám phá ngay
+              {isEn ? 'Explore Now' : 'Khám phá ngay'}
             </button>
           </div>
         </div>
       </main>
 
       <footer className="subpage-footer">
-        <div>© 2026 Zodiac Whisper. Đã đăng ký bản quyền. <span style={{ color: '#e53e3e', fontWeight: 'bold' }}>BETA</span></div>
+        <div>
+          {isEn ? '© 2026 Zodiac Whisper. All rights reserved. ' : '© 2026 Zodiac Whisper. Đã đăng ký bản quyền. '}
+          <span style={{ color: '#e53e3e', fontWeight: 'bold' }}>BETA</span>
+        </div>
         <div style={{ marginTop: '1rem' }}>
-          <span onClick={onBack} style={{ cursor: 'pointer', color: '#6e2cf2' }}>Trang chủ</span>
+          <span onClick={onBack} style={{ cursor: 'pointer', color: '#6e2cf2' }}>{isEn ? 'Home' : 'Trang chủ'}</span>
         </div>
       </footer>
     </div>

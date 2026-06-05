@@ -58,8 +58,8 @@ async def upload_video(
             detail="Chỉ hỗ trợ video định dạng .mp4"
         )
 
-    # Validate size (100MB = 100 * 1024 * 1024 bytes)
-    MAX_SIZE = 100 * 1024 * 1024
+    # Validate size (500MB = 500 * 1024 * 1024 bytes)
+    MAX_SIZE = 500 * 1024 * 1024
     try:
         file.file.seek(0, 2)
         size = file.file.tell()
@@ -70,7 +70,7 @@ async def upload_video(
     if size > MAX_SIZE:
         raise HTTPException(
             status_code=400,
-            detail="Video vượt quá dung lượng cho phép (tối đa 100MB)"
+            detail="Video vượt quá dung lượng cho phép (tối đa 500MB)"
         )
 
     try:

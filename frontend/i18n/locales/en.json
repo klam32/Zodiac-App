@@ -296,7 +296,24 @@
       "contactSupport": "💬 Contact Support",
       "copyright": "© 2026 Zodiac Whisper - A product of Tien Phong Tech.",
       "address": "Address",
-      "workingTime": "Hours"
+      "workingTime": "Hours",
+      "payment": "Payment Policy"
+    },
+    "contact": {
+      "btn_send": "Send Now",
+      "error_fill": "Please fill in all fields.",
+      "field_message": "Message",
+      "field_name": "Full Name",
+      "intro_desc": "Please contact us via our official channels or send a message directly to receive support.",
+      "label": "CONNECT WITH THE COSMOS",
+      "message_title": "Send a Message",
+      "placeholder_email": "Enter email address...",
+      "placeholder_message": "How can Zodiac Whisper help you...",
+      "placeholder_name": "Enter your full name...",
+      "sending": "Sending...",
+      "subtitle": "Zodiac Whisper support team is always ready to listen and accompany you.",
+      "success_send": "Your message has been sent successfully!",
+      "title": "Contact Us"
     }
   },
   "auth": {
@@ -425,7 +442,10 @@
       "noChartData": "No chart data available",
       "detailedAnalysis": "Detailed Analysis",
       "basisInfo": "Analysis based on the synastry of both birth charts"
-    }
+    },
+    "voiceStart": "Text to Speech (Voice Out)",
+    "voiceStop": "Stop Reading",
+    "voiceWait": "Please wait for AI response to complete"
   },
   "daily": {
     "title": "Daily Forecast",
@@ -510,7 +530,15 @@
       "health": "Health & Wellbeing",
       "wealth": "Wealth & Business"
     },
-    "weekdays": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    "weekdays": [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat"
+    ]
   },
   "payment": {
     "title": "Top Up Tokens",
@@ -539,7 +567,67 @@
     "contactAdmin": "Contact Admin",
     "rewardTitle": "Get Free Tokens",
     "dailyCheckIn": "Daily Check-In",
-    "claimTokens": "Claim Tokens"
+    "claimTokens": "Claim Tokens",
+    "checkButton": "Check Payment Status",
+    "checkError": "Error checking payment status",
+    "checkingTransaction": "Checking transaction status...",
+    "invoiceError": "Error creating invoice",
+    "loadingPackages": "Loading payment packages...",
+    "memo": "Memo:",
+    "noExpiry": "No Expiry",
+    "orderId": "Order ID:",
+    "paymentMotto": "\"Connecting energy, unlocking destiny\"",
+    "paymentTitle": "Payment",
+    "priorityResponse": "Priority Response",
+    "report": {
+      "account": "Account",
+      "balance": "Balance",
+      "cancelButton": "Cancel",
+      "deleteImage": "Delete Image",
+      "descriptionLabel": "Detailed Description of the Issue",
+      "descriptionLengthNote": "Min 10 characters. Entered: {{count}} characters.",
+      "descriptionMinLength": "Description must be at least 10 characters.",
+      "descriptionPlaceholder": "Please provide more details (time, payment method, transfer amount...)",
+      "descriptionRequired": "Please enter a detailed description.",
+      "dragDropHint": "Supports JPG, PNG, WEBP. Max 5MB.",
+      "dragDropText": "Click to select or drag and drop image here",
+      "evidenceSubtitle": "You can upload a transaction screenshot or receipt.",
+      "invalidSize": "Proof image must not exceed 5MB.",
+      "invalidType": "Only JPG, PNG or WEBP images are supported.",
+      "invoiceCode": "Invoice Code (if any)",
+      "invoicePlaceholder": "E.g. #71",
+      "issueTitle": "Issue Title",
+      "issueType": "Issue Type",
+      "modalSubtitle": "Provide issue details for fastest assistance.",
+      "modalTitle": "Issue & Payment Report",
+      "sendError": "Failed to send report",
+      "sendSuccess": "Report sent successfully! The admin team will review it soon and reply by email.",
+      "sending": "Sending issue report...",
+      "submitButton": "Submit Report",
+      "submittingText": "Submitting...",
+      "titlePlaceholder": "E.g. Paid but tokens not received...",
+      "titleRequired": "Please enter an issue title.",
+      "transactionCode": "Transaction Code",
+      "transactionPlaceholder": "E.g. FT260529...",
+      "typeDuplicate": "Duplicate transaction",
+      "typeFailed": "Payment failed / gateway error",
+      "typeNotReceived": "Paid but tokens not received",
+      "typeOther": "Other issue",
+      "typeWrongAmount": "Wrong token amount received",
+      "uploadError": "Error uploading proof image.",
+      "uploadSuccess": "Proof image uploaded successfully!",
+      "uploadedStatus": "Uploaded",
+      "uploadingStatus": "Uploading...",
+      "waitUpload": "Please wait for proof image upload to complete."
+    },
+    "reportIssue": "Encountered a top-up issue? Click here to report",
+    "successMsg": "Congratulations! You have successfully topped up {{tokens}} tokens!",
+    "successStatus": "Successfully topped up {{tokens}} tokens!",
+    "summonEnergy": "Summon Energy",
+    "summonSubtitle": "Recharge your cosmic energy to continue unlocking your destiny.",
+    "tokenReceived": "System has recorded tokens!",
+    "topUpVietQR": "Recharge via VietQR",
+    "transactionNotFound": "Transaction not found or processing."
   },
   "profile": {
     "title": "Profile",
@@ -861,7 +949,7 @@
       "videoSubtitleVi": "Video Subtitle (Vietnamese)",
       "videoSubtitleEn": "Video Subtitle (English)",
       "videoUrl": "Video Link (.mp4)",
-      "uploadVideo": "Upload Video .mp4 (max 100MB)",
+      "uploadVideo": "Upload Video .mp4 (max 500MB)",
       "videoPreview": "Video Preview:",
       "videoPoster": "Video Poster Image",
       "uploadPoster": "Upload Poster Image",
@@ -925,6 +1013,127 @@
       "aiErrorFallbackEn": "Default response on AI error (English)",
       "expandedPreview": "✨ Expanded Preview (Realtime)",
       "unsavedChangesShort": "Unsaved changes exist"
+    },
+    "adjustBalance": "Adjust balance",
+    "chatInputPlaceholder": "Type your message...",
+    "chatResolvedDisabled": "Conversation resolved. Reopen to chat.",
+    "imageUrlPlaceholder": "Image URL...",
+    "liveSupport": "Live Support",
+    "loginLogsTitle": "Login History",
+    "markResolved": "Mark as Resolved",
+    "noConversations": "No conversations",
+    "noLogins": "No logins yet",
+    "noMessages": "No messages yet",
+    "receive": "Receive",
+    "resolvedSuccess": "Marked as resolved successfully!",
+    "searchUser": "Search user...",
+    "selectConvToStart": "Select a conversation from the left to start support",
+    "send": "Send",
+    "spend": "Spend",
+    "statusAll": "All",
+    "statusOpen": "Open",
+    "statusResolved": "Resolved",
+    "tokenHistoryTitle": "Token Transaction History",
+    "updatePackageSuccess": "Package updated successfully."
+  },
+  "astrology": {
+    "ascendant": "Ascendant",
+    "moon": "Moon",
+    "sun": "Sun"
+  },
+  "support": {
+    "adminOnline": "Admin Online",
+    "aiMode": "AI Assistant Mode",
+    "placeholder": "Type your message...",
+    "resolved": "The conversation was marked as resolved by admin.",
+    "sendFailed": "Failed to send message",
+    "title": "Live Support",
+    "welcome": "Hello! Please send a message if you encounter any issue. Admin or AI Assistant will support you shortly."
+  },
+  "quests": {
+    "checkin": {
+      "title": "Daily Check-in",
+      "description": "Start the day and receive cosmic energy.",
+      "actionLabel": "Check-in",
+      "label": "Check-in",
+      "value": "+1 token"
+    },
+    "cosmic-chest": {
+      "title": "Open Cosmic Chest",
+      "description": "Open the mystery chest to receive a random reward.",
+      "actionLabel": "Open Chest"
+    },
+    "chest": {
+      "label": "Cosmic Chest",
+      "value": "Random Gift"
+    },
+    "completed": "Completed",
+    "inProgress": "In Progress",
+    "notStarted": "Not Started",
+    "unlocked": "Unlocked",
+    "locked": "Locked",
+    "chestInfo": "The chest can only be opened once a day. The reward will appear after you open it.",
+    "openingChest": "Opening chest...",
+    "openChest": "Open Chest",
+    "progressTracking": "Progress Tracking",
+    "progressPercent": "{{percent}}% completed",
+    "remainingCount": "{{count}} quests remaining",
+    "rewardUnlocked": "Reward Unlocked",
+    "openCosmicChest": "Open Cosmic Chest",
+    "chestDesc": "A mysterious reward from the cosmos awaits you.",
+    "chestOpeningProgress": "The chest is shaking, cosmic light is pouring out...",
+    "received": "Received",
+    "chestOpenCondition": "Can only be opened once per day. The quest is completed once the chest opens and the reward is claimed.",
+    "opening": "Opening...",
+    "openNow": "Open Now",
+    "pleaseLogin": "Please log in to receive quest tokens.",
+    "dailyQuestTitle": "Daily Quest: {{title}}",
+    "successToast": "{{title}}: +{{amount}} token",
+    "failToast": "Unable to complete quest at this time.",
+    "checkinSuccessText": "Successfully checked in and received cosmic energy.",
+    "loginToReceive": "Log in to Receive Quests",
+    "loginDesc": "Daily quests require an account to credit tokens and save your progress.",
+    "journeyTitle": "Cosmic Journey Today",
+    "journeyDesc": "Check-in and open the cosmic chest daily to accumulate tokens and earn mystery rewards.",
+    "progressToday": "Today's Progress",
+    "listTitle": "Quest List",
+    "dailyCount": "2 Daily Quests",
+    "dailyReset": "Resets daily",
+    "milestones": {
+      "checkin": "Check-in: +1 token",
+      "chest": "Cosmic Chest: Random Gift"
+    }
+  },
+  "rewards": {
+    "token-1": {
+      "name": "+1 Token",
+      "description": "A cosmic energy coin added to your wallet.",
+      "message": "You received +1 Token!"
+    },
+    "token-2": {
+      "name": "+2 Tokens",
+      "description": "A rare starlight surge doubled your quest reward.",
+      "message": "You received +2 Tokens!"
+    },
+    "fortune-ticket": {
+      "name": "Fortune Spin Ticket",
+      "description": "A ticket representing luck and new opportunities.",
+      "message": "You received a Fortune Spin Ticket!"
+    },
+    "lucky-message": {
+      "name": "Lucky Message",
+      "description": "A small note from the sky: believe in your pace.",
+      "message": "You received a Lucky Message!"
+    },
+    "mystery-gift": {
+      "name": "Mystery Gift",
+      "description": "A mystical gift waiting to be decoded in your journey.",
+      "message": "You received a Mystery Gift!"
+    },
+    "badge-fragment": {
+      "name": "Cosmic Badge Fragment",
+      "description": "A small fragment of light added to your cosmic badge.",
+      "message": "You received a Cosmic Badge Fragment!"
     }
   }
 }

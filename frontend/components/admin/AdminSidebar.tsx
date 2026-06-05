@@ -4,7 +4,7 @@ import { getImageUrl } from '../../api';
 import { User } from '../../types';
 import UserAvatar from '../common/UserAvatar';
 
-export type AdminPage = 'dashboard' | 'users' | 'packages' | 'history' | 'payments' | 'invoices' | 'chatlogs' | 'settings' | 'logins' | 'reports' | 'blog';
+export type AdminPage = 'dashboard' | 'users' | 'packages' | 'history' | 'payments' | 'invoices' | 'chatlogs' | 'settings' | 'logins' | 'reports' | 'blog' | 'support';
 
 interface AdminSidebarProps {
   activePage: AdminPage;
@@ -54,6 +54,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     { id: 'packages', label: t('admin.packages', 'Gói nạp'), icon: 'package', group: t('admin.groupManage', 'QUẢN LÝ') },
     { id: 'history', label: t('admin.payments', 'Lịch sử tiền'), icon: 'history', group: t('admin.groupManage', 'QUẢN LÝ') },
     { id: 'payments', label: t('admin.invoices', 'Hóa đơn'), icon: 'invoice', group: t('admin.groupManage', 'QUẢN LÝ') },
+    { id: 'support', label: t('admin.liveSupport', 'Hỗ trợ trực tuyến'), icon: 'chat', group: t('admin.groupManage', 'QUẢN LÝ') },
     { id: 'chatlogs', label: t('admin.chatLogs', 'Nhật ký chat'), icon: 'chat', group: t('admin.groupSystem', 'HỆ THỐNG') },
     { id: 'settings', label: t('admin.settingsMenu', 'Cấu hình'), icon: 'settings', group: t('admin.groupSystem', 'HỆ THỐNG') },
     { id: 'logins', label: t('admin.loginLogs', 'Đăng nhập'), icon: 'login', group: t('admin.groupSystem', 'HỆ THỐNG') },

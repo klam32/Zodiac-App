@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, User } from '../types';
 import { Sparkles, DollarSign, Shield, Star, User as UserIcon, Calendar, Zap, Gift } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface BottomNavProps {
   user: User | null;
@@ -11,15 +12,16 @@ interface BottomNavProps {
 }
 
 const BottomNav: React.FC<BottomNavProps> = ({ user, currentView, onViewChange, setCurrentConversationId, setChatHistory }) => {
+  const { t } = useTranslation();
   const navItems = [
-    { id: 'landing' as View, label: 'Trang Chủ', icon: Star },
-    { id: 'chat' as View, label: 'Chiêm Tinh', icon: Sparkles },
-    { id: 'calendar' as View, label: 'Lịch Tường', icon: Calendar },
-    { id: 'prediction' as View, label: 'Vận Trình', icon: Zap },
-    { id: 'rewards' as View, label: 'Nhận Token', icon: Gift },
-    { id: 'payment' as View, label: 'Nạp Điểm', icon: DollarSign },
-    ...(user?.is_admin ? [{ id: 'admin' as View, label: 'Admin', icon: Shield }] : []),
-    { id: 'profile' as View, label: 'Hồ Sơ', icon: UserIcon }
+    { id: 'landing' as View, label: t('chat.home', 'Trang Chủ'), icon: Star },
+    { id: 'chat' as View, label: t('chat.astrology', 'Chiêm Tinh'), icon: Sparkles },
+    { id: 'calendar' as View, label: t('chat.calendar', 'Lịch Tường'), icon: Calendar },
+    { id: 'prediction' as View, label: t('chat.daily', 'Vận Trình'), icon: Zap },
+    { id: 'rewards' as View, label: t('chat.buyTokens', 'Nhận Token'), icon: Gift },
+    { id: 'payment' as View, label: t('chat.depositTokens', 'Nạp Điểm'), icon: DollarSign },
+    ...(user?.is_admin ? [{ id: 'admin' as View, label: t('chat.admin', 'Admin'), icon: Shield }] : []),
+    { id: 'profile' as View, label: t('chat.profile', 'Hồ Sơ'), icon: UserIcon }
   ];
 
   return (
