@@ -7,17 +7,30 @@ interface PrivacyPageProps {
   onBack: () => void;
   onLogin: () => void;
   user?: User | null;
+  siteConfig?: any;
 }
 
-const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onLogin, user }) => {
+const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onLogin, user, siteConfig }) => {
   const { t, i18n } = useTranslation();
   const isEn = i18n.language?.startsWith('en');
+
+  const getVal = (key: string, defaultVal: string) => {
+    if (!siteConfig) return defaultVal;
+    const currentLang = isEn ? 'en' : 'vi';
+    const localizedKey = `${key}_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
+  const replaceBrand = (text: string) => {
+    return text.replace(/Zodiac Whisper/g, siteTitle);
+  };
 
   return (
     <div className="subpage-container">
       <header className="subpage-header">
         <div className="subpage-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
-          <span>✨</span> Zodiac Whisper
+          <span>✨</span> {siteTitle}
         </div>
         {user ? (
           <button className="btn btn-outline" onClick={onBack}>Hi, {user.full_name || user.username}</button>
@@ -35,8 +48,8 @@ const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onLogin, user }) => {
 
           <div className="privacy-intro" style={{ marginBottom: '2rem', lineHeight: '1.8', color: '#4a5568' }}>
             {isEn 
-              ? 'Welcome to Zodiac Whisper (“we,” “us,” or “our”). We are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our services.'
-              : 'Chào mừng bạn đến với Zodiac Whisper (“chúng tôi”). Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn. Chính Sách Bảo Mật này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn khi bạn sử dụng dịch vụ của chúng tôi.'}
+              ? replaceBrand('Welcome to Zodiac Whisper (“we,” “us,” or “our”). We are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our services.')
+              : replaceBrand('Chào mừng bạn đến với Zodiac Whisper (“chúng tôi”). Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn. Chính Sách Bảo Mật này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn khi bạn sử dụng dịch vụ của chúng tôi.')}
           </div>
 
           <div className="terms-list">
@@ -102,7 +115,7 @@ const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onLogin, user }) => {
 
                 <section className="terms-section">
                   <h3>7. Children's Privacy</h3>
-                  <p>Zodiac Whisper is not directed to individuals under the age of 13. We do not knowingly collect personal data from children.</p>
+                  <p>{replaceBrand("Zodiac Whisper is not directed to individuals under the age of 13. We do not knowingly collect personal data from children.")}</p>
                 </section>
 
                 <section className="terms-section">
@@ -168,7 +181,7 @@ const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onLogin, user }) => {
 
                 <section className="terms-section">
                   <h3>5. Bảo Mật Dữ Liệu</h3>
-                  <p>Chúng tôi triển khai các biện pháp bảo mật tiêu chuẩn để bảo vệ dữ liệu của bạn. Tuy nhiên, không có phương pháp truyền qua Internet hoặc lưu trữ điện tử nào là hoàn toàn an toàn.</p>
+                  <p>Chúng tôi triển khai các biện pháp bảo mật tiêu chuẩn để bảo vệ dữ liệu của bạn. Tuy nhiên, không có phương pháp truyền qua Internet hoặc lưu trữ điện tử nào là hoàn toàn an sau.</p>
                 </section>
 
                 <section className="terms-section">
@@ -178,7 +191,7 @@ const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onLogin, user }) => {
 
                 <section className="terms-section">
                   <h3>7. Quyền Riêng Tư Của Trẻ Em</h3>
-                  <p>Trang Web Zodiac Whisper không dành cho trẻ em dưới 13 tuổi. Chúng tôi không cố ý thu thập dữ liệu cá nhân từ trẻ em.</p>
+                  <p>{replaceBrand("Trang Web Zodiac Whisper không dành cho trẻ em dưới 13 tuổi. Chúng tôi không cố ý thu thập dữ liệu cá nhân từ trẻ em.")}</p>
                 </section>
 
                 <section className="terms-section">
@@ -198,7 +211,7 @@ const PrivacyPage: React.FC<PrivacyPageProps> = ({ onBack, onLogin, user }) => {
       </main>
 
       <footer className="subpage-footer">
-        <div>{isEn ? '© 2026 Zodiac Whisper. All rights reserved.' : '© 2026 Zodiac Whisper. Professional Astrology AI System.'}</div>
+        <div>{isEn ? replaceBrand('© 2026 Zodiac Whisper. All rights reserved.') : replaceBrand('© 2026 Zodiac Whisper. Professional Astrology AI System.')}</div>
         <div style={{ marginTop: '1.5rem' }}>
           <span onClick={onBack} style={{ cursor: 'pointer', color: '#6e2cf2' }}>{isEn ? 'Home' : 'Trang chủ'}</span>
         </div>

@@ -52,7 +52,10 @@ export const getImageUrl = (path: string | undefined): string => {
   if (path.startsWith('data:') || path.startsWith('blob:')) return path;
   if (shouldProxyAsset(path)) return `/api/asset?src=${encodeURIComponent(path)}`;
   if (path.startsWith('http')) return path;
-  if (isApiAssetPath(path)) return `${API_ROOT}${path}`;
+  if (isApiAssetPath(path)) {
+    const normalizedPath = path.startsWith('/upload-file/') ? `/api/v1${path}` : path;
+    return `${API_ROOT}${normalizedPath}`;
+  }
   return path;
 };
 

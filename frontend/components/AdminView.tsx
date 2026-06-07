@@ -29,7 +29,9 @@ interface AdminViewProps {
 }
 
 const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName, user }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
+
   const pageTitles: Record<AdminPage, string> = {
     dashboard: t('admin.dashboard'),
     users: t('admin.userManagement'),
@@ -66,6 +68,13 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
     seo_description: '', seo_keywords: '', seo_author: '', favicon_url: '',
     no_answer_fallback: '', hero_title: '', hero_subtitle: '', about_title: '', about_content: ''
   });
+
+  const siteTitle = React.useMemo(() => {
+    if (!data) return 'Zodiac Whisper';
+    const localizedKey = `site_title_${currentLang}`;
+    return data[localizedKey] || data.site_title || 'Zodiac Whisper';
+  }, [data, currentLang]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
   const [selectedUserDetail, setSelectedUserDetail] = useState<any | null>(null);
@@ -341,7 +350,7 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
         isMobileOpen={mobileOpen}
         onCloseMobile={() => setMobileOpen(false)}
         logoUrl={data.logo_url}
-        siteTitle={data.site_title}
+        siteTitle={siteTitle}
         user={user}
       />
       <div className="admin-main">

@@ -28,7 +28,7 @@ interface ChatViewProps {
   history: ChatMessage[]
   setHistory: React.Dispatch<React.SetStateAction<ChatMessage[]>>
   onBalanceUpdate: (balance: number) => void
-  siteConfig?: { logo_url: string, site_title: string }
+  siteConfig?: { logo_url: string; site_title: string; [key: string]: any }
 
   conversationId?: number | null
   setConversationId?: (id: number | null) => void
@@ -45,6 +45,12 @@ const ChatView: React.FC<ChatViewProps> = ({
 }) => {
   const { t, i18n } = useTranslation()
   const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi'
+
+  const siteTitle = useMemo(() => {
+    if (!siteConfig) return 'Zodiac Whisper'
+    const localizedKey = `site_title_${currentLang}`
+    return (siteConfig as any)[localizedKey] || siteConfig.site_title || 'Zodiac Whisper'
+  }, [siteConfig, currentLang])
 
   const [isLoading, setIsLoading] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
@@ -409,7 +415,7 @@ const ChatView: React.FC<ChatViewProps> = ({
       <ChatMessageItem
         key={msg.id}
         msg={msg}
-        userAvatar={user?.picture_url}
+        userAvatar={getImageUrl(user?.picture_url)}
         botAvatar={getImageUrl(siteConfig?.logo_url)}
       />
     ))
@@ -421,7 +427,7 @@ const ChatView: React.FC<ChatViewProps> = ({
 
       <header className="h-12 border-b border-white/10 bg-transparent flex items-center justify-between px-4">
         <h2 className="text-sm font-semibold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-          {siteConfig?.site_title || "Zodiac Whisper"}
+          {siteTitle}
         </h2>
 
         <div className="flex items-center gap-3">
@@ -451,6 +457,7 @@ const ChatView: React.FC<ChatViewProps> = ({
             isLoading={isLoading}
             isLoggedIn={!!user}
             onAuthRequired={() => setShowAuthModal(true)}
+            siteConfig={siteConfig}
           />
         )}
 

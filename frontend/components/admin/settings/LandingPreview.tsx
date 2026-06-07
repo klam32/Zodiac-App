@@ -9,6 +9,9 @@ interface LandingPreviewProps {
   onExpand?: () => void;
   expanded?: boolean;
   isDirty?: boolean;
+  previewLanguage?: 'vi' | 'en';
+  onLanguageChange?: (lang: 'vi' | 'en') => void;
+  hideControlBar?: boolean;
 }
 
 const LandingPreview: React.FC<LandingPreviewProps> = ({
@@ -17,9 +20,52 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
   onClose,
   onExpand,
   expanded = false,
-  isDirty = false
+  isDirty = false,
+  previewLanguage,
+  onLanguageChange,
+  hideControlBar = false
 }) => {
-  const [previewLang, setPreviewLang] = React.useState<'vi' | 'en'>('vi');
+  const [localLang, setLocalLang] = React.useState<'vi' | 'en'>('vi');
+  const previewLang = previewLanguage || localLang;
+  const setPreviewLang = onLanguageChange || setLocalLang;
+
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  
+  const sectionRefs = {
+    seo: React.useRef<HTMLDivElement>(null),
+    hero: React.useRef<HTMLDivElement>(null),
+    stats: React.useRef<HTMLDivElement>(null),
+    intro: React.useRef<HTMLDivElement>(null),
+    video: React.useRef<HTMLDivElement>(null),
+    choice: React.useRef<HTMLDivElement>(null),
+    about: React.useRef<HTMLDivElement>(null),
+    blog: React.useRef<HTMLDivElement>(null),
+    footer: React.useRef<HTMLDivElement>(null)
+  };
+
+  React.useEffect(() => {
+    if (!activeSection) return;
+    
+    // Normalize activeSection to match the keys in sectionRefs
+    let targetKey: string = activeSection;
+    if (targetKey === 'platform') targetKey = 'intro';
+    if (targetKey === 'services') targetKey = 'choice';
+    
+    const targetElement = sectionRefs[targetKey as keyof typeof sectionRefs]?.current;
+    const container = scrollContainerRef.current;
+    
+    if (targetElement && container) {
+      const containerTop = container.getBoundingClientRect().top;
+      const targetTop = targetElement.getBoundingClientRect().top;
+      const relativeTop = targetTop - containerTop;
+      const targetScrollTop = container.scrollTop + relativeTop - (container.clientHeight / 2) + (targetElement.clientHeight / 2);
+      
+      container.scrollTo({
+        top: Math.max(0, targetScrollTop),
+        behavior: 'smooth'
+      });
+    }
+  }, [activeSection]);
 
   const getBGStyle = (url: string) => {
     if (!url) return { backgroundColor: '#0a0a0f' };
@@ -154,6 +200,13 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
           background: #0e0e1a;
         }
 
+        .active-preview-section {
+          outline: 2px solid rgba(139, 92, 246, 0.95) !important;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.18), 0 0 25px rgba(139, 92, 246, 0.35) !important;
+          border-radius: 14px;
+          transition: all 0.25s ease;
+        }
+
         .mini-sec.active-highlight::before {
           content: 'ĐANG CHỈNH SỬA';
           position: absolute;
@@ -166,6 +219,7 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
           padding: 2px 6px;
           border-radius: 4px;
           letter-spacing: 0.05em;
+          z-index: 10;
         }
 
         /* Header */
@@ -557,111 +611,117 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
       `}</style>
 
       {/* Control bar */}
-      <div className="preview-bar">
-        <div className="preview-bar-title">
-          <span>✨ Xem trước</span>
-          {isDirty && <span className="dirty-badge">Chưa lưu</span>}
-          <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+      {!hideControlBar && (
+        <div className="preview-bar">
+          <div className="preview-bar-title">
+            <span>✨ Xem trước</span>
+            {isDirty && <span className="dirty-badge">Chưa lưu</span>}
+            <div style={{ display: 'flex', gap: '4px', marginLeft: '8px' }}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setPreviewLang('vi');
+                }}
+                style={{
+                  background: previewLang === 'vi' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  color: previewLang === 'vi' ? '#fff' : '#94a3b8'
+                }}
+                title="Xem giao diện Tiếng Việt"
+              >
+                🇻🇳 VI
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setPreviewLang('en');
+                }}
+                style={{
+                  background: previewLang === 'en' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  cursor: 'pointer',
+                  borderRadius: '4px',
+                  padding: '2px 6px',
+                  fontSize: '10px',
+                  color: previewLang === 'en' ? '#fff' : '#94a3b8'
+                }}
+                title="Preview English layout"
+              >
+                🇬🇧 EN
+              </button>
+            </div>
+          </div>
+          <div className="preview-actions">
             <button
               type="button"
+              className="preview-btn"
+              title="Trang thật chỉ cập nhật sau khi bạn lưu cấu hình. Bấm để xem bản nháp chưa lưu trong tab mới."
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setPreviewLang('vi');
+                try {
+                  sessionStorage.setItem(
+                    "zodiac_landing_preview_draft",
+                    JSON.stringify(settings)
+                  );
+                  window.open("/?preview_draft=1", "_blank", "noopener,noreferrer");
+                } catch (err) {
+                  console.error(err);
+                  window.open("/", "_blank", "noopener,noreferrer");
+                }
               }}
-              style={{
-                background: previewLang === 'vi' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                cursor: 'pointer',
-                borderRadius: '4px',
-                padding: '2px 6px',
-                fontSize: '10px',
-                color: previewLang === 'vi' ? '#fff' : '#94a3b8'
-              }}
-              title="Xem giao diện Tiếng Việt"
             >
-              🇻🇳 VI
+              <ExternalLink size={12} />
             </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setPreviewLang('en');
-              }}
-              style={{
-                background: previewLang === 'en' ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                cursor: 'pointer',
-                borderRadius: '4px',
-                padding: '2px 6px',
-                fontSize: '10px',
-                color: previewLang === 'en' ? '#fff' : '#94a3b8'
-              }}
-              title="Preview English layout"
-            >
-              🇬🇧 EN
-            </button>
+            {onExpand && (
+              <button
+                type="button"
+                className="preview-btn"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onExpand();
+                }}
+                title={expanded ? "Thu nhỏ" : "Phóng to"}
+              >
+                {expanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+              </button>
+            )}
+            {onClose && (
+              <button
+                type="button"
+                className="preview-btn"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onClose();
+                }}
+                title="Ẩn xem trước"
+              >
+                <EyeOff size={12} />
+              </button>
+            )}
           </div>
         </div>
-        <div className="preview-actions">
-          <button
-            type="button"
-            className="preview-btn"
-            title="Trang thật chỉ cập nhật sau khi bạn lưu cấu hình. Bấm để xem bản nháp chưa lưu trong tab mới."
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              try {
-                sessionStorage.setItem(
-                  "zodiac_landing_preview_draft",
-                  JSON.stringify(settings)
-                );
-                window.open("/?preview_draft=1", "_blank", "noopener,noreferrer");
-              } catch (err) {
-                console.error(err);
-                window.open("/", "_blank", "noopener,noreferrer");
-              }
-            }}
-          >
-            <ExternalLink size={12} />
-          </button>
-          {onExpand && (
-            <button
-              type="button"
-              className="preview-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onExpand();
-              }}
-              title={expanded ? "Thu nhỏ" : "Phóng to"}
-            >
-              {expanded ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-            </button>
-          )}
-          {onClose && (
-            <button
-              type="button"
-              className="preview-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onClose();
-              }}
-              title="Ẩn xem trước"
-            >
-              <EyeOff size={12} />
-            </button>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Main Preview Container */}
-      <div className="preview-scroll custom-scrollbar">
+      <div ref={scrollContainerRef} className="preview-scroll custom-scrollbar">
         
         {/* Header Preview */}
-        <div className={`mini-sec mini-header ${activeSection === 'seo' ? 'active-highlight' : ''}`}>
+        <div 
+          ref={sectionRefs.seo}
+          id="preview-header"
+          className={`mini-sec mini-header ${activeSection === 'seo' ? 'active-highlight active-preview-section' : ''}`}
+        >
           <div className="mini-logo-area">
             {settings.logo_url ? (
               <img src={resolveImage(settings.logo_url)} className="mini-logo-img" alt="Logo" />
@@ -679,7 +739,9 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
 
         {/* Hero Section Preview */}
         <div 
-          className={`mini-sec mini-hero ${activeSection === 'hero' ? 'active-highlight' : ''}`}
+          ref={sectionRefs.hero}
+          id="preview-hero"
+          className={`mini-sec mini-hero ${activeSection === 'hero' ? 'active-highlight active-preview-section' : ''}`}
           style={getBGStyle(settings.hero_background_url || settings.background_url)}
         >
           <div className="mini-hero-overlay"></div>
@@ -718,7 +780,11 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
         </div>
 
         {/* Stats Section Preview */}
-        <div className={`mini-sec ${activeSection === 'stats' ? 'active-highlight' : ''}`}>
+        <div 
+          ref={sectionRefs.stats}
+          id="preview-stats"
+          className={`mini-sec ${activeSection === 'stats' ? 'active-highlight active-preview-section' : ''}`}
+        >
           <div className="mini-stats-grid">
             <div className="mini-stat-card">
               <div className="mini-stat-val">{settings.stat_users_value || '500.000+'}</div>
@@ -740,7 +806,11 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
         </div>
 
         {/* Intro Section Preview */}
-        <div className={`mini-sec mini-intro ${activeSection === 'intro' ? 'active-highlight' : ''}`}>
+        <div 
+          ref={sectionRefs.intro}
+          id="preview-platform"
+          className={`mini-sec mini-intro ${activeSection === 'intro' || activeSection === 'platform' ? 'active-highlight active-preview-section' : ''}`}
+        >
           <div className="mini-badge">{getVal('intro_label', 'CHỈ NĂNG NĂNG LỰC', 'PLATFORM STRENGTH')}</div>
           <h3>{getVal('intro_title', 'Nền tảng Chiêm tinh AI hàng đầu', 'Leading AI Astrology Platform')}</h3>
           <p>{getVal('intro_content', 'Zodiac Whisper kết hợp công nghệ AI tiên tiến với học thuyết chiêm tinh truyền thống...', 'Zodiac Whisper combines advanced AI technology with traditional astrological principles...')}</p>
@@ -748,7 +818,11 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
 
         {/* Video Section Preview */}
         {(!settings.guide_video_enabled || settings.guide_video_enabled === 'true') && (
-          <div className={`mini-sec mini-video ${activeSection === 'video' ? 'active-highlight' : ''}`}>
+          <div 
+            ref={sectionRefs.video}
+            id="preview-video"
+            className={`mini-sec mini-video ${activeSection === 'video' ? 'active-highlight active-preview-section' : ''}`}
+          >
             <div className="mini-badge">{getVal('guide_video_label', 'VIDEO HƯỚNG DẪN', 'VIDEO GUIDE')}</div>
             <h3>{getVal('guide_video_title', 'Video Hướng dẫn sử dụng', 'Video User Guide')}</h3>
             <p style={{ fontSize: '8px', color: '#64748b' }}>{getVal('guide_video_subtitle', 'Thấu hiểu chỉ trong 2 phút', 'Understand in just 2 minutes')}</p>
@@ -791,7 +865,11 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
         )}
 
         {/* Choice Section Preview */}
-        <div className={`mini-sec ${activeSection === 'choice' ? 'active-highlight' : ''}`}>
+        <div 
+          ref={sectionRefs.choice}
+          id="preview-services"
+          className={`mini-sec ${activeSection === 'choice' || activeSection === 'services' ? 'active-highlight active-preview-section' : ''}`}
+        >
           <div className="mini-choice-window">
             <div className="mini-win-hdr">
               <span>{getVal('choice_window_title', 'Zodiac Whisper', 'Zodiac Whisper')}</span>
@@ -846,7 +924,11 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
         </div>
 
         {/* About Section Preview */}
-        <div className={`mini-sec mini-about ${activeSection === 'about' ? 'active-highlight' : ''}`}>
+        <div 
+          ref={sectionRefs.about}
+          id="preview-about"
+          className={`mini-sec mini-about ${activeSection === 'about' ? 'active-highlight active-preview-section' : ''}`}
+        >
           <div className="mini-badge" style={{ color: 'white', borderColor: 'rgba(255,255,255,0.2)' }}>
             {getVal('about_label', 'VỀ CHÚNG TÔI', 'ABOUT US')}
           </div>
@@ -865,7 +947,11 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
 
         {/* Blog Section Preview */}
         {(!settings.blog_section_enabled || settings.blog_section_enabled === 'true') && (
-          <div className={`mini-sec ${activeSection === 'blog' ? 'active-highlight' : ''}`}>
+          <div 
+            ref={sectionRefs.blog}
+            id="preview-blog"
+            className={`mini-sec ${activeSection === 'blog' ? 'active-highlight active-preview-section' : ''}`}
+          >
             <h4 style={{ fontSize: '10px', fontWeight: '700', color: 'white' }}>{getVal('blog_section_title', 'Bài viết mới nhất', 'Latest Posts')}</h4>
             <div className="mini-blog-grid">
               <div className="mini-blog-card">
@@ -881,7 +967,11 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
         )}
 
         {/* Footer Preview */}
-        <div className={`mini-sec mini-footer ${activeSection === 'footer' ? 'active-highlight' : ''}`}>
+        <div 
+          ref={sectionRefs.footer}
+          id="preview-footer"
+          className={`mini-sec mini-footer ${activeSection === 'footer' ? 'active-highlight active-preview-section' : ''}`}
+        >
           <div className="mini-footer-cols">
             <div className="mini-footer-col">
               <h5>Zodiac Whisper</h5>

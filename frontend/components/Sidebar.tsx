@@ -11,7 +11,7 @@ interface SidebarProps {
   currentView: View
   onViewChange: (view: View) => void
   onLogout: () => void
-  siteConfig?: { logo_url: string; site_title: string }
+  siteConfig?: { logo_url: string; site_title: string; [key: string]: any }
 
   conversations?: Conversation[]
   setChatHistory?: React.Dispatch<any>
@@ -46,6 +46,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi'
   const [imgError, setImgError] = React.useState(false)
   const [logoImgError, setLogoImgError] = React.useState(false)
+
+  const siteTitle = React.useMemo(() => {
+    if (!siteConfig) return 'Zodiac Whisper';
+    const localizedKey = `site_title_${currentLang}`;
+    return (siteConfig as any)[localizedKey] || siteConfig.site_title || 'Zodiac Whisper';
+  }, [siteConfig, currentLang]);
   const [deleteId, setDeleteId] = React.useState<number | null>(null)
   const [showToast, setShowToast] = React.useState(false)
   const [toastMessage, setToastMessage] = React.useState("")
@@ -58,6 +64,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   React.useEffect(() => {
     setLogoImgError(false)
   }, [siteConfig?.logo_url])
+
+  React.useEffect(() => {
+    setImgError(false)
+  }, [user?.picture_url])
 
   const navItems = [
     { id: "landing" as View, label: t("chat.home"), icon: Home },
@@ -204,7 +214,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             {isVisible && (
               <h1 className="text-base font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent tracking-wide flex-1 truncate drop-shadow-sm">
-                {siteConfig?.site_title || "Zodiac Whisper"}
+                {siteTitle}
               </h1>
             )}
 
@@ -399,7 +409,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="relative">
                   {user.picture_url && !imgError ? (
                     <img
-                      src={user.picture_url}
+                      src={getImageUrl(user.picture_url)}
                       className="w-8 h-8 rounded-full object-cover ring-2 ring-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.4)] group-hover:ring-purple-400 transition-all"
                       onError={() => setImgError(true)}
                     />

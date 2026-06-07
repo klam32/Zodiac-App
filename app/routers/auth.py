@@ -221,8 +221,89 @@ async def google_callback(request: Request, code: str = Query(...), state: str =
         app_scheme = state.split(":", 1)[1]
         # Use zodiacchatbot://callback?token=... format - needs a host component for Android
         target_url = f"{app_scheme}://callback?token={token}"
-        logger.info(f"Flutter sign-in detected. Redirecting via URI Scheme: {target_url}")
-        return RedirectResponse(url=target_url)
+        logger.info(f"Flutter sign-in detected. Redirecting via HTML: {target_url}")
+        
+        from fastapi.responses import HTMLResponse
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Redirecting...</title>
+            <style>
+                body {{
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                    background-color: #07070c;
+                    color: #ffffff;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    height: 100vh;
+                    margin: 0;
+                    padding: 20px;
+                    box-sizing: border-box;
+                    text-align: center;
+                }}
+                .spinner {{
+                    width: 50px;
+                    height: 50px;
+                    border: 5px solid rgba(255,255,255,0.1);
+                    border-radius: 50%;
+                    border-top-color: #a855f7;
+                    animation: spin 1s ease-in-out infinite;
+                    margin-bottom: 24px;
+                }}
+                @keyframes spin {{
+                    to {{ transform: rotate(360deg); }}
+                }}
+                h2 {{
+                    margin: 0 0 8px 0;
+                    font-size: 20px;
+                    font-weight: 600;
+                    background: linear-gradient(to right, #c084fc, #f472b6, #fbbf24);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }}
+                p {{
+                    color: #94a3b8;
+                    font-size: 14px;
+                    margin: 0 0 32px 0;
+                }}
+                .btn {{
+                    display: inline-block;
+                    background: linear-gradient(135deg, #a855f7, #4f46e5);
+                    color: white;
+                    text-decoration: none;
+                    padding: 12px 24px;
+                    border-radius: 12px;
+                    font-weight: bold;
+                    font-size: 15px;
+                    box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+                    transition: transform 0.2s, box-shadow 0.2s;
+                }}
+                .btn:active {{
+                    transform: scale(0.98);
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="spinner"></div>
+            <h2>Đăng nhập thành công</h2>
+            <p>Đang quay trở lại ứng dụng Zodiac Whisper...</p>
+            <a href="{target_url}" class="btn">Tiếp tục vào ứng dụng</a>
+            
+            <script>
+                // Auto redirect
+                setTimeout(function() {{
+                    window.location.href = "{target_url}";
+                }}, 500);
+            </script>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
     
     # --- LOGIC DYNAMIC FRONTEND REDIRECT ---
     scheme = request.headers.get("x-forwarded-proto", request.url.scheme)

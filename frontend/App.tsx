@@ -33,7 +33,7 @@ import { Toaster } from 'react-hot-toast';
 import { Menu } from 'lucide-react';
 const App: React.FC = () => {
   const { stop } = useTextToSpeech();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   const [user, setUser] = useState<User | null>(null);
 
@@ -94,7 +94,8 @@ const App: React.FC = () => {
     hero_subtitle?: string,
     about_title?: string,
     about_content?: string,
-    blog_posts?: any[]
+    blog_posts?: any[],
+    [key: string]: any
   }>({
     logo_url: '',
     site_title: 'Zodiac Whisper',
@@ -248,6 +249,57 @@ const App: React.FC = () => {
     fetchSiteConfig()
 
   }, [])
+
+  useEffect(() => {
+    if (!siteConfig) return;
+
+    const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
+    const siteTitle = (currentLang === 'en' 
+      ? (siteConfig.site_title_en || siteConfig.site_title) 
+      : (siteConfig.site_title_vi || siteConfig.site_title)) || 'Zodiac Whisper';
+
+    let viewTitle = '';
+    switch (currentView) {
+      case 'admin':
+        viewTitle = currentLang === 'en' ? 'Admin Panel' : 'Quản trị';
+        break;
+      case 'chat':
+        viewTitle = currentLang === 'en' ? 'Astrology Chat' : 'Trò chuyện Chiêm tinh';
+        break;
+      case 'calendar':
+        viewTitle = currentLang === 'en' ? 'Auspicious Calendar' : 'Lịch Cát Tường';
+        break;
+      case 'prediction':
+        viewTitle = currentLang === 'en' ? 'Daily Forecast' : 'Dự báo vận trình ngày';
+        break;
+      case 'profile':
+        viewTitle = currentLang === 'en' ? 'Profile' : 'Trang cá nhân';
+        break;
+      case 'terms':
+        viewTitle = currentLang === 'en' ? 'Terms of Service' : 'Điều khoản sử dụng';
+        break;
+      case 'privacy':
+        viewTitle = currentLang === 'en' ? 'Privacy Policy' : 'Chính sách bảo mật';
+        break;
+      case 'faq':
+        viewTitle = currentLang === 'en' ? 'FAQ' : 'Câu hỏi thường gặp';
+        break;
+      case 'guide':
+        viewTitle = currentLang === 'en' ? 'User Guide' : 'Hướng dẫn sử dụng';
+        break;
+      case 'contact':
+        viewTitle = currentLang === 'en' ? 'Contact Us' : 'Liên hệ';
+        break;
+      default:
+        break;
+    }
+
+    if (viewTitle) {
+      document.title = `${viewTitle} | ${siteTitle}`;
+    } else {
+      document.title = siteTitle;
+    }
+  }, [siteConfig, currentView, i18n.language]);
 
   // =========================
   // LISTEN RELOAD SIDEBAR
@@ -414,34 +466,34 @@ const App: React.FC = () => {
     return (
       <LanguageWelcomeScreen
         onLanguageSelected={() => setLanguageSelected(true)}
-        logoUrl={siteConfig.logo_url}
-        siteTitle={siteConfig.site_title}
+        logoUrl={siteConfig?.logo_url}
+        siteTitle={siteConfig ? (i18n.language?.startsWith('en') ? siteConfig.site_title_en || siteConfig.site_title : siteConfig.site_title_vi || siteConfig.site_title) : 'Zodiac Whisper'}
       />
     );
   }
 
   if (currentView === 'contact') {
-    return <div key="contact" className="view-transition"><ContactPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} /></div>;
+    return <div key="contact" className="view-transition"><ContactPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'terms') {
-    return <div key="terms" className="view-transition"><TermsPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} /></div>;
+    return <div key="terms" className="view-transition"><TermsPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'privacy') {
-    return <div key="privacy" className="view-transition"><PrivacyPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} /></div>;
+    return <div key="privacy" className="view-transition"><PrivacyPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'faq') {
-    return <div key="faq" className="view-transition"><FAQPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} onContact={() => setCurrentView('contact')} user={user} /></div>;
+    return <div key="faq" className="view-transition"><FAQPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} onContact={() => setCurrentView('contact')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'guide') {
-    return <div key="guide" className="view-transition"><GuidePage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} onStart={() => setCurrentView('chat')} /></div>;
+    return <div key="guide" className="view-transition"><GuidePage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} onStart={() => setCurrentView('chat')} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'details') {
-    return <div key="details" className="view-transition"><AstrologyDetailsPage onBack={() => setCurrentView('landing')} /></div>;
+    return <div key="details" className="view-transition"><AstrologyDetailsPage onBack={() => setCurrentView('landing')} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'blog_detail' && selectedArticleId) {

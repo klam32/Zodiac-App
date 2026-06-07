@@ -8,11 +8,24 @@ interface FAQPageProps {
   onLogin: () => void;
   onContact: () => void;
   user?: User | null;
+  siteConfig?: any;
 }
 
-const FAQPage: React.FC<FAQPageProps> = ({ onBack, onLogin, onContact, user }) => {
+const FAQPage: React.FC<FAQPageProps> = ({ onBack, onLogin, onContact, user, siteConfig }) => {
   const { t, i18n } = useTranslation();
   const isEn = i18n.language?.startsWith('en');
+
+  const getVal = (key: string, defaultVal: string) => {
+    if (!siteConfig) return defaultVal;
+    const currentLang = isEn ? 'en' : 'vi';
+    const localizedKey = `${key}_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
+  const replaceBrand = (text: string) => {
+    return text.replace(/Zodiac Whisper/g, siteTitle);
+  };
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs = isEn ? [
@@ -83,7 +96,7 @@ const FAQPage: React.FC<FAQPageProps> = ({ onBack, onLogin, onContact, user }) =
     <div className="subpage-container">
       <header className="subpage-header">
         <div className="subpage-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
-          <span>✨</span> Zodiac Whisper
+          <span>✨</span> {siteTitle}
         </div>
         {user ? (
           <button className="btn btn-outline" onClick={onBack}>Hi, {user.full_name || user.username}</button>
@@ -130,7 +143,7 @@ const FAQPage: React.FC<FAQPageProps> = ({ onBack, onLogin, onContact, user }) =
       </main>
 
       <footer className="subpage-footer">
-        <div>{isEn ? '© 2026 Zodiac Whisper. All rights reserved.' : '© 2026 Zodiac Whisper. Đã đăng ký bản quyền. BETA'}</div>
+        <div>{isEn ? replaceBrand('© 2026 Zodiac Whisper. All rights reserved.') : replaceBrand('© 2026 Zodiac Whisper. Đã đăng ký bản quyền. BETA')}</div>
         <div style={{ marginTop: '1.5rem' }}>
           <span onClick={onBack} style={{ cursor: 'pointer', color: '#6e2cf2' }}>{isEn ? 'Home' : 'Trang chủ'}</span>
           <span style={{ margin: '0 1rem', opacity: 0.3 }}>|</span>

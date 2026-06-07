@@ -1,11 +1,24 @@
 import React from 'react';
 import './SubPage.css';
+import { useTranslation } from 'react-i18next';
 
 interface AstrologyDetailsPageProps {
   onBack: () => void;
+  siteConfig?: any;
 }
 
-const AstrologyDetailsPage: React.FC<AstrologyDetailsPageProps> = ({ onBack }) => {
+const AstrologyDetailsPage: React.FC<AstrologyDetailsPageProps> = ({ onBack, siteConfig }) => {
+  const { i18n } = useTranslation();
+  const isEn = i18n.language?.startsWith('en');
+
+  const getVal = (key: string, defaultVal: string) => {
+    if (!siteConfig) return defaultVal;
+    const currentLang = isEn ? 'en' : 'vi';
+    const localizedKey = `${key}_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
   const sections = [
     {
       id: 1,
@@ -100,7 +113,7 @@ const AstrologyDetailsPage: React.FC<AstrologyDetailsPageProps> = ({ onBack }) =
     <div className="subpage-container" style={{ backgroundColor: '#f8faff' }}>
       <header className="subpage-header">
         <div className="subpage-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
-          <span>✨</span> Zodiac Whisper
+          <span>✨</span> {siteTitle}
         </div>
         <button className="btn btn-primary" onClick={onBack}>Quay lại</button>
       </header>

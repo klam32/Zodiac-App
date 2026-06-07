@@ -44,11 +44,17 @@ const MobileLandingPage: React.FC<MobileLandingPageProps> = ({
 
   // Helper to fetch localized config values
   const getVal = (key: string, defaultVal: string = '') => {
+    if (!siteConfig) return defaultVal;
     const localizedKey = `${key}_${currentLang}`;
     if (currentLang === 'en') {
       return siteConfig[localizedKey] || defaultVal || siteConfig[key];
     }
     return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
+  const replaceBrand = (text: string) => {
+    return text.replace(/Zodiac Whisper/gi, siteTitle);
   };
 
   useEffect(() => {
@@ -283,15 +289,15 @@ const MobileLandingPage: React.FC<MobileLandingPageProps> = ({
           <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/5 blur-2xl rounded-full pointer-events-none" />
           
           <span className="text-[9px] font-bold text-purple-400 tracking-widest uppercase">
-            {t('landing.about.label', '✦ VỀ ZODIAC WHISPER')}
+            {replaceBrand(t('landing.about.label', '✦ VỀ ZODIAC WHISPER'))}
           </span>
           
           <h3 className="text-base font-extrabold tracking-wide mt-1 text-white mb-3">
-            {getVal('about_title') || t('landing.about.title', 'Nền tảng Chiêm tinh AI')}
+            {getVal('about_title') || replaceBrand(t('landing.about.title', 'Nền tảng Chiêm tinh AI'))}
           </h3>
 
           <p className="text-[11px] text-gray-300 leading-relaxed mb-4">
-            {getVal('about_content') || t('landing.about.content', 'Zodiac Whisper là hệ sinh thái công nghệ giúp bạn khám phá chiều sâu tâm hồn qua các thuật toán Chiêm tinh AI tiên tiến nhất. Chúng tôi kết hợp trí tuệ cổ xưa với công nghệ hiện đại để mang lại những lời khuyên chính xác.')}
+            {getVal('about_content') || replaceBrand(t('landing.about.content', 'Zodiac Whisper là hệ sinh thái công nghệ giúp bạn khám phá chiều sâu tâm hồn qua các thuật toán Chiêm tinh AI tiên tiến nhất. Chúng tôi kết hợp trí tuệ cổ xưa với công nghệ hiện đại để mang lại những lời khuyên chính xác.'))}
           </p>
 
           <div className="grid grid-cols-2 gap-2 text-[10px] text-gray-400 font-medium">
@@ -395,7 +401,7 @@ const MobileLandingPage: React.FC<MobileLandingPageProps> = ({
             Sẵn sàng khám phá vận mệnh?
           </h3>
           <p className="text-[11px] text-gray-400 leading-relaxed mb-5">
-            Cung cấp ngày giờ sinh của bạn để Trợ lý AI Zodiac Whisper phân tích chi tiết lá số tử vi và bản đồ sao gốc của bạn ngay.
+            {replaceBrand(t('landing.cta.description', 'Cung cấp ngày giờ sinh của bạn để Trợ lý AI Zodiac Whisper phân tích chi tiết lá số tử vi và bản đồ sao gốc của bạn ngay.'))}
           </p>
 
           {!user ? (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getImageUrl } from '../../api';
-import LandingPreview from './settings/LandingPreview';
 import LandingPreviewModal from './settings/LandingPreviewModal';
+import FloatingLandingPreview from './settings/FloatingLandingPreview';
 import { Eye, ShieldAlert } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -38,9 +38,43 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
 }) => {
     const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<SettingsSection>('seo');
-    const [showPreview, setShowPreview] = useState(true);
+    const [previewLanguage, setPreviewLanguage] = useState<'vi' | 'en'>('vi');
+    const [showPreview, setShowPreview] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('zodiac_preview_visible');
+            return saved !== null ? saved === 'true' : true;
+        } catch (e) {
+            return true;
+        }
+    });
+    const [previewCollapsed, setPreviewCollapsed] = useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('zodiac_preview_collapsed');
+            return saved !== null ? saved === 'true' : false;
+        } catch (e) {
+            return false;
+        }
+    });
     const [previewModalOpen, setPreviewModalOpen] = useState(false);
     const [isDirty, setIsDirty] = useState(false);
+
+    const handleToggleVisible = (visible: boolean) => {
+        setShowPreview(visible);
+        try {
+            localStorage.setItem('zodiac_preview_visible', String(visible));
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
+    const handleToggleCollapsed = (collapsed: boolean) => {
+        setPreviewCollapsed(collapsed);
+        try {
+            localStorage.setItem('zodiac_preview_collapsed', String(collapsed));
+        } catch (e) {
+            console.error(e);
+        }
+    };
     const initialRef = useRef<any>(null);
 
     useEffect(() => {
@@ -212,10 +246,12 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             `}</style>
 
             <LandingPreviewModal
+                open={previewModalOpen}
                 isOpen={previewModalOpen}
                 onClose={() => setPreviewModalOpen(false)}
                 settings={data}
                 activeSection={activeSection}
+                previewLanguage={previewLanguage}
                 isDirty={isDirty}
             />
 
@@ -268,18 +304,48 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-                                setShowPreview(!showPreview);
+                                handleToggleVisible(!showPreview);
                             }}
                             style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                         >
                             <Eye size={14} />
-                            {showPreview ? t('admin.settings.hidePreview', 'Ẩn xem trước') : t('admin.settings.showPreview', 'Xem trước')}
+                            {showPreview ? t('admin.settings.hidePreview', 'Ẩn xem trước') : t('admin.settings.showPreview', 'Hiện xem trước')}
                         </button>
                     </div>
                 </div>
 
                 {/* Dashboard layout */}
-                <form onSubmit={onSave} className="settings-form-layout" style={{ display: 'flex', minHeight: 560 }}>
+                <form 
+                    onSubmit={onSave} 
+                    onFocus={(e) => {
+                        const name = (e.target as any).name;
+                        if (!name) return;
+                        
+                        if (name.startsWith('site_title') || name.startsWith('seo_') || name === 'logo_url' || name === 'favicon_url' || name === 'background_url' || name === 'use_app_background' || name === 'background_app_url') {
+                            setActiveSection('seo');
+                        } else if (name.startsWith('hero_')) {
+                            setActiveSection('hero');
+                        } else if (name.startsWith('stat_')) {
+                            setActiveSection('stats');
+                        } else if (name.startsWith('intro_')) {
+                            setActiveSection('intro');
+                        } else if (name.startsWith('guide_video_') || name === 'guide_video_enabled' || name === 'guide_video_url' || name === 'guide_video_poster_url') {
+                            setActiveSection('video');
+                        } else if (name.startsWith('choice_')) {
+                            setActiveSection('choice');
+                        } else if (name.startsWith('about_') || name.startsWith('company_')) {
+                            setActiveSection('about');
+                        } else if (name.startsWith('blog_')) {
+                            setActiveSection('blog');
+                        } else if (name.startsWith('footer_')) {
+                            setActiveSection('footer');
+                        } else if (name === 'rate' || name.startsWith('no_answer_fallback_')) {
+                            setActiveSection('system');
+                        }
+                    }}
+                    className="settings-form-layout" 
+                    style={{ display: 'flex', minHeight: 560 }}
+                >
                     {/* Left tabs menu */}
                     <div style={{ width: 260, backgroundColor: '#f8fafc', borderRight: '1px solid #e2e8f0', padding: '16px 12px', display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {sections.map((sec) => {
@@ -1048,20 +1114,21 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                         </div>
                     </div>
 
-                    {/* Realtime Preview Panel */}
-                    {showPreview && (
-                        <div className="preview-desktop-wrapper" style={{ width: 380, borderLeft: '1px solid #e2e8f0', background: '#06060a', padding: 12, display: 'flex', flexDirection: 'column' }}>
-                            <LandingPreview
-                                settings={data}
-                                activeSection={activeSection}
-                                onClose={() => setShowPreview(false)}
-                                onExpand={() => setPreviewModalOpen(true)}
-                                isDirty={isDirty}
-                            />
-                        </div>
-                    )}
                 </form>
             </div>
+
+            <FloatingLandingPreview
+                settings={data}
+                activeSection={activeSection}
+                isDirty={isDirty}
+                visible={showPreview}
+                collapsed={previewCollapsed}
+                previewLanguage={previewLanguage}
+                onLanguageChange={setPreviewLanguage}
+                onToggleVisible={handleToggleVisible}
+                onToggleCollapsed={handleToggleCollapsed}
+                onExpand={() => setPreviewModalOpen(true)}
+            />
         </div>
     );
 };

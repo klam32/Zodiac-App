@@ -32,6 +32,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   style,
 }) => {
   const [imageError, setImageError] = useState(false);
+  const avatarUrl = getAvatarUrl(user);
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [avatarUrl]);
 
   const sizeClasses = {
     sm: 'w-8 h-8 text-xs',
@@ -40,7 +45,6 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   };
 
   const roundedClass = shape === 'circle' ? 'rounded-full' : 'rounded-[10px]';
-  const avatarUrl = getAvatarUrl(user);
 
   const getInitial = (name?: string, email?: string): string => {
     if (name && name.trim()) {

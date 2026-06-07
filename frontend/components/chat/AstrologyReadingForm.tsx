@@ -8,14 +8,22 @@ interface AstrologyReadingFormProps {
   isLoading: boolean;
   isLoggedIn: boolean;
   onAuthRequired: () => void;
+  siteConfig?: any;
 }
 
 const VIETNAM_PROVINCES = [
   "An Giang", "Bà Rịa - Vũng Tàu", "Bạc Liêu", "Bắc Giang", "Bắc Kạn", "Bắc Ninh", "Bến Tre", "Bình Dương", "Bình Định", "Bình Phước", "Bình Thuận", "Cà Mau", "Cao Bằng", "Cần Thơ", "Đà Nẵng", "Đắc Lắk", "Đắc Nông", "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình", "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lạng Sơn", "Lào Cai", "Lâm Đồng", "Long An", "Nam Định", "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang", "TP. Hồ Chí Minh", "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
 ];
 
-const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, isLoading, isLoggedIn, onAuthRequired }) => {
-  const { t } = useTranslation();
+const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, isLoading, isLoggedIn, onAuthRequired, siteConfig }) => {
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
+
+  const siteTitle = React.useMemo(() => {
+    if (!siteConfig) return 'Zodiac Whisper';
+    const localizedKey = `site_title_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig.site_title || 'Zodiac Whisper';
+  }, [siteConfig, currentLang]);
 
   const fields = [
     { id: 'general', label: t('chat.form.fields.general', 'Tổng quan vận mệnh') },
@@ -101,7 +109,7 @@ const AstrologyReadingForm: React.FC<AstrologyReadingFormProps> = ({ onSubmit, i
            <Sparkles className="w-16 h-16 text-amber-500 relative z-10 animate-spin-slow" />
         </div>
         <h1 className="text-6xl font-black mb-6 bg-gradient-to-r from-purple-400 via-pink-500 to-amber-500 bg-clip-text text-transparent leading-tight tracking-tighter">
-          Zodiac Whisper
+          {siteTitle}
         </h1>
         <p className="text-xl text-purple-200/60 mb-12 font-medium leading-relaxed max-w-md mx-auto">
           {t('chat.form.welcomeSubtitle', 'Lắng nghe lời thì thầm từ các vì sao. Khám phá bản đồ sao cá nhân để thấu hiểu vận mệnh của chính mình.')}

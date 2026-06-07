@@ -6,16 +6,29 @@ interface GuidePageProps {
   onBack: () => void;
   onLogin: () => void;
   onStart: () => void;
+  siteConfig?: any;
 }
 
-const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
+const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart, siteConfig }) => {
   const { t, i18n } = useTranslation();
   const isEn = i18n.language?.startsWith('en');
+
+  const getVal = (key: string, defaultVal: string) => {
+    if (!siteConfig) return defaultVal;
+    const currentLang = isEn ? 'en' : 'vi';
+    const localizedKey = `${key}_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
+  const replaceBrand = (text: string) => {
+    return text.replace(/Zodiac Whisper/g, siteTitle);
+  };
 
   const steps = isEn ? [
     {
       title: 'Register & Get Free Tokens',
-      description: 'Simply register a new account and receive 10 free tokens immediately to experience all Zodiac Whisper AI features.'
+      description: replaceBrand('Simply register a new account and receive 10 free tokens immediately to experience all Zodiac Whisper AI features.')
     },
     {
       title: 'Choose Astrology Feature',
@@ -36,7 +49,7 @@ const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
   ] : [
     {
       title: 'Đăng ký & Nhận Token miễn phí',
-      description: 'Chỉ cần đăng ký tài khoản mới, bạn sẽ nhận ngay 10 Token miễn phí để trải nghiệm toàn bộ tính năng của hệ thống Zodiac Whisper AI.'
+      description: replaceBrand('Chỉ cần đăng ký tài khoản mới, bạn sẽ nhận ngay 10 Token miễn phí để trải nghiệm toàn bộ tính năng của hệ thống Zodiac Whisper AI.')
     },
     {
       title: 'Chọn tính năng Chiêm tinh',
@@ -60,7 +73,7 @@ const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
     <div className="subpage-container">
       <header className="subpage-header">
         <div className="subpage-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
-          <span>✨</span> Zodiac Whisper
+          <span>✨</span> {siteTitle}
         </div>
         <button className="btn btn-primary" onClick={onLogin}>{isEn ? 'Login' : 'Đăng nhập'}</button>
       </header>
@@ -68,7 +81,7 @@ const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
       <main className="subpage-content">
         <div className="subpage-card">
           <h1 className="subpage-title">{isEn ? 'User Guide & System Navigation' : 'Hướng dẫn sử dụng toàn hệ thống'}</h1>
-          <p className="subpage-subtitle">{isEn ? 'Explore the journey of self-discovery with Zodiac Whisper' : 'Khám phá hành trình thấu hiểu bản thân cùng Zodiac Whisper'}</p>
+          <p className="subpage-subtitle">{isEn ? replaceBrand('Explore the journey of self-discovery with Zodiac Whisper') : replaceBrand('Khám phá hành trình thấu hiểu bản thân cùng Zodiac Whisper')}</p>
 
           <div style={{ marginTop: '4rem' }}>
             {steps.map((step, index) => (
@@ -93,7 +106,7 @@ const GuidePage: React.FC<GuidePageProps> = ({ onBack, onLogin, onStart }) => {
 
       <footer className="subpage-footer">
         <div>
-          {isEn ? '© 2026 Zodiac Whisper. All rights reserved. ' : '© 2026 Zodiac Whisper. Đã đăng ký bản quyền. '}
+          {isEn ? replaceBrand('© 2026 Zodiac Whisper. All rights reserved. ') : replaceBrand('© 2026 Zodiac Whisper. Đã đăng ký bản quyền. ')}
           <span style={{ color: '#e53e3e', fontWeight: 'bold' }}>BETA</span>
         </div>
         <div style={{ marginTop: '1rem' }}>

@@ -7,17 +7,30 @@ interface TermsPageProps {
   onBack: () => void;
   onLogin: () => void;
   user?: User | null;
+  siteConfig?: any;
 }
 
-const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
+const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user, siteConfig }) => {
   const { t, i18n } = useTranslation();
   const isEn = i18n.language?.startsWith('en');
+
+  const getVal = (key: string, defaultVal: string) => {
+    if (!siteConfig) return defaultVal;
+    const currentLang = isEn ? 'en' : 'vi';
+    const localizedKey = `${key}_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
+  const replaceBrand = (text: string) => {
+    return text.replace(/Zodiac Whisper/g, siteTitle);
+  };
 
   return (
     <div className="subpage-container">
       <header className="subpage-header">
         <div className="subpage-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
-          <span>✨</span> Zodiac Whisper
+          <span>✨</span> {siteTitle}
         </div>
         {user ? (
           <button className="btn btn-outline" onClick={onBack}>Hi, {user.full_name || user.username}</button>
@@ -31,8 +44,8 @@ const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
           <h1 className="subpage-title">{isEn ? 'Terms of Service' : 'Điều Khoản Sử Dụng'}</h1>
           <p className="subpage-subtitle">
             {isEn 
-              ? 'Welcome to Zodiac Whisper. By accessing or using this website, you agree to comply with and be bound by the following Terms of Service.'
-              : 'Chào mừng bạn đến với Zodiac Whisper. Bằng cách truy cập hoặc sử dụng trang web này, bạn đồng ý tuân thủ và bị ràng buộc bởi các Điều Khoản Sử Dụng dưới đây.'}
+              ? replaceBrand('Welcome to Zodiac Whisper. By accessing or using this website, you agree to comply with and be bound by the following Terms of Service.')
+              : replaceBrand('Chào mừng bạn đến với Zodiac Whisper. Bằng cách truy cập hoặc sử dụng trang web này, bạn đồng ý tuân thủ và bị ràng buộc bởi các Điều Khoản Sử Dụng dưới đây.')}
           </p>
 
           <div className="terms-list">
@@ -40,7 +53,7 @@ const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
               <>
                 <section className="terms-section">
                   <h3>1. Acceptance of Terms</h3>
-                  <p>By accessing or using this site, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy.</p>
+                  <p>{replaceBrand('By accessing or using this site, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service and our Privacy Policy.')}</p>
                 </section>
 
                 <section className="terms-section">
@@ -64,7 +77,7 @@ const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
 
                 <section className="terms-section">
                   <h3>4. Content Disclaimer</h3>
-                  <p>All content on Zodiac Whisper, including birth charts, articles, reports, and astrological insights, is provided for reference and entertainment purposes only.</p>
+                  <p>{replaceBrand('All content on Zodiac Whisper, including birth charts, articles, reports, and astrological insights, is provided for reference and entertainment purposes only.')}</p>
                   <ul>
                     <li>We do not guarantee the accuracy, completeness, or reliability of any information provided.</li>
                     <li>The website content is not intended to substitute for professional legal, medical, financial, or psychological advice.</li>
@@ -87,17 +100,17 @@ const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
 
                 <section className="terms-section">
                   <h3>7. Intellectual Property Rights</h3>
-                  <p>All content on this website, including text, graphics, logos, and software, is the intellectual property of Zodiac Whisper unless otherwise noted. You may not copy, distribute, or use any content without written permission.</p>
+                  <p>{replaceBrand('All content on this website, including text, graphics, logos, and software, is the intellectual property of Zodiac Whisper unless otherwise noted. You may not copy, distribute, or use any content without written permission.')}</p>
                 </section>
 
                 <section className="terms-section">
                   <h3>8. Limitation of Liability</h3>
-                  <p>To the maximum extent permitted by law, Zodiac Whisper shall not be liable for any damages arising out of your use or inability to use the site, or any errors or omissions in the content.</p>
+                  <p>{replaceBrand('To the maximum extent permitted by law, Zodiac Whisper shall not be liable for any damages arising out of your use or inability to use the site, or any errors or omissions in the content.')}</p>
                 </section>
 
                 <section className="terms-section">
                   <h3>9. Indemnification</h3>
-                  <p>You agree to indemnify and hold harmless Zodiac Whisper from any claims, losses, or damages arising out of your use of the website or violation of these Terms of Service.</p>
+                  <p>{replaceBrand('You agree to indemnify and hold harmless Zodiac Whisper from any claims, losses, or damages arising out of your use of the website or violation of these Terms of Service.')}</p>
                 </section>
 
                 <section className="terms-section">
@@ -144,7 +157,7 @@ const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
 
                 <section className="terms-section">
                   <h3>4. Tuyên Bố Miễn Trừ Nội Dung</h3>
-                  <p>Tất cả nội dung trên Zodiac Whisper, bao gồm các bản đồ sao, bài viết, báo cáo và các nội dung chiêm tinh, đều mang tính chất tham khảo và giải trí.</p>
+                  <p>{replaceBrand('Tất cả nội dung trên Zodiac Whisper, bao gồm các bản đồ sao, bài viết, báo cáo và các nội dung chiêm tinh, đều mang tính chất tham khảo và giải trí.')}</p>
                   <ul>
                     <li>Chúng tôi không đảm bảo tính chính xác, đầy đủ hoặc độ tin cậy của bất kỳ thông tin nào được cung cấp.</li>
                     <li>Nội dung trên trang web không nhằm thay thế lời khuyên chuyên nghiệp, bao gồm tư vấn pháp lý, y tế, tài chính hoặc tâm lý.</li>
@@ -167,17 +180,17 @@ const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
 
                 <section className="terms-section">
                   <h3>7. Quyền Sở Hữu Trí Tuệ</h3>
-                  <p>Tất cả nội dung trên trang web này, bao gồm văn bản, hình ảnh, logo và phần mềm, đều là tài sản trí tuệ của Zodiac Whisper, trừ khi có ghi chú khác. Bạn không được phép sao chép, phân phối hoặc sử dụng bất kỳ nội dung nào trên trang web mà không có sự cho phép bằng văn bản.</p>
+                  <p>{replaceBrand('Tất cả nội dung trên trang web này, bao gồm văn bản, hình ảnh, logo và phần mềm, đều là tài sản trí tuệ của Zodiac Whisper, trừ khi có ghi chú khác. Bạn không được phép sao chép, phân phối hoặc sử dụng bất kỳ nội dung nào trên trang web mà không có sự cho phép bằng văn bản.')}</p>
                 </section>
 
                 <section className="terms-section">
                   <h3>8. Giới Hạn Trách Nhiệm</h3>
-                  <p>Trong phạm vi pháp luật cho phép, Zodiac Whisper không chịu trách nhiệm đối với bất kỳ thiệt hại nào phát sinh từ việc bạn sử dụng hoặc không thể sử dụng trang web, hoặc bất kỳ lỗi/thiếu sót nào trong nội dung.</p>
+                  <p>{replaceBrand('Trong phạm vi pháp luật cho phép, Zodiac Whisper không chịu trách nhiệm đối với bất kỳ thiệt hại nào phát sinh từ việc bạn sử dụng hoặc không thể sử dụng trang web, hoặc bất kỳ lỗi/thiếu sót nào trong nội dung.')}</p>
                 </section>
 
                 <section className="terms-section">
                   <h3>9. Bồi Thường</h3>
-                  <p>Bạn đồng ý bồi thường và bảo vệ Zodiac Whisper khỏi bất kỳ khiếu nại, tổn thất hoặc thiệt hại nào phát sinh từ việc bạn sử dụng trang web hoặc vi phạm các Điều Khoản Sử Dụng này.</p>
+                  <p>{replaceBrand('Bạn đồng ý bồi thường và bảo vệ Zodiac Whisper khỏi bất kỳ khiếu nại, tổn thất hoặc thiệt hại nào phát sinh từ việc bạn sử dụng trang web hoặc vi phạm các Điều Khoản Sử Dụng này.')}</p>
                 </section>
 
                 <section className="terms-section">
@@ -202,7 +215,7 @@ const TermsPage: React.FC<TermsPageProps> = ({ onBack, onLogin, user }) => {
       </main>
 
       <footer className="subpage-footer">
-        <div>{isEn ? '© 2026 Zodiac Whisper. All rights reserved.' : '© 2026 Zodiac Whisper. Professional Astrology AI System.'}</div>
+        <div>{isEn ? `© 2026 ${siteTitle}. All rights reserved.` : `© 2026 ${siteTitle}. Professional Astrology AI System.`}</div>
         <div style={{ marginTop: '1.5rem' }}>
           <span onClick={onBack} style={{ cursor: 'pointer', color: '#6e2cf2' }}>{isEn ? 'Home' : 'Trang chủ'}</span>
         </div>

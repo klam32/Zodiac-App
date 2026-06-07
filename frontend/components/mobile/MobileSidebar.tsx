@@ -27,7 +27,7 @@ interface MobileSidebarProps {
   currentView: View;
   onViewChange: (view: View) => void;
   onLogout: () => void;
-  siteConfig?: { logo_url: string; site_title: string };
+  siteConfig?: { logo_url: string; site_title: string; [key: string]: any };
   conversations?: Conversation[];
   setChatHistory?: React.Dispatch<any>;
   setCurrentConversationId?: (id: number | null) => void;
@@ -51,7 +51,14 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
   isOpen,
   onClose
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
+
+  const siteTitle = React.useMemo(() => {
+    if (!siteConfig) return 'Zodiac Whisper';
+    const localizedKey = `site_title_${currentLang}`;
+    return (siteConfig as any)[localizedKey] || siteConfig.site_title || 'Zodiac Whisper';
+  }, [siteConfig, currentLang]);
   const [imgError, setImgError] = React.useState(false);
   const [logoImgError, setLogoImgError] = React.useState(false);
   const [deleteId, setDeleteId] = React.useState<number | null>(null);
@@ -66,6 +73,10 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
   React.useEffect(() => {
     setLogoImgError(false);
   }, [siteConfig?.logo_url]);
+
+  React.useEffect(() => {
+    setImgError(false);
+  }, [user?.picture_url]);
 
   const menuItems = [
     { id: "landing" as View, label: t("chat.home", "Trang Chủ"), icon: Home },
@@ -220,9 +231,9 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
                 <Sparkles size={18} />
               </div>
             )}
-            <h1 className="text-base font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent tracking-wide truncate max-w-[150px] font-title">
-              {siteConfig?.site_title || "Zodiac Whisper"}
-            </h1>
+             <h1 className="text-base font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent tracking-wide truncate max-w-[150px] font-title">
+              {siteTitle}
+             </h1>
           </div>
           <button
             onClick={onClose}
@@ -385,7 +396,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
               >
                 {user.picture_url && !imgError ? (
                   <img
-                    src={user.picture_url}
+                    src={getImageUrl(user.picture_url)}
                     alt="Avatar"
                     className="w-9 h-9 rounded-full object-cover ring-2 ring-purple-500/40"
                     onError={() => setImgError(true)}

@@ -7,12 +7,25 @@ interface InfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   type: 'terms' | 'faq' | 'guide' | 'privacy';
+  siteConfig?: any;
 }
 
-const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, type }) => {
+const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, type, siteConfig }) => {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const { t, i18n } = useTranslation();
   const isEn = i18n.language?.startsWith('en');
+
+  const getVal = (key: string, defaultVal: string) => {
+    if (!siteConfig) return defaultVal;
+    const currentLang = isEn ? 'en' : 'vi';
+    const localizedKey = `${key}_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
+  const replaceBrand = (text: string) => {
+    return text.replace(/Zodiac Whisper/g, siteTitle);
+  };
 
   const faqs = isEn ? [
     {
@@ -77,8 +90,8 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, type }) => {
             <div className="terms-scroll-area" style={{ marginTop: '20px', maxHeight: '400px', overflowY: 'auto', paddingRight: '10px' }}>
               <p style={{ fontSize: '0.85rem', color: '#4a5568', lineHeight: '1.6', marginBottom: '20px' }}>
                 {isEn 
-                  ? 'Welcome to Zodiac Whisper. We are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.'
-                  : 'Chào mừng bạn đến với Zodiac Whisper. Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn. Chính Sách Bảo Mật này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn.'}
+                  ? replaceBrand('Welcome to Zodiac Whisper. We are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.')
+                  : replaceBrand('Chào mừng bạn đến với Zodiac Whisper. Chúng tôi cam kết bảo vệ thông tin cá nhân của bạn. Chính Sách Bảo Mật này giải thích cách chúng tôi thu thập, sử dụng và bảo vệ dữ liệu của bạn.')}
               </p>
 
               <div className="modal-terms-section">
@@ -168,8 +181,8 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, type }) => {
                 </h4>
                 <p style={{ fontSize: '0.85rem', color: '#4a5568', lineHeight: '1.5' }}>
                   {isEn 
-                    ? 'By using Zodiac Whisper, you agree to these Terms of Service and our Privacy Policy.'
-                    : 'Bằng cách sử dụng Zodiac Whisper, bạn đồng ý với các Điều Khoản Sử Dụng và Chính Sách Bảo Mật của chúng tôi.'}
+                    ? replaceBrand('By using Zodiac Whisper, you agree to these Terms of Service and our Privacy Policy.')
+                    : replaceBrand('Bằng cách sử dụng Zodiac Whisper, bạn đồng ý với các Điều Khoản Sử Dụng và Chính Sách Bảo Mật của chúng tôi.')}
                 </p>
               </div>
 
@@ -212,8 +225,8 @@ const InfoModal: React.FC<InfoModalProps> = ({ isOpen, onClose, type }) => {
                 </h4>
                 <p style={{ fontSize: '0.85rem', color: '#4a5568', lineHeight: '1.5' }}>
                   {isEn 
-                    ? 'All text, images, and algorithms are the intellectual property of Zodiac Whisper.'
-                    : 'Mọi văn bản, hình ảnh, thuật toán đều là tài sản trí tuệ của Zodiac Whisper.'}
+                    ? replaceBrand('All text, images, and algorithms are the intellectual property of Zodiac Whisper.')
+                    : replaceBrand('Mọi văn bản, hình ảnh, thuật toán đều là tài sản trí tuệ của Zodiac Whisper.')}
                 </p>
               </div>
 

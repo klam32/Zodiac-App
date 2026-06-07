@@ -27,9 +27,16 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
   const [adminOnline, setAdminOnline] = useState(false);
   const [isAiTyping, setIsAiTyping] = useState(false);
 
+  const isApp = typeof window !== 'undefined' && (
+    (window as any).FlutterBridge !== undefined ||
+    document.cookie.includes('viewappmobie=true') ||
+    /wv|WebView|FBAN|FBAV/i.test(navigator.userAgent)
+  );
+
   // Draggable position state (offset from bottom-right corner)
   const [pos, setPos] = useState({ right: 20, bottom: 20 });
   const isDragging = useRef(false);
+  const isPointerDown = useRef(false);
   const dragStart = useRef({ x: 0, y: 0, right: 20, bottom: 20 });
   const fabRef = useRef<HTMLButtonElement>(null);
 
@@ -40,7 +47,9 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
 
   // ── Draggable FAB logic ────────────────────────────────────────────
   const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (!isApp) return;
     e.preventDefault();
+    isPointerDown.current = true;
     isDragging.current = false;
     dragStart.current = {
       x: e.clientX,
@@ -48,10 +57,15 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
       right: pos.right,
       bottom: pos.bottom,
     };
-    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-  }, [pos]);
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch (err) {
+      console.error(err);
+    }
+  }, [pos, isApp]);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isApp || !isPointerDown.current) return;
     const dx = e.clientX - dragStart.current.x;
     const dy = e.clientY - dragStart.current.y;
     if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
@@ -60,16 +74,30 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
     if (!isDragging.current) return;
 
     const newRight = Math.max(8, Math.min(window.innerWidth - 68, dragStart.current.right - dx));
-    const newBottom = Math.max(8, Math.min(window.innerHeight - 68, dragStart.current.bottom + dy));
+    const newBottom = Math.max(8, Math.min(window.innerHeight - 68, dragStart.current.bottom - dy));
     setPos({ right: newRight, bottom: newBottom });
-  }, []);
+  }, [isApp]);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (!isApp) {
+      setIsOpen(true);
+      return;
+    }
+    if (isPointerDown.current) {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    isPointerDown.current = false;
     if (!isDragging.current) {
       setIsOpen(true); // treat as tap
     }
     isDragging.current = false;
-  }, []);
+  }, [isApp]);
+
+
 
   // ── Conversation init ──────────────────────────────────────────────
   const initConversation = async () => {
@@ -198,8 +226,8 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
 
   // ── Dialog position (keep inside screen) ───────────────────────────
   const fabSize = 60;
-  // dialog sits above the FAB
-  const dialogBottom = pos.bottom + fabSize + 12;
+  // dialog sits at bottom position
+  const dialogBottom = pos.bottom;
   const dialogRight = Math.max(8, Math.min(pos.right, window.innerWidth - dialogW - 8));
 
   return (
@@ -228,7 +256,7 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
             background: 'linear-gradient(135deg,#3b82f6,#1d4ed8)',
             color: '#fff',
             border: 'none',
-            cursor: 'grab',
+            cursor: isApp ? 'grab' : 'pointer',
             boxShadow: '0 4px 20px rgba(59,130,246,.45)',
             display: 'flex',
             alignItems: 'center',
@@ -283,9 +311,11 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
 
             {/* Drag hint + close */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ color: '#4b5563', fontSize: 10, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <GripVertical size={12} /> kéo FAB
-              </span>
+              {isApp && (
+                <span style={{ color: '#4b5563', fontSize: 10, display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <GripVertical size={12} /> kéo FAB
+                </span>
+              )}
               <button
                 onClick={() => setIsOpen(false)}
                 style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 4, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -351,36 +381,7 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
         </div>
       )}
 
-      {/* ── FAB shown behind dialog (to allow close) ── */}
-      {isOpen && (
-        <button
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={(e) => { if (!isDragging.current) setIsOpen(false); isDragging.current = false; }}
-          style={{
-            position: 'fixed',
-            right: pos.right,
-            bottom: pos.bottom,
-            zIndex: 9999,
-            width: fabSize,
-            height: fabSize,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg,#ef4444,#dc2626)',
-            color: '#fff',
-            border: 'none',
-            cursor: 'grab',
-            boxShadow: '0 4px 20px rgba(239,68,68,.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            touchAction: 'none',
-            userSelect: 'none',
-          }}
-          aria-label="Đóng hỗ trợ"
-        >
-          <X size={24} />
-        </button>
-      )}
+
     </>
   );
 };

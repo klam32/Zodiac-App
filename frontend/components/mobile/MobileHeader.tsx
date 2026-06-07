@@ -3,6 +3,7 @@ import { Menu, Sparkles, User as UserIcon } from 'lucide-react';
 import { User, View } from '../../types';
 import { getImageUrl } from '../../api';
 import LanguageSwitcher from '../common/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 interface MobileHeaderProps {
   user: User | null;
@@ -11,6 +12,7 @@ interface MobileHeaderProps {
   siteConfig: {
     logo_url: string;
     site_title: string;
+    [key: string]: any;
   };
 }
 
@@ -20,8 +22,21 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   onViewChange,
   siteConfig
 }) => {
+  const { i18n } = useTranslation();
+  const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
+
+  const siteTitle = React.useMemo(() => {
+    if (!siteConfig) return 'Zodiac Whisper';
+    const localizedKey = `site_title_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig.site_title || 'Zodiac Whisper';
+  }, [siteConfig, currentLang]);
+
   const [imgError, setImgError] = React.useState(false);
   const [logoImgError, setLogoImgError] = React.useState(false);
+
+  React.useEffect(() => {
+    setImgError(false);
+  }, [user?.picture_url]);
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-[#07070c]/90 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 z-[99] box-border select-none" style={{ height: 'calc(64px + max(20px, env(safe-area-inset-top)))', paddingTop: 'max(20px, env(safe-area-inset-top))' }}>
@@ -52,7 +67,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             </div>
           )}
           <span className="text-base font-bold bg-gradient-to-r from-purple-300 via-pink-300 to-blue-300 bg-clip-text text-transparent tracking-wide max-w-[120px] truncate font-title">
-            {siteConfig.site_title || 'Zodiac Whisper'}
+            {siteTitle}
           </span>
         </div>
       </div>
@@ -80,7 +95,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             >
               {user.picture_url && !imgError ? (
                 <img
-                  src={user.picture_url}
+                  src={getImageUrl(user.picture_url)}
                   alt="Avatar"
                   className="w-8 h-8 rounded-full object-cover ring-2 ring-purple-500/40 shadow-sm"
                   onError={() => setImgError(true)}

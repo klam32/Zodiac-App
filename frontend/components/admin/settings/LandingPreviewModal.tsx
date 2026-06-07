@@ -4,22 +4,27 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface LandingPreviewModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open?: boolean;
+  isOpen?: boolean;
   settings: any;
-  activeSection?: string;
+  activeSection: string;
+  previewLanguage?: 'vi' | 'en';
+  onClose: () => void;
   isDirty?: boolean;
 }
 
 const LandingPreviewModal: React.FC<LandingPreviewModalProps> = ({
+  open,
   isOpen,
-  onClose,
   settings,
   activeSection,
+  previewLanguage = 'vi',
+  onClose,
   isDirty = false
 }) => {
   const { t } = useTranslation();
-  if (!isOpen) return null;
+  const showModal = open !== undefined ? open : isOpen;
+  if (!showModal) return null;
 
   return (
     <div className="preview-modal-overlay">
@@ -111,7 +116,7 @@ const LandingPreviewModal: React.FC<LandingPreviewModalProps> = ({
           box-shadow: none;
           height: 100%;
         }
-      `}</style>,StartLine:106,TargetContent:
+      `}</style>
 
       <div className="preview-modal-card">
         <div className="preview-modal-header">
@@ -149,6 +154,8 @@ const LandingPreviewModal: React.FC<LandingPreviewModalProps> = ({
             settings={settings}
             activeSection={activeSection}
             isDirty={isDirty}
+            previewLanguage={previewLanguage}
+            hideControlBar={false}
           />
         </div>
       </div>

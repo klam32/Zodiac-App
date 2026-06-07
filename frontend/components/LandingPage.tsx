@@ -423,24 +423,28 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onViewChange, onLoginCl
         type="terms"
         isOpen={activeModal === 'terms'}
         onClose={() => setActiveModal(null)}
+        siteConfig={siteConfig}
       />
 
       <InfoModal
         type="faq"
         isOpen={activeModal === 'faq'}
         onClose={() => setActiveModal(null)}
+        siteConfig={siteConfig}
       />
 
       <InfoModal
         type="guide"
         isOpen={activeModal === 'guide'}
         onClose={() => setActiveModal(null)}
+        siteConfig={siteConfig}
       />
 
       <InfoModal
         type="privacy"
         isOpen={activeModal === 'privacy'}
         onClose={() => setActiveModal(null)}
+        siteConfig={siteConfig}
       />
 
       <AboutModal

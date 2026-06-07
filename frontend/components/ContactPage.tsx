@@ -7,17 +7,30 @@ interface ContactPageProps {
   onBack: () => void;
   onLogin: () => void;
   user?: User | null;
+  siteConfig?: any;
 }
 
-const ContactPage: React.FC<ContactPageProps> = ({ onBack, onLogin, user }) => {
+const ContactPage: React.FC<ContactPageProps> = ({ onBack, onLogin, user, siteConfig }) => {
   const { t, i18n } = useTranslation();
   const isEn = i18n.language?.startsWith('en');
+
+  const getVal = (key: string, defaultVal: string) => {
+    if (!siteConfig) return defaultVal;
+    const currentLang = isEn ? 'en' : 'vi';
+    const localizedKey = `${key}_${currentLang}`;
+    return siteConfig[localizedKey] || siteConfig[key] || defaultVal;
+  };
+
+  const siteTitle = getVal('site_title', 'Zodiac Whisper');
+  const replaceBrand = (text: string) => {
+    return text.replace(/Zodiac Whisper/g, siteTitle);
+  };
 
   return (
     <div className="subpage-container">
       <header className="subpage-header">
         <div className="subpage-logo" onClick={onBack} style={{ cursor: 'pointer' }}>
-          <span>✨</span> Zodiac Whisper
+          <span>✨</span> {siteTitle}
         </div>
         {user ? (
           <button className="btn btn-outline" onClick={onBack}>Hi, {user.full_name || user.username}</button>
@@ -29,7 +42,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ onBack, onLogin, user }) => {
       <main className="subpage-content">
         <div className="subpage-card">
           <h1 className="subpage-title">
-            {isEn ? 'Contact Support & About Zodiac Whisper Team' : 'Liên hệ hỗ trợ & Về đội ngũ Zodiac Whisper'}
+            {isEn ? `Contact Support & About ${siteTitle} Team` : `Liên hệ hỗ trợ & Về đội ngũ ${siteTitle}`}
           </h1>
           <p className="subpage-subtitle">
             {isEn ? 'Last updated: April 20, 2026' : 'Cập nhật lần cuối: 20/4/2026'}
@@ -37,16 +50,16 @@ const ContactPage: React.FC<ContactPageProps> = ({ onBack, onLogin, user }) => {
 
           <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
             <h2 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-              {isEn ? 'About Zodiac Whisper Team' : 'Về Đội Ngũ Zodiac Whisper'}
+              {isEn ? `About ${siteTitle} Team` : `Về Đội Ngũ ${siteTitle}`}
             </h2>
             <p style={{ color: '#666', lineHeight: '1.6' }}>
               {isEn ? (
                 <>
-                  At <strong>Zodiac Whisper AI</strong>, we help you discover yourself and guide your future through the most advanced astrological algorithms. Save <strong>90% of research time</strong> and receive profound insights from the universe.
+                  At <strong>{siteTitle} AI</strong>, we help you discover yourself and guide your future through the most advanced astrological algorithms. Save <strong>90% of research time</strong> and receive profound insights from the universe.
                 </>
               ) : (
                 <>
-                  Tại <strong>Zodiac Whisper AI</strong>, chúng tôi giúp bạn khám phá bản thân và định hướng tương lai qua các thuật toán chiêm tinh tiên tiến nhất. Tiết kiệm <strong>90% thời gian nghiên cứu</strong> và mang lại những lời khuyên sâu sắc từ vũ trụ.
+                  Tại <strong>{siteTitle} AI</strong>, chúng tôi giúp bạn khám phá bản thân và định hướng tương lai qua các thuật toán chiêm tinh tiên tiến nhất. Tiết kiệm <strong>90% thời gian nghiên cứu</strong> và mang lại những lời khuyên sâu sắc từ vũ trụ.
                 </>
               )}
             </p>
@@ -104,7 +117,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ onBack, onLogin, user }) => {
 
       <footer className="subpage-footer">
         <div>
-          {isEn ? '© 2026 Zodiac Whisper. All rights reserved. ' : '© 2026 Zodiac Whisper. Đã đăng ký bản quyền. '}
+          {isEn ? `© 2026 ${siteTitle}. All rights reserved. ` : `© 2026 ${siteTitle}. Đã đăng ký bản quyền. `}
           <span style={{ color: '#e53e3e', fontWeight: 'bold' }}>BETA</span>
         </div>
         <div style={{ marginTop: '0.5rem', color: '#cbd5e0' }}>
