@@ -137,6 +137,7 @@
 
 #         return self.gemini()
 # ------------------DÙNG VERTEX AI-------------------
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import ChatVertexAI
 import vertexai
 import os
@@ -170,9 +171,25 @@ class LLM:
 
         return llm
 
+    def gemini(self):
+        api_key = os.getenv("GEMINI_API_KEY")
+        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
+        if not api_key:
+            raise Exception("Thieu GEMINI_API_KEY")
+
+        return ChatGoogleGenerativeAI(
+            google_api_key=api_key,
+            model=model_name,
+            temperature=self.temperature,
+            max_output_tokens=self.max_tokens,
+        )
+
     def get_llm(self, llm_name="vertex"):
 
         if llm_name == "vertex":
             return self.vertex()
+        if llm_name == "gemini":
+            return self.gemini()
 
         raise Exception("LLM không hỗ trợ")
