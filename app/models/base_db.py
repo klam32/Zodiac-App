@@ -1,21 +1,127 @@
 
-import pymysql  # type: ignore
+import sqlite3
 import os
+import json
 from app.config import settings
+
+class SQLiteCursorWrapper:
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    def execute(self, sql, parameters=None):
+        # Translate placeholder %s to ?
+        if '%s' in sql:
+            sql = sql.replace('%s', '?')
+        
+        # Translate INSERT IGNORE INTO to INSERT OR IGNORE INTO
+        if 'INSERT IGNORE INTO' in sql:
+            sql = sql.replace('INSERT IGNORE INTO', 'INSERT OR IGNORE INTO')
+            
+        # Translate ON DUPLICATE KEY UPDATE to ON CONFLICT DO UPDATE
+        if 'ON DUPLICATE KEY UPDATE' in sql:
+            sql = sql.replace('ON DUPLICATE KEY UPDATE profile=?', 'ON CONFLICT(user_id) DO UPDATE SET profile=?')
+
+        if parameters is not None:
+            # sqlite3 doesn't automatically convert list/dict parameters to JSON string
+            if isinstance(parameters, dict):
+                cleaned_params = {}
+                for k, v in parameters.items():
+                    if isinstance(v, (dict, list)):
+                        cleaned_params[k] = json.dumps(v, ensure_ascii=False)
+                    else:
+                        cleaned_params[k] = v
+            else:
+                cleaned_params = []
+                for p in parameters:
+                    if isinstance(p, (dict, list)):
+                        cleaned_params.append(json.dumps(p, ensure_ascii=False))
+                    else:
+                        cleaned_params.append(p)
+                cleaned_params = tuple(cleaned_params)
+            self.cursor.execute(sql, cleaned_params)
+        else:
+            self.cursor.execute(sql)
+        return self
+
+    def executemany(self, sql, seq_of_parameters=None):
+        if '%s' in sql:
+            sql = sql.replace('%s', '?')
+        if 'INSERT IGNORE INTO' in sql:
+            sql = sql.replace('INSERT IGNORE INTO', 'INSERT OR IGNORE INTO')
+            
+        if seq_of_parameters is not None:
+            cleaned_seq = []
+            for parameters in seq_of_parameters:
+                cleaned_params = []
+                for p in parameters:
+                    if isinstance(p, (dict, list)):
+                        cleaned_params.append(json.dumps(p, ensure_ascii=False))
+                    else:
+                        cleaned_params.append(p)
+                cleaned_seq.append(tuple(cleaned_params))
+            self.cursor.executemany(sql, cleaned_seq)
+        else:
+            self.cursor.executemany(sql)
+        return self
+
+    def fetchone(self):
+        row = self.cursor.fetchone()
+        if row is not None:
+            return dict(row)
+        return None
+
+    def fetchall(self):
+        rows = self.cursor.fetchall()
+        return [dict(r) for r in rows]
+
+    @property
+    def lastrowid(self):
+        return self.cursor.lastrowid
+
+    @property
+    def rowcount(self):
+        return self.cursor.rowcount
+
+
+class SQLiteConnectionWrapper:
+    def __init__(self, conn):
+        self.conn = conn
+
+    def __getattr__(self, name):
+        return getattr(self.conn, name)
+
+    def commit(self):
+        pass
+
+    def rollback(self):
+        pass
+
+    def cursor(self):
+        return SQLiteCursorWrapper(self.conn.cursor())
+
+    def close(self):
+        return self.conn.close()
+
 
 class BaseDB:
     def __init__(self):
-        self.conn = pymysql.connect(
-            host=settings.DB_HOST,
-            user=settings.DB_USER,
-            password=settings.DB_PASSWORD,
-            database=settings.DB_NAME,
-            port=settings.DB_PORT,
-            cursorclass=pymysql.cursors.DictCursor,
-            autocommit=True,
-            connect_timeout=5
+        db_dir = os.path.dirname(settings.DB_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+            
+        conn = sqlite3.connect(
+            settings.DB_PATH,
+            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+            isolation_level=None,
+            timeout=10,
+            check_same_thread=False
         )
+        conn.row_factory = sqlite3.Row
+        self.conn = SQLiteConnectionWrapper(conn)
         self.cursor = self.conn.cursor()
+        
+        # Enable foreign keys
+        self.cursor.execute("PRAGMA foreign_keys = ON")
         self._create_tables()
 
     def _create_tables(self):
@@ -23,7 +129,7 @@ class BaseDB:
         # users
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             username VARCHAR(255) UNIQUE,
             password VARCHAR(255),
             email VARCHAR(255) UNIQUE,
@@ -38,8 +144,8 @@ class BaseDB:
         # token_history
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS token_history (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             type VARCHAR(10),
             amount DOUBLE,
             description TEXT,
@@ -51,7 +157,7 @@ class BaseDB:
         # base
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS base (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(255),
             url TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -61,10 +167,10 @@ class BaseDB:
         # packages
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS packages (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(255),
-            tokens INT,
-            amount_vnd INT,
+            tokens INTEGER,
+            amount_vnd INTEGER,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
@@ -72,11 +178,11 @@ class BaseDB:
         # payments
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS payments (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
-            package_id INT,
-            amount_vnd INT,
-            tokens INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            package_id INTEGER,
+            amount_vnd INTEGER,
+            tokens INTEGER,
             status VARCHAR(20) DEFAULT 'pending',
             sepay_id VARCHAR(255),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -87,8 +193,8 @@ class BaseDB:
         # conversations (NEW)
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS conversations (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             title VARCHAR(255),
             is_pinned TINYINT(1) DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -99,16 +205,16 @@ class BaseDB:
         # conversation_chunks (RAG)
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS conversation_chunks (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            conversation_id INT,
-            user_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER,
+            user_id INTEGER,
             section_name VARCHAR(100),
             domain VARCHAR(50),
             source_type VARCHAR(50),
-            chunk_index INT,
-            token_count INT,
+            chunk_index INTEGER,
+            token_count INTEGER,
             content TEXT,
-            embedding JSON,
+            embedding TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
         )
@@ -117,10 +223,10 @@ class BaseDB:
         # retrieval_logs
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS retrieval_logs (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            conversation_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER,
             query TEXT,
-            retrieved_chunks JSON,
+            retrieved_chunks TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
@@ -128,79 +234,26 @@ class BaseDB:
         # chat_logs (UPDATED)
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS chat_logs (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
-            conversation_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            conversation_id INTEGER,
             question TEXT,
             answer TEXT,
             tokens_charged DOUBLE,
-            chart LONGTEXT,
+            chart TEXT,
             chart_summary TEXT,
-            chart_svg LONGTEXT,
-            partner_chart_svg LONGTEXT,
-            compatibility INT,
+            chart_svg TEXT,
+            partner_chart_svg TEXT,
+            compatibility INTEGER,
             label VARCHAR(50),
-            partner_json LONGTEXT,
-            raw_data LONGTEXT,
+            partner_json TEXT,
+            raw_data TEXT,
+            sources TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE
         )
         """)
-
-        # safety migration for existing tables
-        try:
-            self.cursor.execute("ALTER TABLE chat_logs ADD COLUMN chart LONGTEXT AFTER tokens_charged")
-        except:
-            pass
-
-        try:
-            self.cursor.execute("ALTER TABLE conversation_chunks ADD COLUMN user_id INT AFTER conversation_id")
-            self.cursor.execute("ALTER TABLE conversation_chunks ADD COLUMN section_name VARCHAR(100) AFTER user_id")
-            self.cursor.execute("ALTER TABLE conversation_chunks ADD COLUMN token_count INT AFTER chunk_index")
-        except:
-            pass
-
-        try:
-            self.cursor.execute("ALTER TABLE conversation_chunks ADD COLUMN domain VARCHAR(50) AFTER section_name")
-        except:
-            pass
-
-        try:
-            self.cursor.execute("ALTER TABLE conversation_chunks ADD COLUMN source_type VARCHAR(50) AFTER domain")
-        except:
-            pass
-
-        try:
-            self.cursor.execute("ALTER TABLE chat_logs ADD COLUMN sources JSON AFTER partner_json")
-        except:
-            pass
-
-        try:
-            self.cursor.execute("ALTER TABLE chat_logs ADD COLUMN raw_data LONGTEXT AFTER partner_json")
-        except:
-            pass
-
-        # Alter payment_reports table for new columns
-        for sql_alter in [
-            "ALTER TABLE payment_reports ADD COLUMN report_code VARCHAR(50) UNIQUE AFTER id",
-            "ALTER TABLE payment_reports ADD COLUMN title VARCHAR(255) AFTER user_id",
-            "ALTER TABLE payment_reports ADD COLUMN report_type VARCHAR(50) AFTER title",
-            "ALTER TABLE payment_reports ADD COLUMN invoice_code VARCHAR(50) NULL AFTER report_type",
-            "ALTER TABLE payment_reports ADD COLUMN transaction_code VARCHAR(100) NULL AFTER invoice_code",
-            "ALTER TABLE payment_reports ADD COLUMN attachment_url TEXT NULL AFTER description",
-            "ALTER TABLE payment_reports ADD COLUMN admin_note TEXT NULL AFTER status",
-            "ALTER TABLE payment_reports ADD COLUMN adjustment_type VARCHAR(20) NULL AFTER admin_note",
-            "ALTER TABLE payment_reports ADD COLUMN token_amount FLOAT NULL AFTER adjustment_type",
-            "ALTER TABLE payment_reports ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP AFTER created_at",
-            "ALTER TABLE payment_reports ADD COLUMN resolved_at TIMESTAMP NULL AFTER updated_at",
-            "ALTER TABLE payment_reports MODIFY COLUMN payment_id INT NULL"
-        ]:
-            try:
-                self.cursor.execute(sql_alter)
-            except Exception as ex:
-                pass
-
 
         # settings
         self.cursor.execute("""
@@ -210,29 +263,29 @@ class BaseDB:
         )
         """)
 
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('rate_per_1000','1.0')")
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('logo_url','')")
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('site_title','Zodiac Whisper')")
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('background_url','')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('rate_per_1000','1.0')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('logo_url','')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('site_title','Zodiac Whisper')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('background_url','')")
         
         # Landing Page Settings
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('hero_title','Khai mở vận mệnh cùng AI')")
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('hero_subtitle','Khám phá bản đồ sao cá nhân để thấu hiểu vận mệnh của chính mình.')")
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('about_title','Về chúng tôi')")
-        self.cursor.execute("INSERT IGNORE INTO settings (`key`, value) VALUES ('about_content','Chúng tôi là đội ngũ đam mê chiêm tinh học và công nghệ AI...')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('hero_title','Khai mở vận mệnh cùng AI')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('hero_subtitle','Khám phá bản đồ sao cá nhân để thấu hiểu vận mệnh của chính mình.')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('about_title','Về chúng tôi')")
+        self.cursor.execute("INSERT OR IGNORE INTO settings (`key`, value) VALUES ('about_content','Chúng tôi là đội ngũ đam mê chiêm tinh học và công nghệ AI...')")
 
         # blog_posts
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS blog_posts (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             title VARCHAR(255),
             excerpt TEXT,
-            content LONGTEXT,
+            content TEXT,
             image_url TEXT,
             author VARCHAR(100) DEFAULT 'Zodiac Whisper',
             slug VARCHAR(255) UNIQUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
 
@@ -250,10 +303,10 @@ class BaseDB:
         # payment_reports
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS payment_reports (
-            id INT AUTO_INCREMENT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             report_code VARCHAR(50) UNIQUE,
-            user_id INT,
-            payment_id INT NULL,
+            user_id INTEGER,
+            payment_id INTEGER NULL,
             title VARCHAR(255),
             report_type VARCHAR(50),
             invoice_code VARCHAR(50) NULL,
@@ -265,7 +318,7 @@ class BaseDB:
             adjustment_type VARCHAR(20) NULL,
             token_amount FLOAT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             resolved_at TIMESTAMP NULL,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
@@ -274,8 +327,8 @@ class BaseDB:
         # login_logs
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS login_logs (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             ip_address VARCHAR(255),
             user_agent TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -286,22 +339,38 @@ class BaseDB:
         # user_memory
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_memory (
-            user_id INT PRIMARY KEY,
-            profile LONGTEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            user_id INTEGER PRIMARY KEY,
+            profile TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+        """)
+
+        # chat_feedback
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat_feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            conversation_id INTEGER,
+            log_id INTEGER,
+            rating VARCHAR(10), -- 'like' or 'dislike'
+            comment TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+            FOREIGN KEY (log_id) REFERENCES chat_logs(id) ON DELETE CASCADE
         )
         """)
 
         # daily_checkins
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS daily_checkins (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             checkin_date DATE,
-            streak INT DEFAULT 1,
+            streak INTEGER DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY unique_user_checkin (user_id, checkin_date),
+            UNIQUE (user_id, checkin_date),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         """)
@@ -309,16 +378,16 @@ class BaseDB:
         # daily_quizzes
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS daily_quizzes (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             quiz_date DATE,
-            questions_answered INT DEFAULT 0,
-            correct_answers INT DEFAULT 0,
+            questions_answered INTEGER DEFAULT 0,
+            correct_answers INTEGER DEFAULT 0,
             claimed_3_correct TINYINT(1) DEFAULT 0,
             claimed_5_correct TINYINT(1) DEFAULT 0,
             answers_json TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE KEY unique_user_quiz (user_id, quiz_date),
+            UNIQUE (user_id, quiz_date),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         """)
@@ -326,14 +395,14 @@ class BaseDB:
         # support_conversations
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS support_conversations (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
             status VARCHAR(20) DEFAULT 'open',
-            assigned_admin_id INT NULL,
+            assigned_admin_id INTEGER NULL,
             last_message TEXT NULL,
             last_message_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         """)
@@ -341,10 +410,10 @@ class BaseDB:
         # support_messages
         self.cursor.execute("""
         CREATE TABLE IF NOT EXISTS support_messages (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            conversation_id INT,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER,
             sender_type VARCHAR(20),
-            sender_id INT NULL,
+            sender_id INTEGER NULL,
             message TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             is_read TINYINT(1) DEFAULT 0,
@@ -352,22 +421,32 @@ class BaseDB:
         )
         """)
 
+        # email_otps
+        self.cursor.execute("""
+        CREATE TABLE IF NOT EXISTS email_otps (
+            email VARCHAR(255) PRIMARY KEY,
+            otp VARCHAR(10),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP
+        )
+        """)
+
+
 
     def reconnect(self):
         """Ensure the database connection is alive."""
         try:
-            self.conn.ping(reconnect=True)
+            self.cursor.execute("SELECT 1")
         except Exception:
-            self.conn = pymysql.connect(
-                host=settings.DB_HOST,
-                user=settings.DB_USER,
-                password=settings.DB_PASSWORD,
-                database=settings.DB_NAME,
-                port=settings.DB_PORT,
-                cursorclass=pymysql.cursors.DictCursor,
-                autocommit=True,
-                connect_timeout=5
+            conn = sqlite3.connect(
+                settings.DB_PATH,
+                detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES,
+                isolation_level=None,
+                timeout=10,
+                check_same_thread=False
             )
+            conn.row_factory = sqlite3.Row
+            self.conn = SQLiteConnectionWrapper(conn)
             self.cursor = self.conn.cursor()
     
     def log_login(self, user_id, ip_address, user_agent):
@@ -702,6 +781,25 @@ class BaseDB:
         )
 
     # ===============================
+    # 🧠 CHAT FEEDBACK
+    # ===============================
+    def save_chat_feedback(self, user_id, conversation_id, log_id, rating, comment=None):
+        self.cursor.execute(
+            """
+            INSERT OR REPLACE INTO chat_feedback (user_id, conversation_id, log_id, rating, comment)
+            VALUES (%s, %s, %s, %s, %s)
+            """,
+            (user_id, conversation_id, log_id, rating, comment)
+        )
+
+    def get_chat_feedback(self, conversation_id):
+        self.cursor.execute(
+            "SELECT * FROM chat_feedback WHERE conversation_id=%s ORDER BY created_at DESC",
+            (conversation_id,)
+        )
+        return self.cursor.fetchall()
+
+    # ===============================
     # 🧠 RAG DOCUMENT CHUNKS
     # ===============================
     def save_document_chunks(self, conversation_id, chunks_data):
@@ -766,6 +864,30 @@ class BaseDB:
 
 
 class UserDB(BaseDB):
+
+    def save_otp(self, email, otp, expires_at_seconds=300):
+        import datetime
+        expires_at = datetime.datetime.now() + datetime.timedelta(seconds=expires_at_seconds)
+        expires_str = expires_at.strftime('%Y-%m-%d %H:%M:%S')
+        
+        self.cursor.execute(
+            "INSERT OR REPLACE INTO email_otps (email, otp, expires_at) VALUES (%s, %s, %s)",
+            (email.strip().lower(), otp, expires_str)
+        )
+
+    def verify_otp(self, email, otp):
+        import datetime
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        self.cursor.execute(
+            "SELECT otp FROM email_otps WHERE email=%s AND expires_at > %s",
+            (email.strip().lower(), now_str)
+        )
+        row = self.cursor.fetchone()
+        if row and row.get("otp") == otp:
+            self.cursor.execute("DELETE FROM email_otps WHERE email=%s", (email.strip().lower(),))
+            return True
+        return False
 
     def get_all(self):
 

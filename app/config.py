@@ -110,6 +110,11 @@ class Settings:
     DB_PORT = int(os.getenv("DB_PORT", 3306))
 
     # ====================
+    # DATABASE SQLITE
+    # ====================
+    DB_PATH = os.getenv("DB_PATH", os.path.join(os.path.dirname(DIR_ROOT), "database.db"))
+
+    # ====================
     # AI MODEL
     # ====================
 
