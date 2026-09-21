@@ -1,37 +1,27 @@
 import os
 from typing import Optional
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_google_vertexai import ChatVertexAI
 from langchain_core.messages import HumanMessage, SystemMessage
 
 class SupportAIService:
     def __init__(self):
-        llm_name = os.getenv("LLM_NAME", "vertex").lower().strip()
         project_id = os.getenv("PROJECT_ID")
         location = os.getenv("LOCATION", "us-central1")
         model_name = os.getenv("VERTEX_MODEL_NAME", "gemini-1.5-flash")
-
+        
+        # Initialize Vertex AI if not already initialized
+        import vertexai
         try:
-            if llm_name == "gemini":
-                self.llm = ChatGoogleGenerativeAI(
-                    google_api_key=os.getenv("GEMINI_API_KEY"),
-                    model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
-                    temperature=0.2,
-                    max_output_tokens=1024,
-                )
-            else:
-                # Initialize Vertex AI if not already initialized
-                import vertexai
-                try:
-                    vertexai.init(project=project_id, location=location)
-                except Exception:
-                    pass
-
-                self.llm: Optional[ChatVertexAI] = ChatVertexAI(
-                    model=model_name,
-                    temperature=0.2,
-                    max_output_tokens=1024,
-                )
+            vertexai.init(project=project_id, location=location)
+        except Exception:
+            pass
+            
+        try:
+            self.llm: Optional[ChatVertexAI] = ChatVertexAI(
+                model=model_name,
+                temperature=0.2,
+                max_output_tokens=1024,
+            )
         except Exception:
             self.llm = None
 

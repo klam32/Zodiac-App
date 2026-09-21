@@ -1,23 +1,10 @@
 import os
 from functools import lru_cache
 from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharacterTextSplitter
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_vertexai import VertexAIEmbeddings
 
 @lru_cache(maxsize=1)
 def get_embeddings_model():
-    provider = os.getenv("EMBEDDING_MODEL_NAME") or os.getenv("LLM_NAME", "vertex")
-    provider = provider.lower().strip()
-
-    if provider == "gemini":
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise Exception("Thieu GEMINI_API_KEY cho embeddings")
-        return GoogleGenerativeAIEmbeddings(
-            google_api_key=api_key,
-            model=os.getenv("GEMINI_EMBEDDING_MODEL", "models/text-embedding-004"),
-        )
-
     return VertexAIEmbeddings(model="text-embedding-004")
 
 def chunk_text(text: str, section_name: str, user_id: int) -> list[dict]:
