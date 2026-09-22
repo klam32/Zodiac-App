@@ -1,5 +1,5 @@
 import React from 'react';
-import { getImageUrl } from '../../api';
+import { APK_DOWNLOAD_FALLBACK, getImageUrl } from '../../api';
 import { Facebook, Instagram, PhoneCall, Globe, Shield, FileText, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../common/LanguageSwitcher';
@@ -88,11 +88,7 @@ const Footer: React.FC<FooterProps> = ({ siteConfig, currentLang, onAction, onPo
             textAlign: 'left'
           }}>
             {(() => {
-              const getApkFallback = () => {
-                const origin = typeof window !== 'undefined' ? window.location.origin : 'https://frontend-omega-pink-49.vercel.app';
-                return `${origin}/zodiac_whisper_33552dac.apk`;
-              };
-              const targetApkUrl = getImageUrl(siteConfig.apk_download_url) || getApkFallback();
+              const targetApkUrl = getImageUrl(siteConfig.apk_download_url) || APK_DOWNLOAD_FALLBACK;
               return (
                 <>
                   <img

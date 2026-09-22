@@ -38,6 +38,12 @@ pytest_cache/
 # Docker-specific
 *.pid
 
+# Large mobile build artifacts
+*.apk
+
+# Local Google service account secrets
+sacred-flash-*.json
+
 # Folder
 /download/*
 /docker/

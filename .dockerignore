@@ -13,10 +13,13 @@ venv
 frontend/node_modules
 frontend/dist
 frontend/.vercel
+app_web_view
+*.apk
 
 .env
 .env.*
 frontend/.env*
+sacred-flash-*.json
 
 # Keep database.db in the Docker context so deploy_bootstrap.py can seed /data/database.db.
 database.db.*

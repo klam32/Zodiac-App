@@ -2,6 +2,7 @@
 import { AuthResponse, ChatResponse, PaymentPackage, PaymentInvoice, PaymentStatus, User } from './types';
 
 const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
+export const APK_DOWNLOAD_FALLBACK = 'https://github.com/klam32/Zodiac-App/releases';
 
 const normalizeApiRoot = (url: string): string => {
   const trimmed = url.trim();
@@ -64,10 +65,9 @@ export const getImageUrl = (path: string | undefined): string => {
   if (!path) return '';
   if (path.startsWith('data:') || path.startsWith('blob:')) return path;
 
-  // Directly serve the pre-packaged APK from the frontend's static directory to bypass ngrok/backend bottleneck
+  // Keep large APK files out of the web Docker image; host downloadable builds via releases/admin config.
   if (path.includes('zodiac_whisper_33552dac.apk')) {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://frontend-omega-pink-49.vercel.app';
-    return `${origin}/zodiac_whisper_33552dac.apk`;
+    return APK_DOWNLOAD_FALLBACK;
   }
 
   if (shouldProxyAsset(path)) return `/api/asset?src=${encodeURIComponent(path)}`;

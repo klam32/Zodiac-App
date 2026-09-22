@@ -1,4 +1,4 @@
-const DEFAULT_API_ROOT = 'https://huddle-imperial-chewable.ngrok-free.dev';
+const DEFAULT_API_ROOT = 'https://zodiac.klam.blitz.cloud';
 
 const getApiRoot = () => (
   process.env.API_ROOT ||
