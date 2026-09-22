@@ -137,7 +137,26 @@
 
 #         return self.gemini()
 # ------------------DÙNG VERTEX AI-------------------
+import base64
 import os
+from pathlib import Path
+
+
+def _configure_google_credentials_from_env() -> None:
+    if os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        return
+
+    credentials_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    credentials_b64 = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_BASE64")
+    if not credentials_json and not credentials_b64:
+        return
+
+    if credentials_b64:
+        credentials_json = base64.b64decode(credentials_b64).decode("utf-8")
+
+    target = Path(os.getenv("GOOGLE_APPLICATION_CREDENTIALS_PATH", "/tmp/google-credentials.json"))
+    target.write_text(credentials_json or "", encoding="utf-8")
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(target)
 
 
 class LLM:
@@ -163,14 +182,10 @@ class LLM:
         )
 
     def vertex(self):
-        try:
-            import vertexai
-            from langchain_google_vertexai import ChatVertexAI
-        except ImportError as exc:
-            raise RuntimeError(
-                "Vertex AI dependencies are not installed in the production image. "
-                "Set LLM_NAME=gemini and GEMINI_API_KEY, or add Vertex dependencies back."
-            ) from exc
+        _configure_google_credentials_from_env()
+
+        import vertexai
+        from langchain_google_vertexai import ChatVertexAI
 
         project_id = os.getenv("PROJECT_ID")
         location = os.getenv("LOCATION", "us-central1")
@@ -191,16 +206,10 @@ class LLM:
         llm_name = (llm_name or os.getenv("LLM_NAME") or "").strip().lower()
 
         if not llm_name:
-            llm_name = "gemini"
+            llm_name = "vertex"
 
         if llm_name == "vertex":
-            try:
-                return self.vertex()
-            except RuntimeError:
-                if os.getenv("GEMINI_API_KEY") or os.getenv("KEY_API_GOOGLE"):
-                    print("[LLM] Vertex unavailable in this image; falling back to Gemini.")
-                    return self.gemini()
-                raise
+            return self.vertex()
 
         if llm_name in {"gemini", "google", "google_genai"}:
             return self.gemini()

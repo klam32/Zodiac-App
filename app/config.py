@@ -118,7 +118,7 @@ class Settings:
     # AI MODEL
     # ====================
 
-    LLM_NAME = os.getenv("LLM_NAME", "gemini")
+    LLM_NAME = os.getenv("LLM_NAME", "vertex")
 
     # GEMINI
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
