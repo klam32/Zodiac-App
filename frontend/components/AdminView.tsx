@@ -294,6 +294,16 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
     } catch (err: any) { toast.error(err.message); }
   };
 
+  const handleUploadApk = async (file: File) => {
+    try {
+      const loadingToast = toast.loading('Đang tải lên file APK...');
+      const res = await api.adminUploadApk(file);
+      toast.dismiss(loadingToast);
+      toast.success('Tải APK thành công!');
+      setData(prev => ({ ...prev, apk_download_url: res.apk_url }));
+    } catch (err: any) { toast.error(err.message); }
+  };
+
   const renderPage = () => {
     switch (activePage) {
       case 'dashboard':
@@ -323,6 +333,7 @@ const AdminView: React.FC<AdminViewProps> = ({ onBackToSite, onLogout, adminName
             onUploadHeroChartImg={(f) => handleUpload(f, 'hero_chart_image_url')}
             onUploadVideoGuide={(f) => handleUploadVideo(f, 'guide_video_url')}
             onUploadVideoPoster={(f) => handleUpload(f, 'guide_video_poster_url')}
+            onUploadApk={handleUploadApk}
           />
         );
       case 'logins':

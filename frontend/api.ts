@@ -3,16 +3,23 @@ import { AuthResponse, ChatResponse, PaymentPackage, PaymentInvoice, PaymentStat
 
 const isNative = typeof window !== 'undefined' && (window as any).Capacitor?.isNativePlatform?.();
 
+const normalizeApiRoot = (url: string): string => {
+  const trimmed = url.trim();
+  if (!trimmed || trimmed === '/') return '';
+  return trimmed.replace(/\/$/, '');
+};
+
 const getApiRoot = (): string => {
   // Ưu tiên lấy từ biến môi trường Vite (hỗ trợ cả VITE_API_BASE_URL và VITE_API_URL)
   const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
   if (envUrl) {
-    return envUrl.trim().replace(/\/$/, '');
+    return normalizeApiRoot(envUrl);
   }
 
   // Nếu là môi trường native mobile (Capacitor), dùng public URL ngrok
   if (isNative) {
-    return 'https://huddle-imperial-chewable.ngrok-free.dev';
+    const nativeUrl = import.meta.env.VITE_NATIVE_API_URL || import.meta.env.VITE_API_FALLBACK_URL;
+    return nativeUrl ? normalizeApiRoot(nativeUrl) : '';
   }
 
   // Fallback cho local development trên web browser
@@ -21,7 +28,7 @@ const getApiRoot = (): string => {
   }
 
   // Mặc định gọi đến domain ngrok public
-  return 'https://huddle-imperial-chewable.ngrok-free.dev';
+  return typeof window !== 'undefined' ? window.location.origin : '';
 };
 
 export const API_ROOT = getApiRoot().trim();
@@ -35,6 +42,12 @@ const shouldProxyAsset = (path: string): boolean => {
   if (typeof window === 'undefined') return false;
   if (!API_ROOT.includes('ngrok-free')) return false;
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return false;
+
+  // Do not proxy large files like APKs or videos because Vercel has a 4.5MB payload limit and 10s execution limit
+  const pathname = path.split('?')[0].toLowerCase();
+  if (pathname.endsWith('.apk') || pathname.match(/\.(mp4|webm|avi|mov|mkv|zip|gz|rar|tar)$/)) {
+    return false;
+  }
 
   if (isApiAssetPath(path)) return true;
 
@@ -50,6 +63,13 @@ const shouldProxyAsset = (path: string): boolean => {
 export const getImageUrl = (path: string | undefined): string => {
   if (!path) return '';
   if (path.startsWith('data:') || path.startsWith('blob:')) return path;
+
+  // Directly serve the pre-packaged APK from the frontend's static directory to bypass ngrok/backend bottleneck
+  if (path.includes('zodiac_whisper_33552dac.apk')) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://frontend-omega-pink-49.vercel.app';
+    return `${origin}/zodiac_whisper_33552dac.apk`;
+  }
+
   if (shouldProxyAsset(path)) return `/api/asset?src=${encodeURIComponent(path)}`;
   if (path.startsWith('http')) return path;
   if (isApiAssetPath(path)) {
@@ -86,9 +106,28 @@ export const api = {
       headers: getHeaders(),
       body: formData,
     });
-    if (!response.ok) throw new Error('Đăng ký thất bại');
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Đăng ký thất bại');
+    }
     return response.json();
   },
+
+  async sendOtp(email: string): Promise<{ message: string }> {
+    const formData = new FormData();
+    formData.append('email', email);
+    const response = await fetch(`${BASE_URL}/auth/send-otp`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Gửi OTP thất bại');
+    }
+    return response.json();
+  },
+
 
   async checkAuth(): Promise<User> {
     const response = await fetch(`${BASE_URL}/auth/check`, {
@@ -389,6 +428,18 @@ export const api = {
     if (!response.ok) {
       const errData = await response.json();
       throw new Error(errData.detail || 'Cập nhật hồ sơ thất bại');
+    }
+    return response.json();
+  },
+
+  async deleteAccount(): Promise<any> {
+    const response = await fetch(`${BASE_URL}/auth/account`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Xóa tài khoản thất bại');
     }
     return response.json();
   },
@@ -932,6 +983,21 @@ export const api = {
       headers: getHeaders(),
     });
     if (!response.ok) throw new Error('Không thể đánh dấu hoàn thành hội thoại');
+    return response.json();
+  },
+
+  async adminUploadApk(file: File): Promise<{ apk_url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${BASE_URL}/admin/upload-apk`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: formData,
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Tải lên file APK thất bại');
+    }
     return response.json();
   }
 };

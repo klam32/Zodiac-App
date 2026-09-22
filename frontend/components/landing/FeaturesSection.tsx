@@ -62,7 +62,7 @@ const FeaturesSection: React.FC<FeaturesSectionProps> = ({ siteConfig, currentLa
   ];
 
   return (
-    <section id="features-detail" className="features-detail-section reveal active">
+    <section id="features" className="features-detail-section reveal active">
       <div className="section-container">
         <div className="section-header">
           <div className="badge">✦ {t('landing.features.label', 'TÍNH NĂNG VƯỢT TRỘI')}</div>

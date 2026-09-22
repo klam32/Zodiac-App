@@ -222,10 +222,15 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onViewChange, onLoginCl
   }, []);
 
   const handleAction = (view: View) => {
-    const modalViews: View[] = ['contact', 'terms', 'faq', 'guide', 'about', 'privacy'];
+    const modalViews: View[] = ['about'];
 
     if (modalViews.includes(view)) {
       setActiveModal(view as any);
+      return;
+    }
+
+    if (view === 'faq' || view === 'guide' || view === 'contact' || view === 'support') {
+      onViewChange('support');
       return;
     }
 
@@ -395,12 +400,21 @@ const LandingPage: React.FC<LandingPageProps> = ({ user, onViewChange, onLoginCl
       {/* 11. FAQ Section */}
       <FAQSection siteConfig={siteConfig} currentLang={currentLang} />
 
-      {/* 14. Footer */}
       <Footer
         siteConfig={siteConfig}
         currentLang={currentLang}
         onAction={handleAction}
-        onPolicyOpen={(type) => setPolicyModalType(type)}
+        onPolicyOpen={(type) => {
+          if (type === 'privacy') {
+            onViewChange('privacy');
+          } else if (type === 'terms') {
+            onViewChange('terms');
+          } else if (type === 'data_deletion' as any) {
+            onViewChange('data_deletion');
+          } else if (type === 'payment') {
+            setPolicyModalType('payment');
+          }
+        }}
         setShowZaloModal={setShowZaloModal}
       />
 

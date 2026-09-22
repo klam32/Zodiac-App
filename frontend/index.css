@@ -257,3 +257,15 @@ html, body {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ===== INTERACTIVE SVG CHART ===== */
+.astrology-chart-svg svg text {
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.astrology-chart-svg svg text:hover {
+  fill: #a855f7 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.6);
+}

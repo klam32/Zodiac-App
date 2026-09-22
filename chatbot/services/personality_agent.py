@@ -21,6 +21,7 @@ class PersonalityAgent:
     def analyze(self, birth_info: Dict[str, Any], raw_chart_data: str | None = None) -> Dict[str, Any]:
 
         name = birth_info.get("name", "Người dùng")
+        lang = birth_info.get("language", "vi")
 
         try:
             subject = None if raw_chart_data else get_astrological_subject(
@@ -60,13 +61,40 @@ class PersonalityAgent:
 
         except Exception as e:
             return {
-                "interpretation": f"Không thể phân tích tính cách: {str(e)}"
+                "interpretation": f"Could not analyze personality: {str(e)}" if lang == "en" else f"Không thể phân tích tính cách: {str(e)}"
             }
 
         # =========================
         # PROMPT
         # =========================
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+ You are a psychological and behavioral analysis expert based on astrology.
+
+USER INFO:
+- Name: {name}
+- Birthdate: {birth_info.get('day')}/{birth_info.get('month')}/{birth_info.get('year')}
+- Current Date: {birth_info.get('current_date', 'N/A')}
+
+User asks:
+"{birth_info.get("context")}"
+
+Astrological Data (Must be used as the sole basis):
+{chart_data_to_use}
+
+⚠️ MANDATORY RULES (LOGIC & ACCURACY):
+1. LOGIC CHECK: Based on the birthdate and current date, recognize the user's age.
+   - If the question is about the past, analyze the formation of personality.
+   - Always reply based on psychological maturity at the current age.
+2. DATA-BASED: Absolutely do not fabricate planetary positions. Only use the data provided in "Astrological Data".
+3. TRẢ LỜI ĐÚNG TRỌNG TÂM: Only focus on psychology and personality.
+4. NO TECHNICAL TERMS: Absolutely DO NOT mention or explain technical astrology terms (planets, houses, zodiac signs, aspects). Focus entirely on practical psychological insights and advice.
+5. FORMATTING: Use professional Markdown (##, -). DO NOT overuse bold formatting.
+
+Answer in English:
+"""
+        else:
+            prompt = f"""
  Bạn là chuyên gia phân tích tâm lý và hành vi dựa trên chiêm tinh học.
 
 THÔNG TIN NGƯỜI DÙNG:
@@ -82,12 +110,12 @@ Dữ liệu Chiêm tinh (Bắt buộc sử dụng làm cơ sở duy nhất):
 
 ⚠️ QUY TẮC BẮT BUỘC (LOGIC & CHÍNH XÁC):
 1. KIỂM TRA TÍNH LOGIC: Dựa vào ngày sinh và ngày hiện tại, hãy nhận diện độ tuổi của người dùng.
-   - Nếu câu hỏi về quá khứ, hãy phân tích sự hình thành tính cách.
+   - Nếu câu hỏi về quá khứ, hãy phân tích sự hình thái tính cách.
    - Luôn trả lời dựa trên sự trưởng thành tâm lý ở độ tuổi hiện tại.
 2. DỰA TRÊN DỮ LIỆU: Tuyệt đối không được bịa đặt vị trí các hành tinh. Chỉ sử dụng dữ liệu được cung cấp ở mục "Dữ liệu Chiêm tinh".
 3. TRẢ LỜI ĐÚNG TRỌNG TÂM: Chỉ tập trung vào tâm lý và tính cách.
 4. TUYỆT ĐỐI KHÔNG nhắc đến hoặc giải thích các thuật ngữ chiêm tinh kỹ thuật (hành tinh, nhà, cung hoàng đạo, góc chiếu). Hãy tập trung hoàn toàn vào các khía cạnh tâm lý và lời khuyên thực tế.
-4. ĐỊNH DẠNG: Sử dụng Markdown chuyên nghiệp (##, -). KHÔNG lạm dụng in đậm.
+5. ĐỊNH DẠNG: Sử dụng Markdown chuyên nghiệp (##, -). KHÔNG lạm dụng in đậm.
 
 Trả lời:
 """
@@ -100,7 +128,7 @@ Trả lời:
         answer = answer.strip()
 
         return {
-            "type":"personality",
+            "type": "personality",
             "agent": "personality",
             "interpretation": answer
         }
@@ -108,7 +136,7 @@ Trả lời:
     # =========================
     # FOLLOW-UP CHAT
     # =========================
-    def chat(self, question: str) -> str:
+    def chat(self, question: str, lang: str = "vi") -> str:
 
         history_text = ""
 
@@ -116,7 +144,25 @@ Trả lời:
             role = "User" if msg["role"] == "user" else "Psychologist"
             history_text += f"{role}: {msg['content']}\n"
 
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+You are a psychological analysis expert.
+
+Here is the previous conversation:
+{history_text}
+
+The user asks further:
+{question}
+
+Requirements:
+- ANSWER TO THE POINT from a practical psychological perspective.
+- ABSOLUTELY DO NOT mention technical astrology terms.
+- Present in clean, professional Markdown: Use headings (##) if needed and lists (-) for clarity. Do NOT overuse bold formatting.
+
+Answer in English:
+"""
+        else:
+            prompt = f"""
 Bạn là chuyên gia phân tích tâm lý.
 
 Dưới đây là cuộc hội thoại trước đó:

@@ -71,6 +71,85 @@ const Footer: React.FC<FooterProps> = ({ siteConfig, currentLang, onAction, onPo
               <span>Zalo</span>
             </div>
           </div>
+
+          {/* Android APK Download Widget */}
+          <div style={{
+            marginTop: '24px',
+            padding: '16px',
+            background: 'rgba(109, 93, 252, 0.08)',
+            border: '1px solid rgba(109, 93, 252, 0.2)',
+            borderRadius: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            maxWidth: '300px',
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.25)',
+            textAlign: 'left'
+          }}>
+            {(() => {
+              const getApkFallback = () => {
+                const origin = typeof window !== 'undefined' ? window.location.origin : 'https://frontend-omega-pink-49.vercel.app';
+                return `${origin}/zodiac_whisper_33552dac.apk`;
+              };
+              const targetApkUrl = getImageUrl(siteConfig.apk_download_url) || getApkFallback();
+              return (
+                <>
+                  <img
+                    src={`https://quickchart.io/qr?text=${encodeURIComponent(targetApkUrl)}&size=80&margin=1`}
+                    alt="QR Code Tải App"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      backgroundColor: 'white',
+                      padding: '4px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(109, 93, 252, 0.3)',
+                      boxShadow: '0 4px 12px rgba(109, 93, 252, 0.15)'
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {t('landing.footer.appTitle', 'Ứng dụng di động')}
+                    </span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#ffffff', lineHeight: 1.2 }}>
+                      {t('landing.footer.scanToDownload', 'Quét QR tải APK')}
+                    </span>
+                    <a
+                      href={targetApkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '6px 12px',
+                  background: 'linear-gradient(135deg, #6d5dfc, #a855f7)',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 10px rgba(109, 93, 252, 0.3)',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 6px 14px rgba(109, 93, 252, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.boxShadow = '0 4px 10px rgba(109, 93, 252, 0.3)';
+                }}
+              >
+                {t('landing.footer.downloadApk', 'Tải APK trực tiếp')}
+              </a>
+            </div>
+                </>
+              );
+            })()}
+          </div>
         </div>
 
         {/* Column 1: Services */}
@@ -88,10 +167,11 @@ const Footer: React.FC<FooterProps> = ({ siteConfig, currentLang, onAction, onPo
         <div className="footer-column-v2">
           <h4>{footerColumn2}</h4>
           <ul>
-            <li><span onClick={() => onAction('guide')}>{t('landing.footer.guide', 'Hướng dẫn sử dụng')}</span></li>
-            <li><span onClick={() => onAction('faq')}>{t('landing.footer.faq', 'Câu hỏi thường gặp')}</span></li>
+            <li><span onClick={() => onAction('support')}>{t('landing.footer.guide', 'Hướng dẫn sử dụng')}</span></li>
+            <li><span onClick={() => onAction('support')}>{t('landing.footer.faq', 'Câu hỏi thường gặp')}</span></li>
             <li><span onClick={() => onPolicyOpen('privacy')}>{t('landing.footer.privacy', 'Chính sách bảo mật')}</span></li>
             <li><span onClick={() => onPolicyOpen('terms')}>{t('landing.footer.terms', 'Điều khoản sử dụng')}</span></li>
+            <li><span onClick={() => onPolicyOpen('data_deletion' as any)}>{currentLang === 'en' ? 'Data Deletion Policy' : 'Chính sách xóa dữ liệu'}</span></li>
             <li><span onClick={() => onPolicyOpen('payment')}>{t('landing.footer.payment', 'Chính sách thanh toán')}</span></li>
           </ul>
         </div>
@@ -123,7 +203,7 @@ const Footer: React.FC<FooterProps> = ({ siteConfig, currentLang, onAction, onPo
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              onAction('contact');
+              onAction('support');
             }}
           >
             <PhoneCall size={14} />
@@ -138,6 +218,7 @@ const Footer: React.FC<FooterProps> = ({ siteConfig, currentLang, onAction, onPo
         <div className="footer-bottom-links-v2">
           <span onClick={() => onPolicyOpen('privacy')}>{t('landing.footer.privacy', 'Chính sách bảo mật')}</span>
           <span onClick={() => onPolicyOpen('terms')}>{t('landing.footer.terms', 'Điều khoản sử dụng')}</span>
+          <span onClick={() => onPolicyOpen('data_deletion' as any)}>{currentLang === 'en' ? 'Data Deletion' : 'Xóa dữ liệu'}</span>
           <span onClick={() => onPolicyOpen('payment')}>{t('landing.footer.payment', 'Chính sách thanh toán')}</span>
           <LanguageSwitcher variant="light" />
         </div>

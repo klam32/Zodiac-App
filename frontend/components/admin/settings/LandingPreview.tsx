@@ -976,6 +976,14 @@ const LandingPreview: React.FC<LandingPreviewProps> = ({
             <div className="mini-footer-col">
               <h5>Zodiac Whisper</h5>
               <p>{getVal('footer_description', 'Hệ sinh thái Chiêm tinh AI hàng đầu.', 'Leading AI Astrology ecosystem.')}</p>
+              <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 6, padding: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)' }}>
+                <img
+                  src={`https://quickchart.io/qr?text=${encodeURIComponent(getImageUrl(settings.apk_download_url) || 'https://github.com/klam32/Zodiac-App/releases')}&size=40&margin=1`}
+                  alt="QR"
+                  style={{ width: 32, height: 32, borderRadius: 4, background: 'white', padding: 1 }}
+                />
+                <span style={{ fontSize: 9, color: '#a78bfa' }}>Scan APK QR</span>
+              </div>
             </div>
             <div className="mini-footer-col">
               <h5>{getVal('footer_column_1_title', 'DỊCH VỤ', 'SERVICES')}</h5>

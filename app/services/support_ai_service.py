@@ -1,28 +1,14 @@
 import os
 from typing import Optional
-from langchain_google_vertexai import ChatVertexAI
 from langchain_core.messages import HumanMessage, SystemMessage
+from chatbot.utils.llm import LLM
 
 class SupportAIService:
     def __init__(self):
-        project_id = os.getenv("PROJECT_ID")
-        location = os.getenv("LOCATION", "us-central1")
-        model_name = os.getenv("VERTEX_MODEL_NAME", "gemini-1.5-flash")
-        
-        # Initialize Vertex AI if not already initialized
-        import vertexai
         try:
-            vertexai.init(project=project_id, location=location)
-        except Exception:
-            pass
-            
-        try:
-            self.llm: Optional[ChatVertexAI] = ChatVertexAI(
-                model=model_name,
-                temperature=0.2,
-                max_output_tokens=1024,
-            )
-        except Exception:
+            self.llm: Optional[object] = LLM(temperature=0.2, max_tokens=1024).get_llm(os.getenv("LLM_NAME"))
+        except Exception as exc:
+            print("Support AI init error:", exc)
             self.llm = None
 
     def get_support_reply(self, message: str, language: str = "vi") -> str:

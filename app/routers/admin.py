@@ -43,6 +43,7 @@ ALL_SETTINGS_DEFAULTS = {
     "seo_author": "Zodiac Whisper Team",
     "favicon_url": "/favicon.svg",
     "no_answer_fallback": "Rất tiếc, các lá bài hiện chưa cho thấy câu trả lời rõ ràng cho vấn đề này. Hãy thử hít thở sâu và đặt câu hỏi theo một cách khác để vũ trụ có thể dẫn lối cho bạn tốt hơn.",
+    "apk_download_url": "https://github.com/klam32/Zodiac-App/releases",
     
     # Hero Section
     "hero_title": "Khai mở vận mệnh cùng AI",
@@ -204,6 +205,7 @@ class SettingsUpdate(BaseModel):
     seo_author: Optional[str] = None
     favicon_url: Optional[str] = None
     no_answer_fallback: Optional[str] = None
+    apk_download_url: Optional[str] = None
     
     # Hero Section
     hero_title: Optional[str] = None
@@ -738,6 +740,51 @@ async def upload_blog_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/upload-apk")
+async def upload_apk(
+    file: UploadFile = File(...),
+    admin: dict = Depends(get_current_admin)
+):
+    try:
+        safe_filename = os.path.basename(file.filename or "file.apk")
+        file_extension = os.path.splitext(safe_filename)[1].lower()
+        if file_extension != ".apk":
+            raise HTTPException(status_code=400, detail="Chỉ hỗ trợ tải lên tệp .apk")
+            
+        db = UserDB()
+        try:
+            old_val = db.get_setting("apk_download_url", "")
+            if old_val and "/upload-file/view/" in old_val:
+                old_filename = old_val.split("/upload-file/view/")[-1]
+                old_filename = os.path.basename(old_filename)
+                old_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads", old_filename))
+                if os.path.exists(old_path):
+                    try:
+                        os.remove(old_path)
+                    except Exception as delete_err:
+                        import logging
+                        logging.getLogger(__name__).error(f"[CLEANUP ERROR] Failed to delete old APK: {delete_err}")
+        except Exception as db_err:
+            import logging
+            logging.getLogger(__name__).error(f"[CLEANUP ERROR] DB error: {db_err}")
+        finally:
+            db.close()
+
+        unique_filename = f"zodiac_whisper_{uuid4().hex[:8]}.apk"
+        folder_path = os.path.abspath(os.path.join(settings.DIR_ROOT, "..", "uploads"))
+        os.makedirs(folder_path, exist_ok=True)
+        file_path = os.path.join(folder_path, unique_filename)
+
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        view_url = f"/api/v1/upload-file/view/{unique_filename}"
+        return {"apk_url": view_url}
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=f"Lỗi tải lên file APK: {str(e)}")
+
 @router.get("/active-users")
 async def get_active_users(limit: int = 50, admin: dict = Depends(get_current_admin)):
     db = UserDB()
@@ -1043,7 +1090,7 @@ async def get_dashboard_stats(admin: dict = Depends(get_current_admin)):
         
         # revenue_by_month
         db.cursor.execute("""
-            SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(amount_vnd) as revenue 
+            SELECT strftime('%Y-%m', created_at) as month, SUM(amount_vnd) as revenue 
             FROM payments 
             WHERE status = 'completed' 
             GROUP BY month 
@@ -1054,7 +1101,7 @@ async def get_dashboard_stats(admin: dict = Depends(get_current_admin)):
         
         # token_usage_by_day
         db.cursor.execute("""
-            SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as date, SUM(tokens_charged) as tokens 
+            SELECT strftime('%Y-%m-%d', created_at) as date, SUM(tokens_charged) as tokens 
             FROM chat_logs 
             GROUP BY date 
             ORDER BY date ASC 
@@ -1067,7 +1114,7 @@ async def get_dashboard_stats(admin: dict = Depends(get_current_admin)):
         
         # new_users_by_day
         db.cursor.execute("""
-            SELECT DATE_FORMAT(created_at, '%Y-%m-%d') as date, COUNT(*) as users 
+            SELECT strftime('%Y-%m-%d', created_at) as date, COUNT(*) as users 
             FROM users 
             GROUP BY date 
             ORDER BY date ASC 

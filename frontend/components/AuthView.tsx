@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { api } from "../api";
 import { User } from "../types";
 import { useTranslation } from "react-i18next";
@@ -16,20 +16,55 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onClose }) => {
     username: "",
     password: "",
     email: "",
+    otp: "",
   });
 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [infoMessage, setInfoMessage] = useState("");
+
+  useEffect(() => {
+    let timer: any;
+    if (countdown > 0) {
+      timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const handleSendOtp = async () => {
+    if (!formData.email) return;
+    setError("");
+    setInfoMessage("");
+    setIsSendingOtp(true);
+
+    try {
+      const res = await api.sendOtp(formData.email);
+      setInfoMessage(res.message || "Mã OTP đã được gửi!");
+      setCountdown(60);
+    } catch (err: any) {
+      setError(err.message || "Không thể gửi OTP. Vui lòng thử lại!");
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setInfoMessage("");
     setIsLoading(true);
 
     const data = new FormData();
     data.append("username", formData.username);
     data.append("password", formData.password);
-    if (!isLogin) data.append("email", formData.email);
+    if (!isLogin) {
+      data.append("email", formData.email);
+      data.append("otp", formData.otp);
+    }
 
     try {
       if (isLogin) {
@@ -96,19 +131,51 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onClose }) => {
           </div>
         )}
 
+        {/* INFO MESSAGE */}
+        {infoMessage && (
+          <div className="mb-5 p-3 bg-green-500/10 text-green-400 text-sm rounded-lg border border-green-500/20">
+            {infoMessage}
+          </div>
+        )}
+
         {/* FORM */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div>
-              <label className="text-xs text-purple-400 mb-1 block">{t("auth.email")}</label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="oracle@example.com"
-                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 outline-none"
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs text-purple-400 mb-1 block">{t("auth.email")}</label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="oracle@example.com"
+                    className="flex-1 bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 outline-none min-w-0"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={isSendingOtp || countdown > 0 || !formData.email}
+                    className="px-4 bg-purple-600 hover:bg-purple-500 disabled:bg-purple-800/40 disabled:text-purple-300/50 text-white text-xs font-bold rounded-lg transition-all whitespace-nowrap min-w-[90px]"
+                  >
+                    {isSendingOtp ? "Đang gửi..." : countdown > 0 ? `${countdown}s` : "Gửi mã"}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-purple-400 mb-1 block">Mã xác thực OTP</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.otp}
+                  onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
+                  placeholder="Mã OTP 6 số"
+                  maxLength={6}
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-purple-500 outline-none text-center tracking-widest font-mono text-lg"
+                />
+              </div>
             </div>
           )}
 
@@ -176,7 +243,11 @@ const AuthView: React.FC<AuthViewProps> = ({ onSuccess, onClose }) => {
         <p className="text-center mt-6 text-sm text-gray-400">
           {isLogin ? t("auth.noAccount") : t("auth.hasAccount")}
           <button
-            onClick={() => setIsLogin(!isLogin)}
+            onClick={() => {
+              setIsLogin(!isLogin);
+              setError("");
+              setInfoMessage("");
+            }}
             className="ml-2 text-purple-400 hover:text-purple-300"
           >
             {isLogin ? t("auth.registerNow") : t("auth.login")}

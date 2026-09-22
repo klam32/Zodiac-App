@@ -34,4 +34,4 @@ RUN mkdir -p /data/uploads \
 USER 1000
 EXPOSE 8080
 
-CMD ["sh", "-c", "mkdir -p /data/uploads && uvicorn app_deploy:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "mkdir -p /data/uploads && if [ -z \"${GOOGLE_APPLICATION_CREDENTIALS:-}\" ]; then for f in /app/*.json; do if [ -f \"$f\" ] && grep -q '\"type\"[[:space:]]*:[[:space:]]*\"service_account\"' \"$f\"; then export GOOGLE_APPLICATION_CREDENTIALS=\"$f\"; break; fi; done; fi && python deploy_bootstrap.py && uvicorn app_deploy:app --host 0.0.0.0 --port ${PORT:-8080}"]

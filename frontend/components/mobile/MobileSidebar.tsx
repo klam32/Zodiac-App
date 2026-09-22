@@ -333,17 +333,25 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
                               ) {
                                 return t("chat.newChatDefault", "Đoạn chat mới");
                               }
-                              if (ttl.startsWith("[Lịch Cát Tường]")) {
-                                return ttl.replace("[Lịch Cát Tường]", `[${t("chat.calendar")}]`);
+                              if (ttl.startsWith("[Lịch Cát Tường]") || ttl.startsWith("[Auspicious Calendar]")) {
+                                const match = ttl.match(/(\d+)\/(\d+)/);
+                                if (match) {
+                                  const [_, month, year] = match;
+                                  return currentLang === 'en'
+                                    ? `[${t('chat.calendar')}] - Month ${month}/${year}`
+                                    : `[${t('chat.calendar')}] - Tháng ${month}/${year}`;
+                                }
+                                return `[${t('chat.calendar')}]`;
                               }
-                              if (ttl.startsWith("[Auspicious Calendar]")) {
-                                return ttl.replace("[Auspicious Calendar]", `[${t("chat.calendar")}]`);
-                              }
-                              if (ttl.startsWith("[Vận Trình Ngày]")) {
-                                return ttl.replace("[Vận Trình Ngày]", `[${t("chat.daily")}]`);
-                              }
-                              if (ttl.startsWith("[Daily Forecast]")) {
-                                return ttl.replace("[Daily Forecast]", `[${t("chat.daily")}]`);
+                              if (ttl.startsWith("[Vận Trình Ngày]") || ttl.startsWith("[Daily Forecast]")) {
+                                const match = ttl.match(/(\d{4}-\d{2}-\d{2})/);
+                                if (match) {
+                                  const dateStr = match[1];
+                                  return currentLang === 'en'
+                                    ? `[${t('chat.daily')}] - Date ${dateStr}`
+                                    : `[${t('chat.daily')}] - Ngày ${dateStr}`;
+                                }
+                                return `[${t('chat.daily')}]`;
                               }
                               return conv.title;
                             })()}

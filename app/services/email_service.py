@@ -82,7 +82,7 @@ def send_payment_report_admin_notification(report: dict, user: dict) -> bool:
     
     attachment_url = report.get('attachment_url')
     if attachment_url and attachment_url.startswith("/"):
-        backend_base_url = "https://huddle-imperial-chewable.ngrok-free.dev"  # Default fallback from env
+        backend_base_url = (settings.FRONTEND_URL or "https://zodiac.klam.blitz.cloud").rstrip("/")
         if settings.GOOGLE_REDIRECT_URI:
             if "/api/" in settings.GOOGLE_REDIRECT_URI:
                 backend_base_url = settings.GOOGLE_REDIRECT_URI.split("/api/")[0]

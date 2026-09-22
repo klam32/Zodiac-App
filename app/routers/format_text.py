@@ -7,7 +7,7 @@ import os
 
 router = APIRouter(tags=["Format Text"])
 
-llm_name = os.environ.get("LLM_NAME", "vertex")
+llm_name = os.environ.get("LLM_NAME")
 llm = LLM().get_llm(llm_name)
 
 class FormatTextRequest(BaseModel):

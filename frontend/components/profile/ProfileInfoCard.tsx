@@ -2,16 +2,35 @@ import React from 'react';
 import { User } from '../../types';
 import { useTranslation } from 'react-i18next';
 import UserAvatar from '../common/UserAvatar';
+import { api } from '../../api';
 
 interface ProfileInfoCardProps {
   user: User;
   onUpdateName: () => void;
   onChangePassword: () => void;
+  onLogout: () => void;
 }
 
-const ProfileInfoCard: React.FC<ProfileInfoCardProps> = ({ user, onUpdateName, onChangePassword }) => {
+const ProfileInfoCard: React.FC<ProfileInfoCardProps> = ({ user, onUpdateName, onChangePassword, onLogout }) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
+
+  const handleDeleteAccount = async () => {
+    const isEn = currentLang === 'en';
+    const confirmMsg = isEn 
+      ? 'WARNING: Are you absolutely sure you want to permanently delete your account? All your birth charts, chat history, and remaining tokens will be completely and irreversibly erased.'
+      : 'CẢNH BÁO: Bạn có chắc chắn muốn xóa vĩnh viễn tài khoản của mình? Tất cả bản đồ sao, lịch sử chat và token còn lại sẽ bị xóa sạch hoàn toàn và không thể khôi phục.';
+    
+    if (window.confirm(confirmMsg)) {
+      try {
+        await api.deleteAccount();
+        alert(isEn ? 'Your account has been successfully deleted.' : 'Tài khoản của bạn đã được xóa thành công.');
+        onLogout();
+      } catch (err: any) {
+        alert(err.message || (isEn ? 'Failed to delete account' : 'Xóa tài khoản thất bại'));
+      }
+    }
+  };
 
   return (
     <div className="bg-white rounded-3xl shadow-xl border border-stone-100 p-8 transition-all">
@@ -108,12 +127,23 @@ const ProfileInfoCard: React.FC<ProfileInfoCardProps> = ({ user, onUpdateName, o
             </div>
           </div>
 
-          <button
-            onClick={onChangePassword}
-            className="sm:self-end px-5 py-3 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold uppercase rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 text-center"
-          >
-            {t('profile.changePassword') || 'Đổi mật khẩu'}
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 sm:self-end">
+            {!user.is_admin && (
+              <button
+                onClick={handleDeleteAccount}
+                className="px-5 py-3 border border-red-200 hover:bg-red-50 text-red-600 hover:text-red-700 text-xs font-bold uppercase rounded-xl transition-all text-center active:scale-95"
+              >
+                {currentLang === 'en' ? 'Delete Account' : 'Xóa tài khoản'}
+              </button>
+            )}
+
+            <button
+              onClick={onChangePassword}
+              className="px-5 py-3 bg-stone-800 hover:bg-stone-900 text-white text-xs font-bold uppercase rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 text-center"
+            >
+              {t('profile.changePassword') || 'Đổi mật khẩu'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

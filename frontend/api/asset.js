@@ -35,6 +35,14 @@ export default async function handler(req, res) {
     return;
   }
 
+  // Redirect large files directly to avoid Vercel Serverless Function 4.5MB payload response limit and 10s execution timeout
+  const pathname = targetUrl.pathname.toLowerCase();
+  if (pathname.endsWith('.apk') || pathname.match(/\.(mp4|webm|avi|mov|mkv|zip|gz|rar|tar)$/)) {
+    res.writeHead(307, { Location: targetUrl.toString() });
+    res.end();
+    return;
+  }
+
   try {
     const upstream = await fetch(targetUrl.toString(), {
       headers: {

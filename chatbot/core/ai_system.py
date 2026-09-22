@@ -69,6 +69,70 @@ class AISystem:
         }
 
 
+
+    # =====================================================
+    # 🧠 SEMANTIC ROUTER FOR CASUAL/SOCIAL QUERIES
+    # =====================================================
+    async def route_query(self, question: str, lang: str = "vi") -> Dict[str, Any] | None:
+        """
+        Phân loại câu hỏi bằng Semantic Router để xử lý nhanh các câu hỏi xã giao/đơn giản.
+        Bypass toàn bộ RAG, GraphRAG và Multi-Agent pipeline nặng nếu câu hỏi là xã giao.
+        """
+        # 1. Luật heuristic nhanh trước
+        import unicodedata
+        def strip_accents(text):
+            text = unicodedata.normalize("NFD", text)
+            return "".join(ch for ch in text if unicodedata.category(ch) != "Mn").lower().replace("đ", "d").strip()
+            
+        q_clean = re.sub(r'[^\w\s]', '', question).strip()
+        q_strip = strip_accents(q_clean)
+        
+        greetings = ["xin chao", "chao ban", "chao bot", "chao ai", "hello", "hi", "helo", "alo", "chao ad", "chao"]
+        thanks = ["cam on", "thank", "thanks", "cam on ban", "cam on bot", "thank you", "tks", "ty"]
+        farewells = ["tam biet", "bye", "goodbye", "hen gap lai", "off day", "di ngu day"]
+        
+        if q_strip in greetings:
+            ans = "Hello! I am your Astrology Assistant. How can I help you explore your natal chart today?" if lang == "en" else "Xin chào! Tôi là trợ lý chiêm tinh của bạn. Hôm nay bạn muốn khám phá điều gì về bản đồ sao của mình?"
+            return {"route": "greeting", "answer": ans}
+        if q_strip in thanks:
+            ans = "You're very welcome! If you have any other questions, feel free to ask." if lang == "en" else "Rất sẵn lòng giúp đỡ bạn! Nếu bạn có bất kỳ câu hỏi nào khác về bản đồ sao, hãy cứ hỏi tôi nhé."
+        if q_strip in farewells:
+            ans = "Goodbye! Have a wonderful day and see you next time!" if lang == "en" else "Tạm biệt bạn! Chúc bạn một ngày tốt lành và hẹn gặp lại lần sau!"
+            return {"route": "farewell", "answer": ans}
+            
+        # 2. Phân loại bằng LLM gọn nhẹ
+        prompt = f"""
+        Bạn là Bộ định tuyến Ngữ nghĩa (Semantic Router) cho hệ thống Chatbot Chiêm tinh.
+        Hãy phân loại câu hỏi sau của người dùng vào 1 trong các nhóm:
+        - "casual": Chào hỏi, cảm ơn, tạm biệt hoặc trò chuyện xã giao chung chung (không chứa nội dung cần phân tích bản đồ sao/chiêm tinh).
+        - "astrology": Câu hỏi thực sự cần tư vấn/luận giải chiêm tinh, bản đồ sao, tính cách, tình duyên, sự nghiệp, sức khỏe.
+        
+        CÂU HỎI: "{question}"
+        
+        Mẫu output JSON:
+        {{
+          "category": "casual" hoặc "astrology",
+          "direct_response": "Câu trả lời thân thiện ngắn gọn tương ứng nếu là 'casual', ngược lại để trống"
+        }}
+        """
+        try:
+            res = await asyncio.to_thread(self.llm.invoke, prompt)
+            content = res.content if hasattr(res, "content") else str(res)
+            
+            json_match = re.search(r"\{.*\}", content, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group(0))
+                category = data.get("category", "astrology")
+                if category == "casual":
+                    direct_response = data.get("direct_response")
+                    if not direct_response:
+                        direct_response = "Tôi có thể giúp gì cho bạn về chiêm tinh học hôm nay?"
+                    return {"route": "casual", "answer": direct_response}
+            return None
+        except Exception as e:
+            print(f"[SemanticRouter] Error: {e}")
+            return None
+
     # =====================================================
     # 🧠 ALL-IN-ONE ANALYZER 
     # =====================================================

@@ -14,6 +14,16 @@ const getLocalDateString = () => {
   return `${year}-${month}-${day}`;
 };
 
+const normalizeField = (field: string): string => {
+  if (!field) return 'overview';
+  const lower = field.toLowerCase();
+  if (lower.includes('tổng quan') || lower.includes('overview') || lower.includes('general') || lower.includes('astrology')) return 'overview';
+  if (lower.includes('tình cảm') || lower.includes('love') || lower.includes('relationship')) return 'love';
+  if (lower.includes('sự nghiệp') || lower.includes('career') || lower.includes('fame')) return 'career';
+  if (lower.includes('sức khỏe') || lower.includes('health') || lower.includes('wellbeing') || lower.includes('energy')) return 'health';
+  return 'overview';
+};
+
 interface DailyPredictionProps {
   user: User | null;
   onBalanceUpdate: (balance: number) => void;
@@ -26,10 +36,10 @@ const DailyPrediction: React.FC<DailyPredictionProps> = ({ user, onBalanceUpdate
   const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
 
   const CATEGORIES = [
-    { id: currentLang === 'en' ? 'General' : 'Tổng quan', name: t('daily.categories.overview'), icon: <Star className="w-5 h-5" /> },
-    { id: currentLang === 'en' ? 'Love' : 'Tình cảm', name: t('daily.categories.love'), icon: <Heart className="w-5 h-5" /> },
-    { id: currentLang === 'en' ? 'Career' : 'Sự nghiệp', name: t('daily.categories.career'), icon: <Briefcase className="w-5 h-5" /> },
-    { id: currentLang === 'en' ? 'Health' : 'Sức khỏe', name: t('daily.categories.health'), icon: <Zap className="w-5 h-5" /> },
+    { id: 'overview', name: t('daily.categories.overview'), icon: <Star className="w-5 h-5" /> },
+    { id: 'love', name: t('daily.categories.love'), icon: <Heart className="w-5 h-5" /> },
+    { id: 'career', name: t('daily.categories.career'), icon: <Briefcase className="w-5 h-5" /> },
+    { id: 'health', name: t('daily.categories.health'), icon: <Zap className="w-5 h-5" /> },
   ];
 
   const [view, setView] = useState<'input' | 'result'>('input');
@@ -54,7 +64,7 @@ const DailyPrediction: React.FC<DailyPredictionProps> = ({ user, onBalanceUpdate
         const data = predictionMsg.chart_summary;
         setPrediction(data.prediction);
         setChartSvg(predictionMsg.chart_svg || data.chart_svg || '');
-        setSelectedField(data.field || CATEGORIES[0].id);
+        setSelectedField(normalizeField(data.field));
         if (data.date || data.birth_info) {
           setFormData(prev => ({
             ...prev,

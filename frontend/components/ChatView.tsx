@@ -110,6 +110,53 @@ const ChatView: React.FC<ChatViewProps> = ({
       window.removeEventListener("NEW_CHAT_RESET", handleReset)
     }
   }, [])
+
+  useEffect(() => {
+    const handleAskQuestion = (e: Event) => {
+      const questionText = (e as CustomEvent).detail
+      if (!questionText) return
+
+      let autoQuestion = ""
+      const isEn = i18n.language?.startsWith('en')
+      
+      const planets = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "Mặt Trời", "Mặt Trăng", "Sao Thủy", "Sao Kim", "Sao Hỏa", "Sao Mộc", "Sao Thổ", "Sao Thiên Vương", "Sao Hải Vương", "Sao Diêm Vương"]
+      const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"]
+      
+      if (planets.includes(questionText)) {
+        autoQuestion = isEn 
+          ? `Tell me more about the meaning of ${questionText} in my natal chart.` 
+          : `Hãy phân tích chi tiết ý nghĩa của ${questionText} trong bản đồ sao của tôi.`
+      } else if (signs.includes(questionText)) {
+        autoQuestion = isEn 
+          ? `Tell me more about the influence of ${questionText} sign in my natal chart.` 
+          : `Hãy cho tôi biết thêm về ảnh hưởng của cung ${questionText} trong bản đồ sao của tôi.`
+      } else if (!isNaN(Number(questionText))) {
+        autoQuestion = isEn 
+          ? `What does House ${questionText} signify in my chart?` 
+          : `Nhà ${questionText} trong bản đồ sao của tôi có ý nghĩa gì?`
+      } else {
+        autoQuestion = isEn 
+          ? `Tell me more about the meaning of "${questionText}" in my chart.` 
+          : `Giải thích cho tôi thêm về ý nghĩa của "${questionText}" trong bản đồ sao.`
+      }
+
+      setInput(autoQuestion)
+      setTimeout(() => {
+        const textarea = document.querySelector('textarea[placeholder]') as HTMLTextAreaElement
+        if (textarea) {
+          textarea.focus()
+          // Tự động trigger chiều cao textarea
+          textarea.style.height = 'auto'
+          textarea.style.height = textarea.scrollHeight + 'px'
+        }
+      }, 50)
+    }
+
+    window.addEventListener("ASK_ASTROLOGY_QUESTION", handleAskQuestion)
+    return () => {
+      window.removeEventListener("ASK_ASTROLOGY_QUESTION", handleAskQuestion)
+    }
+  }, [i18n.language])
   const loadLatestConversation = async () => {
     try {
       const convRes = await api.getConversations()

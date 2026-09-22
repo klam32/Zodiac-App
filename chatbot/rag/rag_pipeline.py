@@ -784,9 +784,9 @@ def format_graphrag_context(graph_data) -> str:
                 
     return "\n".join(lines).strip()
 
-def combine_hybrid_context(rag_context: str, graph_context: str) -> str:
-    r_ctx = rag_context if rag_context.strip() else "Không tìm thấy chunk phù hợp."
-    g_ctx = graph_context if graph_context.strip() else "Không tìm thấy entity/relationship phù hợp."
+def combine_hybrid_context(rag_context: str, graph_context: str, language: str = "vi") -> str:
+    r_ctx = rag_context if rag_context.strip() else ("No relevant RAG chunks found." if language == "en" else "Không tìm thấy chunk phù hợp.")
+    g_ctx = graph_context if graph_context.strip() else ("No relevant entities/relationships found." if language == "en" else "Không tìm thấy entity/relationship phù hợp.")
     
     combined = f"""HYBRID_CONTEXT
 
@@ -800,12 +800,41 @@ GRAPH_CONTEXT:
         combined = combined[:14000] + "\n... [Context truncated due to length limits] ..."
     return combined
 
-async def generate_answer_from_hybrid_context(question: str, hybrid_context: str, domain: str, llm_model = None) -> str:
+async def generate_answer_from_hybrid_context(question: str, hybrid_context: str, domain: str, llm_model = None, language: str = "vi") -> str:
     if llm_model is None:
         from chatbot.utils.llm import LLM
         llm_model = LLM().get_llm()
         
-    prompt = f"""Bạn là trợ lý chiêm tinh của hệ thống MARA-AI.
+    if language == "en":
+        prompt = f"""You are a fun astrology assistant of the MARA-AI system.
+
+You must answer based on the HYBRID_CONTEXT consisting of 2 sources:
+1. RAG_CONTEXT: text chunks divided from the natal chart interpretation.
+2. GRAPH_CONTEXT: entities and relationships extracted from the natal chart.
+
+Mandatory rules:
+- Prioritize specific information in RAG_CONTEXT.
+- Use GRAPH_CONTEXT to supplement relations between planets, signs, houses, traits, life areas, and advice.
+- Prioritize information in HYBRID_CONTEXT. However, if HYBRID_CONTEXT does not contain specific information to answer the question, or if both sources are empty/missing data, you MUST USE your deep astrological knowledge and logic to deduce and provide the most accurate, deep, and complete astrological answer to the user's question (absolutely do not answer 'information not found' or 'no data yet').
+- If RAG_CONTEXT and GRAPH_CONTEXT conflict, prioritize RAG_CONTEXT and express it cautiously.
+- If you only have indirect data or deduce from your own knowledge, start or blend subtly: 'Based on astrological indicators...' or 'According to an in-depth astrological perspective...' to analyze in the most convincing way.
+- If the question contains time elements like 'after 30 years old', 'future', 'later' but context has no direct time markers, use your astrological knowledge (e.g., planet cycles like Saturn return at age 30, or house meanings) to provide predictions and deep advice.
+- Answer in English.
+- Answer clearly, friendly, to the point.
+- Do not mention RAG or GraphRAG in detail unless debugging is needed.
+
+QUESTION:
+{question}
+
+DOMAIN:
+{domain}
+
+HYBRID_CONTEXT:
+{hybrid_context}
+
+ANSWER:"""
+    else:
+        prompt = f"""Bạn là trợ lý chiêm tinh của hệ thống MARA-AI.
 
 Bạn phải trả lời dựa trên HYBRID_CONTEXT gồm 2 nguồn:
 1. RAG_CONTEXT: các đoạn văn bản đã được chia chunk từ luận giải bản đồ sao.
@@ -840,9 +869,9 @@ ANSWER:"""
         return answer
     except Exception as e:
         print(f"[Hybrid Context LLM Error] {e}")
-        return "Hiện tại hệ thống gặp lỗi khi truy vấn câu trả lời. Vui lòng thử lại sau."
+        return "System error when retrieving response. Please try again later." if language == "en" else "Hiện tại hệ thống gặp lỗi khi truy vấn câu trả lời. Vui lòng thử lại sau."
 
-async def answer_followup_with_hybrid_context(user_id: int, chart_id: int, question: str, user_db = None):
+async def answer_followup_with_hybrid_context(user_id: int, chart_id: int, question: str, user_db = None, language: str = "vi"):
     import time
     start_time = time.time()
     
@@ -868,7 +897,7 @@ async def answer_followup_with_hybrid_context(user_id: int, chart_id: int, quest
     if not is_astrology_related:
         print(f"\n[Hybrid FollowUp] Non-astrology query rejected: {question}")
         return {
-            "answer": "Xin lỗi, mình chỉ có thể trả lời các câu hỏi liên quan đến chiêm tinh học và bản đồ sao cá nhân của bạn. Bạn vui lòng đặt câu hỏi trong phạm vi này nhé!",
+            "answer": "Sorry, I can only answer questions related to astrology and your personal natal chart. Please ask questions within this scope!" if language == "en" else "Xin lỗi, mình chỉ có thể trả lời các câu hỏi liên quan đến chiêm tinh học và bản đồ sao cá nhân của bạn. Bạn vui lòng đặt câu hỏi trong phạm vi này nhé!",
             "source_used": "NONE",
             "rag_chunks_count": 0,
             "graph_entities_count": 0,
@@ -879,7 +908,7 @@ async def answer_followup_with_hybrid_context(user_id: int, chart_id: int, quest
         
     # Check Cache
     normalized_q = question.strip().lower()
-    cache_key = (user_id, chart_id, normalized_q, domain)
+    cache_key = (user_id, chart_id, normalized_q, domain, language)
     if cache_key in HYBRID_FOLLOWUP_CACHE:
         print(f"[Hybrid FollowUp] Cache hit for key={cache_key}")
         return HYBRID_FOLLOWUP_CACHE[cache_key]
@@ -922,11 +951,11 @@ async def answer_followup_with_hybrid_context(user_id: int, chart_id: int, quest
             "graph_sources": {"entities": [], "relationships": []}
         }
 
-    hybrid_context = combine_hybrid_context(rag_context, graph_context)
+    hybrid_context = combine_hybrid_context(rag_context, graph_context, language=language)
     
     # Measure LLM time
     t_start_llm = time.time()
-    answer = await generate_answer_from_hybrid_context(question, hybrid_context, domain)
+    answer = await generate_answer_from_hybrid_context(question, hybrid_context, domain, language=language)
     llm_time_ms = int((time.time() - t_start_llm) * 1000)
     
     total_time_ms = int((time.time() - start_time) * 1000)
@@ -965,7 +994,7 @@ async def answer_followup_with_hybrid_context(user_id: int, chart_id: int, quest
     HYBRID_FOLLOWUP_CACHE[cache_key] = result
     return result
 
-async def answer_followup_with_hybrid_rag(user_id: int, chart_id: int, question: str, user_db = None):
+async def answer_followup_with_hybrid_rag(user_id: int, chart_id: int, question: str, user_db = None, language: str = "vi"):
     # Backward compatibility wrapper pointing to new hybrid context flow
-    return await answer_followup_with_hybrid_context(user_id, chart_id, question, user_db)
+    return await answer_followup_with_hybrid_context(user_id, chart_id, question, user_db, language=language)
 

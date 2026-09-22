@@ -21,16 +21,27 @@ interface CalendarFortuneProps {
   history?: any[];
 }
 
+const normalizeField = (field: string): string => {
+  if (!field) return 'overview';
+  const lower = field.toLowerCase();
+  if (lower.includes('tổng quan') || lower.includes('overview') || lower.includes('general') || lower.includes('astrology')) return 'overview';
+  if (lower.includes('tình cảm') || lower.includes('tình duyên') || lower.includes('love') || lower.includes('relationship')) return 'love';
+  if (lower.includes('sự nghiệp') || lower.includes('career') || lower.includes('fame')) return 'career';
+  if (lower.includes('sức khỏe') || lower.includes('health') || lower.includes('wellbeing') || lower.includes('energy')) return 'health';
+  if (lower.includes('tài lộc') || lower.includes('wealth') || lower.includes('business')) return 'wealth';
+  return 'overview';
+};
+
 const CalendarFortune: React.FC<CalendarFortuneProps> = ({ user, onBalanceUpdate, conversationId, history }) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language?.startsWith('en') ? 'en' : 'vi';
 
   const CATEGORIES = [
-    t('calendar.categories.overview'),
-    t('calendar.categories.love'),
-    t('calendar.categories.career'),
-    t('calendar.categories.health'),
-    t('calendar.categories.wealth'),
+    { id: 'overview', name: t('calendar.categories.overview') },
+    { id: 'love', name: t('calendar.categories.love') },
+    { id: 'career', name: t('calendar.categories.career') },
+    { id: 'health', name: t('calendar.categories.health') },
+    { id: 'wealth', name: t('calendar.categories.wealth') },
   ];
 
   const WEEKDAYS = currentLang === 'en'
@@ -38,7 +49,7 @@ const CalendarFortune: React.FC<CalendarFortuneProps> = ({ user, onBalanceUpdate
     : ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
   const [view, setView] = useState<'input' | 'result'>('input');
-  const [selectedField, setSelectedField] = useState(CATEGORIES[0]);
+  const [selectedField, setSelectedField] = useState(CATEGORIES[0].id);
   const [birthInfo, setBirthInfo] = useState({
     name: user?.full_name || '',
     day: 1, month: 1, year: 1990, hour: 12, minute: 0, city: ''
@@ -61,7 +72,7 @@ const CalendarFortune: React.FC<CalendarFortuneProps> = ({ user, onBalanceUpdate
         setCalendarData(data.days || []);
         setSummary(data.summary || '');
         setChartSvg(calendarMsg.chart_svg || data.chart_svg || '');
-        setSelectedField(data.field || CATEGORIES[0]);
+        setSelectedField(normalizeField(data.field));
         setTargetDate({ month: data.month || targetDate.month, year: data.year || targetDate.year });
         if (data.birth_info) setBirthInfo(data.birth_info);
         setView('result');
@@ -229,9 +240,9 @@ const CalendarFortune: React.FC<CalendarFortuneProps> = ({ user, onBalanceUpdate
               <label className="block text-sm font-medium text-gray-400">{t('calendar.selectField')}</label>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map(cat => (
-                  <button key={cat} onClick={() => setSelectedField(cat)}
-                    className={`px-4 py-2 rounded-full text-xs transition ${selectedField === cat ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
-                    {cat}
+                  <button key={cat.id} onClick={() => setSelectedField(cat.id)}
+                    className={`px-4 py-2 rounded-full text-xs transition ${selectedField === cat.id ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/30' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}>
+                    {cat.name}
                   </button>
                 ))}
               </div>
@@ -275,7 +286,7 @@ const CalendarFortune: React.FC<CalendarFortuneProps> = ({ user, onBalanceUpdate
           <div className="md:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-6">
             <div className="flex items-center gap-3 mb-4">
               <Info size={18} className="text-blue-400" />
-              <h3 className="font-medium">{t('calendar.fieldAnalysis')}: {selectedField}</h3>
+              <h3 className="font-medium">{t('calendar.fieldAnalysis')}: {CATEGORIES.find(c => c.id === selectedField)?.name || selectedField}</h3>
             </div>
             <p className="text-sm text-gray-400">
               {t('calendar.whyBirthChartDesc')}

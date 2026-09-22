@@ -21,6 +21,7 @@ class CalendarRequest(BaseModel):
     field: str
     birth_info: dict | None = None
     conversation_id: int | None = None
+    language: str | None = "vi"
 
 @router.post("/good-bad-days")
 async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depends(get_current_user)):
@@ -29,15 +30,59 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
     token_counter = None
 
     try:
+        # Kiểm tra số dư token
+        if not current_user.get("is_admin") and float(current_user.get("token_balance", 0.0)) <= 0:
+            lang = request.language or "vi"
+            msg = "You have run out of tokens. Please recharge to continue using the service." if lang == "en" else "Bạn đã hết tokens. Vui lòng nạp thêm để tiếp tục sử dụng dịch vụ."
+            raise HTTPException(
+                status_code=402,
+                detail=msg
+            )
+
         user_db = await asyncio.to_thread(UserDB)
         history_db = await asyncio.to_thread(ChatHistoryDB)
         token_counter = await asyncio.to_thread(TokenCounter)
         
         now = datetime.now()
-        if request.year < now.year or (request.year == now.year and request.month < now.month):
-             raise HTTPException(status_code=400, detail="Vui lòng chọn tháng trong hiện tại hoặc tương lai.")
+        lang = request.language or "vi"
 
-        llm_name = os.environ.get("LLM_NAME", "vertex")
+        field_labels_vi = {
+            "overview": "Tổng quan",
+            "love": "Tình duyên",
+            "career": "Sự nghiệp",
+            "health": "Sức khỏe",
+            "wealth": "Tài lộc"
+        }
+        field_labels_en = {
+            "overview": "General Fortune",
+            "love": "Love & Relationships",
+            "career": "Career & Fame",
+            "health": "Health & Wellbeing",
+            "wealth": "Wealth & Business"
+        }
+        field_id = "overview"
+        req_field_lower = (request.field or "").lower()
+        if "tổng quan" in req_field_lower or "overview" in req_field_lower or "general" in req_field_lower or "astrology" in req_field_lower:
+            field_id = "overview"
+        elif "tình cảm" in req_field_lower or "tình duyên" in req_field_lower or "love" in req_field_lower:
+            field_id = "love"
+        elif "sự nghiệp" in req_field_lower or "career" in req_field_lower or "fame" in req_field_lower:
+            field_id = "career"
+        elif "sức khỏe" in req_field_lower or "health" in req_field_lower or "wellbeing" in req_field_lower:
+            field_id = "health"
+        elif "tài lộc" in req_field_lower or "wealth" in req_field_lower or "business" in req_field_lower:
+            field_id = "wealth"
+        else:
+            field_id = request.field or "overview"
+
+        field_name = field_labels_en.get(field_id, field_id) if lang == "en" else field_labels_vi.get(field_id, field_id)
+        if request.year < now.year or (request.year == now.year and request.month < now.month):
+             raise HTTPException(
+                 status_code=400, 
+                 detail="Please select a month in the current or future." if lang == "en" else "Vui lòng chọn tháng trong hiện tại hoặc tương lai."
+             )
+
+        llm_name = os.environ.get("LLM_NAME")
         llm = LLM().get_llm(llm_name)
         
         _, num_days = py_calendar.monthrange(request.year, request.month)
@@ -73,16 +118,33 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
 
                 # Format data for LLM
                 planets_keys = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
-                planets = [f"- {getattr(user_chart, k).name}: {getattr(user_chart, k).sign} (Nhà {getattr(user_chart, k).house})" for k in planets_keys if hasattr(user_chart, k)]
+                planets = [f"- {getattr(user_chart, k).name}: {getattr(user_chart, k).sign} (" + (f"House {getattr(user_chart, k).house}" if lang == "en" else f"Nhà {getattr(user_chart, k).house}") + ")" for k in planets_keys if hasattr(user_chart, k)]
                 
-                chart_data_str = f"""
+                if lang == "en":
+                    chart_data_str = f"""
+                NATAL CHART:
+                Ascendant: {user_chart.ascendant.sign}
+                Planets:
+                {chr(10).join(planets)}
+                """
+                else:
+                    chart_data_str = f"""
                 BẢN ĐỒ SAO GỐC (NATAL CHART):
                 Cung Mọc (Ascendant): {user_chart.ascendant.sign}
                 Các hành tinh:
                 {chr(10).join(planets)}
                 """
 
-                birth_context = f"""
+                if lang == "en":
+                    birth_context = f"""
+                User Info:
+                Full Name: {name}
+                Birthdate: {day}/{month}/{year} at {hour}:{minute}
+                Birthplace: {city}
+                {chart_data_str}
+                """
+                else:
+                    birth_context = f"""
                 Thông tin người dùng:
                 Họ tên: {name}
                 Ngày sinh: {day}/{month}/{year} lúc {hour}:{minute}
@@ -91,16 +153,39 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
                 """
             except Exception as e:
                 print(f"Lỗi tính toán bản đồ sao: {e}")
-                birth_context = f"Thông tin người dùng: {name}, sinh ngày {day}/{month}/{year}"
+                birth_context = f"User Info: {name}, born {day}/{month}/{year}" if lang == "en" else f"Thông tin người dùng: {name}, sinh ngày {day}/{month}/{year}"
 
-        prompt = f"""
-        Bạn là bậc thầy chiêm tinh học cao cấp. Hãy lập lịch Cát Tường tháng {request.month}/{request.year} cho lĩnh vực "{request.field}".
+        if lang == "en":
+            prompt = f"""
+        You are a senior professional astrologer. Please construct the Auspicious Calendar for {request.month}/{request.year} in the field of "{field_name}".
+        
+        {birth_context}
+        
+        TASKS:
+        1. Analyze transiting planets (Transits) in the month {request.month}/{request.year} relative to the user's natal chart.
+        2. Identify days that are genuinely Good (good) or Bad (bad) for the field of "{field_name}".
+        
+        FORMATTING RULES (MANDATORY):
+        - RETURN ONLY JSON. Only list special days (good or bad).
+        - Number of special days: around 6-10 days.
+        - JSON Format:
+        {{
+          "special_days": [
+            {{"day": 5, "quality": "good", "reason": "Short reason based on aspects/transits..."}},
+            {{"day": 12, "quality": "bad", "reason": "Short reason..."}}
+          ],
+          "summary": "Summary of this month's trend (100 words)..."
+        }}
+        """
+        else:
+            prompt = f"""
+        Bạn là bậc thầy chiêm tinh học cao cấp. Hãy lập lịch Cát Tường tháng {request.month}/{request.year} cho lĩnh vực "{field_name}".
         
         {birth_context}
         
         NHIỆM VỤ:
         1. Phân tích các hành tinh quá cảnh (Transits) trong tháng {request.month}/{request.year} so với bản đồ sao gốc.
-        2. Tìm các ngày thực sự Cát (good) hoặc Hung (bad) cho lĩnh vực "{request.field}".
+        2. Tìm các ngày thực sự Cát (good) hoặc Hung (bad) cho lĩnh vực "{field_name}".
         
         YÊU CẦU ĐỊNH DẠNG (BẮT BUỘC):
         - TRẢ JSON DUY NHẤT. Chỉ liệt kê các ngày đặc biệt (tốt hoặc xấu).
@@ -135,7 +220,7 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
         except:
             # Fallback bóc tách bằng Regex nếu LLM trả về text lộn xộn
             summary_match = re.search(r'"summary"\s*:\s*"(.*?)"', content, re.DOTALL)
-            summary = summary_match.group(1) if summary_match else "Dữ liệu tóm tắt hiện không khả dụng."
+            summary = summary_match.group(1) if summary_match else ("Monthly trend data currently unavailable." if lang == "en" else "Dữ liệu tóm tắt hiện không khả dụng.")
             blocks = re.findall(r'\{[^{}]*?"day"\s*:\s*(\d+).*?\}', content, re.DOTALL)
             for block in blocks:
                 try:
@@ -160,27 +245,38 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
                 days_data.append({
                     "day": d,
                     "quality": "neutral",
-                    "reason": "Ngày bình hòa, không có biến động chiêm tinh lớn."
+                    "reason": "Neutral day, no major astrological movements." if lang == "en" else "Ngày bình hòa, không có biến động chiêm tinh lớn."
                 })
 
         # 3. TẠO ĐOẠN CHAT
-        conv_title = f"[Lịch Cát Tường] - Tháng {request.month}/{request.year}"
+        conv_title = f"[Auspicious Calendar] - Month {request.month}/{request.year}" if lang == "en" else f"[Lịch Cát Tường] - Tháng {request.month}/{request.year}"
         new_conv_id = await asyncio.to_thread(history_db.create_conversation, current_user["id"], title=conv_title)
         
-        msg_user = f"Xem lịch cát tường tháng {request.month}/{request.year} - Lĩnh vực: {request.field}"
+        msg_user = f"View auspicious calendar for month {request.month}/{request.year} - Field: {field_name}" if lang == "en" else f"Xem lịch cát tường tháng {request.month}/{request.year} - Lĩnh vực: {field_name}"
         
-        good_list = [f"Ngày {d['day']}: {d['reason']}" for d in days_data if d['quality'] == 'good']
-        bad_list = [f"Ngày {d['day']}: {d['reason']}" for d in days_data if d['quality'] == 'bad']
+        good_list = [f"Day {d['day']}: {d['reason']}" if lang == "en" else f"Ngày {d['day']}: {d['reason']}" for d in days_data if d['quality'] == 'good']
+        bad_list = [f"Day {d['day']}: {d['reason']}" if lang == "en" else f"Ngày {d['day']}: {d['reason']}" for d in days_data if d['quality'] == 'bad']
         
-        msg_bot = f"### 🗓️ LỊCH CÁT TƯỜNG THÁNG {request.month}/{request.year}\n\n"
-        msg_bot += f"**Lĩnh vực:** {request.field}\n\n"
-        
-        if good_list:
-            msg_bot += "✅ **NGÀY TỐT (CÁT):**\n" + "\n".join([f"- {i}" for i in good_list]) + "\n\n"
-        if bad_list:
-            msg_bot += "❌ **NGÀY XẤU (HUNG):**\n" + "\n".join([f"- {i}" for i in bad_list]) + "\n\n"
+        if lang == "en":
+            msg_bot = f"### 🗓️ AUSPICIOUS CALENDAR FOR {request.month}/{request.year}\n\n"
+            msg_bot += f"**Field:** {field_name}\n\n"
             
-        msg_bot += f"**Tóm lược:**\n{summary}"
+            if good_list:
+                msg_bot += "✅ **GOOD DAYS (AUSPICIOUS):**\n" + "\n".join([f"- {i}" for i in good_list]) + "\n\n"
+            if bad_list:
+                msg_bot += "❌ **BAD DAYS (INASPICIOUS):**\n" + "\n".join([f"- {i}" for i in bad_list]) + "\n\n"
+                
+            msg_bot += f"**Summary:**\n{summary}"
+        else:
+            msg_bot = f"### 🗓️ LỊCH CÁT TƯỜNG THÁNG {request.month}/{request.year}\n\n"
+            msg_bot += f"**Lĩnh vực:** {field_name}\n\n"
+            
+            if good_list:
+                msg_bot += "✅ **NGÀY TỐT (CÁT):**\n" + "\n".join([f"- {i}" for i in good_list]) + "\n\n"
+            if bad_list:
+                msg_bot += "❌ **NGÀY XẤU (HUNG):**\n" + "\n".join([f"- {i}" for i in bad_list]) + "\n\n"
+                
+            msg_bot += f"**Tóm lược:**\n{summary}"
 
         # Deduct tokens
         tokens = token_counter.count_tokens(prompt + content)
@@ -188,7 +284,7 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
         
         email = str(current_user.get("email") or "")
         if not current_user.get("is_admin"):
-            new_balance = await asyncio.to_thread(token_counter.deduct_tokens, email=email, tokens=cost, description=f"Lịch Cát Tường: {request.field}")
+            new_balance = await asyncio.to_thread(token_counter.deduct_tokens, email=email, tokens=cost, description=f"Lịch Cát Tường: {field_name}")
         else:
             db_user = await asyncio.to_thread(user_db.get_by_email, email)
             new_balance = db_user.get("token_balance", 0) if db_user else 0
@@ -196,7 +292,7 @@ async def get_good_bad_days(request: CalendarRequest, current_user: dict = Depen
         chart_data = {
             "days": days_data,
             "summary": summary,
-            "field": request.field,
+            "field": field_name,
             "month": request.month,
             "year": request.year,
             "birth_info": request.birth_info

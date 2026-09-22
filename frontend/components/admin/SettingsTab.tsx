@@ -18,6 +18,7 @@ interface SettingsTabProps {
     onUploadHeroChartImg: (file: File) => Promise<void>;
     onUploadVideoGuide: (file: File) => Promise<void>;
     onUploadVideoPoster: (file: File) => Promise<void>;
+    onUploadApk?: (file: File) => Promise<void>;
 }
 
 type SettingsSection = 'seo' | 'hero' | 'stats' | 'intro' | 'video' | 'choice' | 'about' | 'blog' | 'footer' | 'system';
@@ -34,7 +35,8 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
     onUploadHeroBg,
     onUploadHeroChartImg,
     onUploadVideoGuide,
-    onUploadVideoPoster
+    onUploadVideoPoster,
+    onUploadApk
 }) => {
     const { t } = useTranslation();
     const [activeSection, setActiveSection] = useState<SettingsSection>('seo');
@@ -105,7 +107,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
             'company_name', 'company_description', 'company_address', 'company_hotline', 'company_active_date',
             'blog_section_title', 'blog_section_enabled', 'footer_description', 'footer_column_1_title',
             'footer_column_2_title', 'footer_column_3_title', 'footer_address', 'footer_hotline',
-            'footer_working_time', 'footer_copyright', 'rate', 'no_answer_fallback'
+            'footer_working_time', 'footer_copyright', 'rate', 'no_answer_fallback', 'apk_download_url'
         ];
 
         const localizableKeys = [
@@ -339,7 +341,7 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                             setActiveSection('blog');
                         } else if (name.startsWith('footer_')) {
                             setActiveSection('footer');
-                        } else if (name === 'rate' || name.startsWith('no_answer_fallback_')) {
+                        } else if (name === 'rate' || name.startsWith('no_answer_fallback_') || name === 'apk_download_url') {
                             setActiveSection('system');
                         }
                     }}
@@ -1110,6 +1112,20 @@ const SettingsTab: React.FC<SettingsTabProps> = ({
                                         <textarea className="admin-textarea" name="no_answer_fallback_en" value={data.no_answer_fallback_en || ''} onChange={onChange} rows={4} placeholder="Default response on AI error..." />
                                     </div>
                                 </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: 16 }}>
+                                <label className="admin-input-label">{t('admin.settings.apkDownloadUrl', 'Đường dẫn tải file APK (Android App)')}</label>
+                                <div style={{ display: 'flex', gap: 16, alignItems: 'start' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <input className="admin-input" name="apk_download_url" value={data.apk_download_url || ''} onChange={onChange} placeholder="https://github.com/klam32/Zodiac-App/releases" />
+                                        <label className="admin-btn admin-btn-sm admin-btn-outline" style={{ marginTop: 8, cursor: 'pointer', display: 'inline-flex' }}>
+                                            Tải trực tiếp file APK lên hệ thống (Khuyên dùng)
+                                            <input type="file" style={{ display: 'none' }} accept=".apk" onChange={e => { const f = e.target.files?.[0]; if (f && onUploadApk) onUploadApk(f); }} />
+                                        </label>
+                                    </div>
+                                </div>
+                                <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 6, fontStyle: 'italic' }}>{t('admin.settings.apkDownloadUrlNote', 'Mã QR trên trang Landing Page sẽ tự động cập nhật theo đường dẫn này để người dùng quét tải app.')}</div>
                             </div>
                         </div>
                     </div>

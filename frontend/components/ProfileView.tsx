@@ -10,9 +10,10 @@ import TransactionDetailModal from './profile/TransactionDetailModal';
 interface ProfileViewProps {
   user: User | null;
   onUpdateUser: (user: User) => void;
+  onLogout: () => void;
 }
 
-const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) => {
+const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser, onLogout }) => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,6 +50,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onUpdateUser }) => {
           user={user}
           onUpdateName={() => setEditOpen(true)}
           onChangePassword={() => setChangePwOpen(true)}
+          onLogout={onLogout}
         />
 
         {/* Transaction History Table */}

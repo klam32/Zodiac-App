@@ -104,6 +104,64 @@ class AstrologyGraph:
             ("Tình duyên", "LIÊN_QUAN_ĐẾN", "Nhà 5"),
             ("Tình duyên", "LIÊN_QUAN_ĐẾN", "Sao Kim"),
             ("Sức khỏe", "LIÊN_QUAN_MẬT_THIẾT_ĐẾN", "Nhà 6"),
+
+            # ==========================================
+            # 🔮 ASTROLOGICAL ASPECTS (GÓC CHIẾU DỰNG TRÊN ĐỒ THỊ)
+            # ==========================================
+            ("Trùng tụ", "CÓ_TÍNH_CHẤT", "Hội tụ, tăng cường năng lượng mạnh mẽ (0 độ)"),
+            ("Đối đỉnh", "CÓ_TÍNH_CHẤT", "Căng thẳng, đối lập, mâu thuẫn, cần sự cân bằng (180 độ)"),
+            ("Tam hợp", "CÓ_TÍNH_CHẤT", "Hài hòa, may mắn, dòng chảy năng lượng trôi chảy (120 độ)"),
+            ("Vuông góc", "CÓ_TÍNH_CHẤT", "Thử thách, xung đột, tạo động lực mạnh mẽ để hành động (90 độ)"),
+            ("Lục hợp", "CÓ_TÍNH_CHẤT", "Cơ hội, sự hỗ trợ nhẹ nhàng, tiềm năng phát triển (60 độ)"),
+
+            # ==========================================
+            # 🔮 PLANETARY DIGNITIES (THẾ TINH / THỂ TINH CỦA HÀNH TINH TẠI CÁC CUNG)
+            # ==========================================
+            # 1. Domicile (Chủ quản / Trị vì)
+            ("Mặt Trời", "CHỦ_QUẢN_TẠI", "Sư Tử"),
+            ("Mặt Trăng", "CHỦ_QUẢN_TẠI", "Cự Giải"),
+            ("Sao Thủy", "CHỦ_QUẢN_TẠI", "Song Tử"),
+            ("Sao Thủy", "CHỦ_QUẢN_TẠI", "Xử Nữ"),
+            ("Sao Kim", "CHỦ_QUẢN_TẠI", "Kim Ngưu"),
+            ("Sao Kim", "CHỦ_QUẢN_TẠI", "Thiên Bình"),
+            ("Sao Hỏa", "CHỦ_QUẢN_TẠI", "Bạch Dương"),
+            ("Sao Hỏa", "CHỦ_QUẢN_TẠI", "Bọ Cạp"),
+            ("Sao Mộc", "CHỦ_QUẢN_TẠI", "Nhân Mã"),
+            ("Sao Mộc", "CHỦ_QUẢN_TẠI", "Song Ngư"),
+            ("Sao Thổ", "CHỦ_QUẢN_TẠI", "Ma Kết"),
+            ("Sao Thổ", "CHỦ_QUẢN_TẠI", "Bảo Bình"),
+
+            # 2. Exaltation (Vượng tinh)
+            ("Mặt Trời", "VƯỢNG_TẠI", "Bạch Dương"),
+            ("Mặt Trăng", "VƯỢNG_TẠI", "Kim Ngưu"),
+            ("Sao Thủy", "VƯỢNG_TẠI", "Xử Nữ"),
+            ("Sao Kim", "VƯỢNG_TẠI", "Song Ngư"),
+            ("Sao Hỏa", "VƯỢNG_TẠI", "Ma Kết"),
+            ("Sao Mộc", "VƯỢNG_TẠI", "Cự Giải"),
+            ("Sao Thổ", "VƯỢNG_TẠI", "Thiên Bình"),
+
+            # 3. Detriment (Tù tinh / Yếu thế)
+            ("Mặt Trời", "TÙ_TẠI", "Bảo Bình"),
+            ("Mặt Trăng", "TÙ_TẠI", "Ma Kết"),
+            ("Sao Thủy", "TÙ_TẠI", "Nhân Mã"),
+            ("Sao Thủy", "TÙ_TẠI", "Song Ngư"),
+            ("Sao Kim", "TÙ_TẠI", "Bạch Dương"),
+            ("Sao Kim", "TÙ_TẠI", "Bọ Cạp"),
+            ("Sao Hỏa", "TÙ_TẠI", "Kim Ngưu"),
+            ("Sao Hỏa", "TÙ_TẠI", "Thiên Bình"),
+            ("Sao Mộc", "TÙ_TẠI", "Song Tử"),
+            ("Sao Mộc", "TÙ_TẠI", "Xử Nữ"),
+            ("Sao Thổ", "TÙ_TẠI", "Cự Giải"),
+            ("Sao Thổ", "TÙ_TẠI", "Sư Tử"),
+
+            # 4. Fall (Tử tinh / Hãm địa)
+            ("Mặt Trời", "TỬ_TẠI", "Thiên Bình"),
+            ("Mặt Trăng", "TỬ_TẠI", "Bọ Cạp"),
+            ("Sao Thủy", "TỬ_TẠI", "Song Ngư"),
+            ("Sao Kim", "TỬ_TẠI", "Xử Nữ"),
+            ("Sao Hỏa", "TỬ_TẠI", "Cự Giải"),
+            ("Sao Mộc", "TỬ_TẠI", "Ma Kết"),
+            ("Sao Thổ", "TỬ_TẠI", "Bạch Dương"),
         ]
         
         for sub, pred, obj in triplets:
@@ -143,16 +201,15 @@ class AstrologyGraph:
 
 # Biến toàn cục để khởi tạo KG 1 lần
 def init_kg():
+    print("[KnowledgeGraph] Dang kiem tra ket noi Neo4j...")
     try:
-        # Thử khởi tạo Neo4j
-        print("[KnowledgeGraph] Dang kiem tra ket noi Neo4j...")
         kg = Neo4jAstrologyGraph()
         # Kiểm tra nhanh kết nối
         kg.query("MATCH (n) RETURN count(n) LIMIT 1")
         print("[KnowledgeGraph] Da ket noi Neo4j thanh cong.")
         return kg
     except Exception as e:
-        print(f"[KnowledgeGraph] Can not connect to Neo4j ({e}). Falling back to NetworkX (In-memory).")
+        print(f"[KnowledgeGraph] Khong the ket noi Neo4j ({e}). Su dung NetworkX (in-memory) lam fallback.")
         return AstrologyGraph()
 
 kg_instance = init_kg()
@@ -172,7 +229,9 @@ def extract_astrology_entities(text: str) -> list:
         "Sao Thổ", "Sao Thiên Vương", "Sao Hải Vương", "Sao Diêm Vương", 
         "Nhà 1", "Nhà 2", "Nhà 3", "Nhà 4", "Nhà 5", "Nhà 6", "Nhà 7", "Nhà 8", 
         "Nhà 9", "Nhà 10", "Nhà 11", "Nhà 12",
-        "Sự nghiệp", "Tình duyên", "Sức khỏe", "Lửa", "Đất", "Khí", "Nước"
+        "Sự nghiệp", "Tình duyên", "Sức khỏe", "Lửa", "Đất", "Khí", "Nước",
+        "Trùng tụ", "Đối đỉnh", "Tam hợp", "Vuông góc", "Lục hợp",
+        "Chủ quản", "Vượng tinh", "Tù tinh", "Tử tinh", "Hãm địa", "Thế tinh", "Thể tinh", "Góc chiếu"
     ]
     
     found = []

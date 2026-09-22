@@ -42,6 +42,7 @@ origins = [
     "http://127.0.0.1:3000",
     "https://frontend-omega-pink-49.vercel.app",
     "https://huddle-imperial-chewable.ngrok-free.dev",
+    "https://zodiac.klam.blitz.cloud",
 ]
 
 if settings.ALLOW_ORIGINS:
@@ -101,6 +102,7 @@ app.include_router(prediction.router, prefix=api_prefix)
 app.include_router(format_text.router, prefix=api_prefix)
 app.include_router(rewards.router, prefix=api_prefix)
 app.include_router(support.router, prefix=api_prefix)
+app.add_api_websocket_route(f"{api_prefix}/ws/support", support.websocket_support)
 app.add_api_websocket_route("/ws/support", support.websocket_support)
 
 

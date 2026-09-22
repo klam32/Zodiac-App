@@ -1,5 +1,5 @@
 //TYPES.TS
-export type View = 'landing' | 'chat' | 'payment' | 'admin' | 'profile' | 'calendar' | 'prediction' | 'contact' | 'terms' | 'faq' | 'guide' | 'details' | 'about' | 'privacy' | 'blog_detail' | 'rewards';
+export type View = 'landing' | 'chat' | 'payment' | 'admin' | 'profile' | 'calendar' | 'prediction' | 'contact' | 'terms' | 'faq' | 'guide' | 'details' | 'about' | 'privacy' | 'blog_detail' | 'rewards' | 'data_deletion' | 'support';
 
 export interface User {
   id: number;

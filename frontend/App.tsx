@@ -18,6 +18,8 @@ import TermsPage from './components/TermsPage';
 import FAQPage from './components/FAQPage';
 import GuidePage from './components/GuidePage';
 import PrivacyPage from './components/PrivacyPage';
+import DataDeletionPage from './components/DataDeletionPage';
+import SupportPage from './components/SupportPage';
 import BlogDetailPage from './components/BlogDetailPage';
 import AstrologyDetailsPage from './components/AstrologyDetailsPage';
 import SupportChatWidget from './components/support/SupportChatWidget';
@@ -76,6 +78,69 @@ const App: React.FC = () => {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<View>('landing');
+
+  const navigateTo = (view: View, path: string) => {
+    window.history.pushState({}, '', path);
+    setCurrentView(view);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewChange = (view: View) => {
+    if (view === 'privacy') {
+      navigateTo('privacy', '/privacy-policy');
+    } else if (view === 'terms') {
+      navigateTo('terms', '/terms-of-service');
+    } else if (view === 'data_deletion' || view === 'data-deletion' as any) {
+      navigateTo('data_deletion', '/data-deletion');
+    } else if (view === 'support') {
+      navigateTo('support', '/support');
+    } else if (view === 'contact') {
+      navigateTo('contact', '/contact');
+    } else if (view === 'landing') {
+      navigateTo('landing', '/');
+    } else {
+      setCurrentView(view);
+    }
+  };
+
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname;
+      if (path === '/privacy-policy') {
+        setCurrentView('privacy');
+      } else if (path === '/terms-of-service') {
+        setCurrentView('terms');
+      } else if (path === '/data-deletion') {
+        setCurrentView('data_deletion');
+      } else if (path === '/support') {
+        setCurrentView('support');
+      } else if (path === '/contact') {
+        setCurrentView('contact');
+      } else if (path === '/' || path === '') {
+        if (['privacy', 'terms', 'data_deletion', 'support', 'contact'].includes(currentView)) {
+          setCurrentView('landing');
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handleLocationChange);
+    
+    // Initial routing
+    const initialPath = window.location.pathname;
+    if (initialPath === '/privacy-policy') {
+      setCurrentView('privacy');
+    } else if (initialPath === '/terms-of-service') {
+      setCurrentView('terms');
+    } else if (initialPath === '/data-deletion') {
+      setCurrentView('data_deletion');
+    } else if (initialPath === '/support') {
+      setCurrentView('support');
+    } else if (initialPath === '/contact') {
+      setCurrentView('contact');
+    }
+
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, [currentView]);
 
   useEffect(() => {
     stop();
@@ -344,11 +409,15 @@ const App: React.FC = () => {
       if (isPreviewDraft) {
         setCurrentView('landing');
       } else {
-        const role = userData.role?.toUpperCase();
-        if (userData.is_admin || role === 'ADMIN') {
-          setCurrentView('admin');
-        } else {
-          setCurrentView('chat');
+        const path = window.location.pathname;
+        const isLegalPath = ['/privacy-policy', '/terms-of-service', '/data-deletion', '/support', '/contact'].includes(path);
+        if (!isLegalPath) {
+          const role = userData.role?.toUpperCase();
+          if (userData.is_admin || role === 'ADMIN') {
+            setCurrentView('admin');
+          } else {
+            setCurrentView('chat');
+          }
         }
       }
 
@@ -473,23 +542,31 @@ const App: React.FC = () => {
   }
 
   if (currentView === 'contact') {
-    return <div key="contact" className="view-transition"><ContactPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
+    return <div key="contact" className="view-transition"><ContactPage onBack={() => navigateTo('landing', '/')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'terms') {
-    return <div key="terms" className="view-transition"><TermsPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
+    return <div key="terms" className="view-transition"><TermsPage onBack={() => navigateTo('landing', '/')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'privacy') {
-    return <div key="privacy" className="view-transition"><PrivacyPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
+    return <div key="privacy" className="view-transition"><PrivacyPage onBack={() => navigateTo('landing', '/')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
+  }
+
+  if (currentView === 'data_deletion') {
+    return <div key="data_deletion" className="view-transition"><DataDeletionPage onBack={() => navigateTo('landing', '/')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
+  }
+
+  if (currentView === 'support') {
+    return <div key="support" className="view-transition"><SupportPage onBack={() => navigateTo('landing', '/')} onLogin={() => setCurrentView('profile')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'faq') {
-    return <div key="faq" className="view-transition"><FAQPage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} onContact={() => setCurrentView('contact')} user={user} siteConfig={siteConfig} /></div>;
+    return <div key="faq" className="view-transition"><FAQPage onBack={() => navigateTo('landing', '/')} onLogin={() => setCurrentView('profile')} onContact={() => navigateTo('support', '/support')} user={user} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'guide') {
-    return <div key="guide" className="view-transition"><GuidePage onBack={() => setCurrentView('landing')} onLogin={() => setCurrentView('profile')} onStart={() => setCurrentView('chat')} siteConfig={siteConfig} /></div>;
+    return <div key="guide" className="view-transition"><GuidePage onBack={() => navigateTo('landing', '/')} onLogin={() => setCurrentView('profile')} onStart={() => setCurrentView('chat')} siteConfig={siteConfig} /></div>;
   }
 
   if (currentView === 'details') {
@@ -534,7 +611,7 @@ const App: React.FC = () => {
           {currentView === 'landing' ? (
             <MobileLandingPage
               user={user}
-              onViewChange={setCurrentView}
+              onViewChange={handleViewChange}
               onLoginClick={() => {
                 if (!user) {
                   setCurrentView('profile');
@@ -564,7 +641,7 @@ const App: React.FC = () => {
                 <PaymentView user={user} onBalanceUpdate={updateBalance} />
               )}
               {currentView === 'profile' && (
-                <ProfileView user={user} onUpdateUser={setUser} />
+                <ProfileView user={user} onUpdateUser={setUser} onLogout={handleLogout} />
               )}
               {currentView === 'calendar' && (
                 <CalendarFortune
@@ -621,7 +698,7 @@ const App: React.FC = () => {
       <div key="landing" className="view-transition">
         <LandingPage
           user={user}
-          onViewChange={setCurrentView}
+          onViewChange={handleViewChange}
           siteConfig={siteConfig}
           onArticleClick={(id) => {
             setSelectedArticleId(id);
@@ -655,7 +732,7 @@ const App: React.FC = () => {
       <Sidebar
         user={user}
         currentView={currentView}
-        onViewChange={setCurrentView}
+        onViewChange={handleViewChange}
         onLogout={handleLogout}
         siteConfig={siteConfig}
         isVisible={isSidebarVisible}
@@ -708,7 +785,7 @@ const App: React.FC = () => {
 
             {currentView === 'profile' && user && (
 
-              <ProfileView user={user} onUpdateUser={setUser} />
+              <ProfileView user={user} onUpdateUser={setUser} onLogout={handleLogout} />
 
             )}
 
@@ -746,7 +823,7 @@ const App: React.FC = () => {
         <BottomNav
           user={user}
           currentView={currentView}
-          onViewChange={setCurrentView}
+          onViewChange={handleViewChange}
           setCurrentConversationId={setCurrentConversationId}
           setChatHistory={setChatHistory}
         />

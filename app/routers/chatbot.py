@@ -39,7 +39,7 @@ def generate_conversation_title(name, field):
 # GLOBAL LLM
 # =========================
 
-llm_name = os.environ.get("LLM_NAME", "vertex")
+llm_name = os.environ.get("LLM_NAME")
 llm = LLM().get_llm(llm_name)
 db= BaseDB()
 # 🔥 MULTI AGENT
@@ -61,6 +61,15 @@ FIELD_LABELS = {
     "love": "Tình duyên",
     "career": "Sự nghiệp",
     "health": "Sức khỏe"
+}
+
+FIELD_LABELS_EN = {
+    "general": "General",
+    "astrology": "General",
+    "personality": "Personality",
+    "love": "Love",
+    "career": "Career",
+    "health": "Health"
 }
 
 RAG_BUILDING_CONVERSATIONS: set[int] = set()
@@ -414,6 +423,14 @@ async def chat_with_astrology(
     user_db = UserDB()
 
     try:
+        # Kiểm tra số dư token
+        if not current_user.get("is_admin") and float(current_user.get("token_balance", 0.0)) <= 0:
+            lang = request.language or "vi"
+            msg = "You have run out of tokens. Please recharge to continue using the service." if lang == "en" else "Bạn đã hết tokens. Vui lòng nạp thêm để tiếp tục sử dụng dịch vụ."
+            raise HTTPException(
+                status_code=402,
+                detail=msg
+            )
 
         conversation_id = request.conversation_id
 
@@ -629,7 +646,9 @@ async def chat_with_astrology(
         if is_init:
             try:
                 from chatbot.rag.rag_pipeline import pipeline_process_and_store
-                field_label = FIELD_LABELS.get(request.field, "Tổng quan")
+                lang = request.language or "vi"
+                field_labels = FIELD_LABELS_EN if lang == "en" else FIELD_LABELS
+                field_label = field_labels.get(request.field, "General" if lang == "en" else "Tổng quan")
                 rag_seed_text = build_rag_seed_text(
                     chart_to_save,
                     chart_summary,
@@ -656,7 +675,9 @@ async def chat_with_astrology(
             conv = user_db.get_conversation(conversation_id)
 
             if conv:
-                field_label = FIELD_LABELS.get(request.field, "Luận giải")
+                lang = request.language or "vi"
+                field_labels = FIELD_LABELS_EN if lang == "en" else FIELD_LABELS
+                field_label = field_labels.get(request.field, "General" if lang == "en" else "Luận giải")
                 
                 # 🔥 CHỈ ĐỔI TÊN KHI LÀ LẦN ĐẦU (INIT)
                 if is_init:
@@ -717,6 +738,14 @@ async def chat_followup(
     user_db = UserDB()
 
     try:
+        # Kiểm tra số dư token
+        if not current_user.get("is_admin") and float(current_user.get("token_balance", 0.0)) <= 0:
+            lang = request.language or "vi"
+            msg = "You have run out of tokens. Please recharge to continue using the service." if lang == "en" else "Bạn đã hết tokens. Vui lòng nạp thêm để tiếp tục sử dụng dịch vụ."
+            raise HTTPException(
+                status_code=402,
+                detail=msg
+            )
 
         question = (request.question or "").strip() or "Phân tích thêm"
         assert_conversation_owner(user_db, request.conversation_id, current_user["id"])
@@ -793,6 +822,61 @@ async def chat_followup(
             raw_chart_data = json.dumps(raw_chart_data, ensure_ascii=False)
 
         # =========================================
+        # 🧠 0. SEMANTIC ROUTER FOR CASUAL/SIMPLE QUERIES (Bypasses expensive pipeline)
+        # =========================================
+        lang = request.language or "vi"
+        route_result = await ai_system.route_query(question, lang)
+        if route_result:
+            print(f"[SemanticRouter] Routed query to: {route_result['route']}")
+            email = str(current_user.get("email") or "")
+            current_balance = float(current_user.get("token_balance", 0.0))
+            
+            # Save social chat log
+            await asyncio.to_thread(
+                user_db.save_chat_log,
+                current_user["id"],
+                request.conversation_id,
+                question,
+                route_result["answer"],
+                0.0,
+                None, None, None, None, None, None, None,
+                sources=[{
+                    "chunk_index": 0,
+                    "section_name": "Semantic Router" if lang == "en" else "Bộ định tuyến ngữ nghĩa",
+                    "content": "Casual/Social query handled directly by the Semantic Router.",
+                    "semantic_score": 1.0,
+                    "rerank_score": 1.0,
+                    "final_score": 1.0,
+                    "rank_position": 1
+                }]
+            )
+            
+            return {
+                "answer": route_result["answer"],
+                "analysis": last_analysis,
+                "chart": last_analysis,
+                "chart_svg": last_chart_svg,
+                "partner_chart_svg": last_partner_chart_svg,
+                "chart_summary": None,
+                "tokens_charged": 0.0,
+                "user_token_balance": current_balance,
+                "conversation_id": request.conversation_id,
+                "sources": [{
+                    "chunk_index": 0,
+                    "section_name": "Semantic Router" if lang == "en" else "Bộ định tuyến ngữ nghĩa",
+                    "content": "Casual/Social query handled directly by the Semantic Router.",
+                    "semantic_score": 1.0,
+                    "rerank_score": 1.0,
+                    "final_score": 1.0,
+                    "rank_position": 1
+                }],
+                "source_used": "SEMANTIC_ROUTER",
+                "domain": "general",
+                "rag_sources": [],
+                "graph_sources": {"entities": [], "relationships": []}
+            }
+
+        # =========================================
         # 🔮 1. GUARD & ANALYZE (RUN PARALLEL)
         # =========================================
         print(f"[API] 🚀 Đang xử lý Followup cho conversation {request.conversation_id}...")
@@ -841,7 +925,9 @@ async def chat_followup(
         
         # Seed chunks if not existing
         try:
-            field_label = FIELD_LABELS.get(request.field, "Tổng quan")
+            lang = request.language or "vi"
+            field_labels = FIELD_LABELS_EN if lang == "en" else FIELD_LABELS
+            field_label = field_labels.get(request.field, "General" if lang == "en" else "Tổng quan")
             existing_chunks = await asyncio.to_thread(user_db.get_document_chunks, request.conversation_id)
             if not existing_chunks and init_log:
                 seed_text = build_rag_seed_text(
@@ -861,6 +947,7 @@ async def chat_followup(
         answer = ""
         source_used = "NONE"
         hybrid_res = {}
+        lang = request.language or "vi"
         if "daily" in intents:
             print("[Followup] Daily intent detected. Bypassing RAG to run DailyAgent directly.")
             has_rag = False
@@ -870,7 +957,8 @@ async def chat_followup(
                     user_id=current_user["id"],
                     chart_id=request.conversation_id,
                     question=question,
-                    user_db=user_db
+                    user_db=user_db,
+                    language=lang
                 )
                 if hybrid_res.get("has_rag") is False or hybrid_res.get("source_used") == "NONE":
                     has_rag = False
@@ -901,7 +989,6 @@ async def chat_followup(
                 # If no agents returned a response, use LLM general answer fallback
                 from chatbot.utils.llm import LLM
                 llm_model = LLM().get_llm()
-                lang = request.language or "vi"
                 if lang == "en":
                     fallback_prompt = f"""You are the astrology assistant of the MARA-AI system. 
 The user is asking the following question for which the system has not found personalized data. Please answer the user's question accurately, deeply, and helpfully based on your astrological knowledge.
@@ -921,15 +1008,16 @@ Trả lời:"""
             elif len(valid_results) == 1:
                 res_agent = valid_results[0]
                 ans = res_agent.get("answer", "")
-                from chatbot.core.ai_system import AGENT_TITLES
+                from chatbot.core.ai_system import AGENT_TITLES, AGENT_TITLES_EN
                 if ans and not ans.strip().startswith("#"):
-                    title = AGENT_TITLES.get(res_agent.get("type", "general"), "Luận giải Chiêm tinh")
+                    title_map = AGENT_TITLES_EN if lang == "en" else AGENT_TITLES
+                    title = title_map.get(res_agent.get("type", "general"), "Natal Chart Interpretation" if lang == "en" else "Luận giải Chiêm tinh")
                     answer = f"### {title}\n\n{ans}"
                 else:
                     answer = ans
                 source_used = "AGENT"
             else:
-                answer = await asyncio.to_thread(ai_system.fuse, valid_results, question)
+                answer = await asyncio.to_thread(ai_system.fuse, valid_results, question, lang=lang)
                 source_used = "AGENT"
 
         sources = []
@@ -940,7 +1028,7 @@ Trả lời:"""
                 for i, chunk in enumerate(rag_sources[:3]):
                     sources.append({
                         "chunk_index": chunk.get("chunk_index", i),
-                        "section_name": f"Tài liệu RAG - {chunk.get('section_title', 'Chuyên môn')}",
+                        "section_name": f"RAG Document - {chunk.get('section_title', 'Expertise')}" if lang == "en" else f"Tài liệu RAG - {chunk.get('section_title', 'Chuyên môn')}",
                         "content": chunk["content"],
                         "semantic_score": chunk.get("similarity_score", 0.0),
                         "rerank_score": chunk.get("similarity_score", 0.0),
@@ -950,8 +1038,8 @@ Trả lời:"""
             else:
                 sources.append({
                     "chunk_index": 0,
-                    "section_name": "Tài liệu RAG",
-                    "content": "Không tìm thấy chunk RAG phù hợp.",
+                    "section_name": "RAG Document" if lang == "en" else "Tài liệu RAG",
+                    "content": "No matching RAG chunk found." if lang == "en" else "Không tìm thấy chunk RAG phù hợp.",
                     "semantic_score": 0.0,
                     "rerank_score": 0.0,
                     "final_score": 0.0,
@@ -965,8 +1053,8 @@ Trả lời:"""
                 relationships_count = len(graph_sources.get("relationships", []))
                 sources.append({
                     "chunk_index": 0,
-                    "section_name": "Dữ liệu GraphRAG",
-                    "content": f"Graph Database: Tìm thấy {entities_count} thực thể chiêm tinh và {relationships_count} quan hệ liên quan được đưa vào luận giải.",
+                    "section_name": "GraphRAG Data" if lang == "en" else "Dữ liệu GraphRAG",
+                    "content": f"Graph Database: Found {entities_count} astrology entities and {relationships_count} related relations for interpretation." if lang == "en" else f"Graph Database: Tìm thấy {entities_count} thực thể chiêm tinh và {relationships_count} quan hệ liên quan được đưa vào luận giải.",
                     "semantic_score": 1.0,
                     "rerank_score": 1.0,
                     "final_score": 1.0,
@@ -978,7 +1066,7 @@ Trả lời:"""
                 for i, chunk in enumerate(retrieved_chunks):
                     sources.append({
                         "chunk_index": chunk.get("chunk_index", i),
-                        "section_name": chunk.get("section_title", "Chuyên môn"),
+                        "section_name": chunk.get("section_title", "Expertise" if lang == "en" else "Chuyên môn"),
                         "content": chunk["content"],
                         "semantic_score": chunk.get("similarity_score", 0.0),
                         "rerank_score": chunk.get("similarity_score", 0.0),
@@ -988,7 +1076,7 @@ Trả lời:"""
         elif source_used == "GraphRAG":
             sources.append({
                 "chunk_index": 0,
-                "section_name": "Nguồn: GraphRAG",
+                "section_name": "Source: GraphRAG" if lang == "en" else "Nguồn: GraphRAG",
                 "content": hybrid_res.get("graph_context", ""),
                 "semantic_score": 1.0,
                 "rerank_score": 1.0,
@@ -998,8 +1086,8 @@ Trả lời:"""
         elif source_used == "AGENT":
             sources.append({
                 "chunk_index": 0,
-                "section_name": "Hệ thống chuyên gia Chiêm tinh (MARA-AI)",
-                "content": "Câu trả lời được sinh ra trực tiếp bởi các Agent chuyên gia dựa trên thông tin ngày sinh và câu hỏi của bạn.",
+                "section_name": "Astrology Expert System (MARA-AI)" if lang == "en" else "Hệ thống chuyên gia Chiêm tinh (MARA-AI)",
+                "content": "The answer is generated directly by expert agents based on your birth info and question." if lang == "en" else "Câu trả lời được sinh ra trực tiếp bởi các Agent chuyên gia dựa trên thông tin ngày sinh và câu hỏi của bạn.",
                 "semantic_score": 1.0,
                 "rerank_score": 1.0,
                 "final_score": 1.0,
@@ -1008,8 +1096,8 @@ Trả lời:"""
         elif source_used == "LLM_FALLBACK":
             sources.append({
                 "chunk_index": 0,
-                "section_name": "Trí tuệ nhân tạo (LLM Fallback)",
-                "content": "Không tìm thấy dữ liệu cá nhân hóa phù hợp, câu trả lời được lập luận dựa trên tri thức chiêm tinh học của mô hình ngôn ngữ lớn.",
+                "section_name": "Artificial Intelligence (LLM Fallback)" if lang == "en" else "Trí tuệ nhân tạo (LLM Fallback)",
+                "content": "No relevant personalized data found, the answer is reasoned based on the large language model's astrology knowledge." if lang == "en" else "Không tìm thấy dữ liệu cá nhân hóa phù hợp, câu trả lời được lập luận dựa trên tri thức chiêm tinh học của mô hình ngôn ngữ lớn.",
                 "semantic_score": 1.0,
                 "rerank_score": 1.0,
                 "final_score": 1.0,
@@ -1018,8 +1106,8 @@ Trả lời:"""
         else:
             sources.append({
                 "chunk_index": 0,
-                "section_name": "Không tìm thấy dữ liệu phù hợp",
-                "content": "Dữ liệu bản đồ sao hiện tại chưa đủ thông tin cho câu hỏi này.",
+                "section_name": "No relevant data found" if lang == "en" else "Không tìm thấy dữ liệu phù hợp",
+                "content": "Current natal chart data does not have enough information for this question." if lang == "en" else "Dữ liệu bản đồ sao hiện tại chưa đủ thông tin cho câu hỏi này.",
                 "semantic_score": 0.0,
                 "rerank_score": 0.0,
                 "final_score": 0.0,
@@ -1157,6 +1245,15 @@ async def chat_followup_stream(
 
     # ---------- PHASE 1: Retrieval (runs synchronously before streaming) ----------
     try:
+        # Kiểm tra số dư token
+        if not current_user.get("is_admin") and float(current_user.get("token_balance", 0.0)) <= 0:
+            lang = request.language or "vi"
+            msg = "You have run out of tokens. Please recharge to continue using the service." if lang == "en" else "Bạn đã hết tokens. Vui lòng nạp thêm để tiếp tục sử dụng dịch vụ."
+            raise HTTPException(
+                status_code=402,
+                detail=msg
+            )
+
         question = (request.question or "").strip() or "Phân tích thêm"
         assert_conversation_owner(user_db, request.conversation_id, current_user["id"])
         logs = user_db.get_user_chat_logs(request.conversation_id)
@@ -1221,6 +1318,45 @@ async def chat_followup_stream(
         if isinstance(raw_chart_data, (dict, list)):
             raw_chart_data = json.dumps(raw_chart_data, ensure_ascii=False)
 
+        # =========================================
+        # 🧠 0. SEMANTIC ROUTER FOR CASUAL/SIMPLE QUERIES (Bypasses expensive pipeline)
+        # =========================================
+        lang = request.language or "vi"
+        route_result = await ai_system.route_query(question, lang)
+        if route_result:
+            print(f"[SemanticRouter] Routed streaming query to: {route_result['route']}")
+            email = str(current_user.get("email") or "")
+            current_balance = float(current_user.get("token_balance", 0.0))
+            
+            # Save social chat log
+            await asyncio.to_thread(
+                user_db.save_chat_log,
+                current_user["id"],
+                request.conversation_id,
+                question,
+                route_result["answer"],
+                0.0,
+                None, None, None, None, None, None, None,
+                sources=[{
+                    "chunk_index": 0,
+                    "section_name": "Semantic Router" if lang == "en" else "Bộ định tuyến ngữ nghĩa",
+                    "content": "Casual/Social query handled directly by the Semantic Router.",
+                    "semantic_score": 1.0,
+                    "rerank_score": 1.0,
+                    "final_score": 1.0,
+                    "rank_position": 1
+                }]
+            )
+
+            async def casual_stream():
+                yield f"data: {json.dumps({'type': 'meta', 'sources': [{ 'chunk_index': 0, 'section_name': 'Semantic Router' if lang == 'en' else 'Bộ định tuyến ngữ nghĩa', 'content': 'Casual/Social query handled directly by the Semantic Router.', 'semantic_score': 1.0, 'rerank_score': 1.0, 'final_score': 1.0, 'rank_position': 1 }], 'source_used': 'SEMANTIC_ROUTER', 'domain': 'general'}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'text', 'content': route_result['answer']}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'tokens_charged': 0.0, 'user_token_balance': current_balance}, ensure_ascii=False)}\n\n"
+                if token_counter is not None: token_counter.close()
+                if user_db is not None: user_db.close()
+
+            return StreamingResponse(casual_stream(), media_type="text/event-stream")
+
         # Guard & Analyze
         guard_task = asyncio.to_thread(ai_system.guard.run, question)
         analyze_task = asyncio.to_thread(ai_system.analyze, question, memory, birth_info)
@@ -1249,7 +1385,9 @@ async def chat_followup_stream(
         # RAG seed
         from chatbot.rag.rag_pipeline import answer_followup_with_hybrid_rag, pipeline_process_and_store
         try:
-            field_label = FIELD_LABELS.get(request.field, "Tổng quan")
+            lang = request.language or "vi"
+            field_labels = FIELD_LABELS_EN if lang == "en" else FIELD_LABELS
+            field_label = field_labels.get(request.field, "General" if lang == "en" else "Tổng quan")
             existing_chunks = await asyncio.to_thread(user_db.get_document_chunks, request.conversation_id)
             if not existing_chunks and init_log:
                 seed_text = build_rag_seed_text(
@@ -1266,6 +1404,7 @@ async def chat_followup_stream(
         has_rag = True
         source_used = "NONE"
         hybrid_res = {}
+        lang = request.language or "vi"
         if "daily" in intents:
             has_rag = False
         else:
@@ -1274,7 +1413,8 @@ async def chat_followup_stream(
                     user_id=current_user["id"],
                     chart_id=request.conversation_id,
                     question=question,
-                    user_db=user_db
+                    user_db=user_db,
+                    language=lang
                 )
                 if hybrid_res.get("has_rag") is False or hybrid_res.get("source_used") == "NONE":
                     has_rag = False
@@ -1301,15 +1441,16 @@ async def chat_followup_stream(
             elif len(valid_results) == 1:
                 res_agent = valid_results[0]
                 ans = res_agent.get("answer", "")
-                from chatbot.core.ai_system import AGENT_TITLES
+                from chatbot.core.ai_system import AGENT_TITLES, AGENT_TITLES_EN
                 if ans and not ans.strip().startswith("#"):
-                    title = AGENT_TITLES.get(res_agent.get("type", "general"), "Luận giải Chiêm tinh")
+                    title_map = AGENT_TITLES_EN if lang == "en" else AGENT_TITLES
+                    title = title_map.get(res_agent.get("type", "general"), "Natal Chart Interpretation" if lang == "en" else "Luận giải Chiêm tinh")
                     agent_answer = f"### {title}\n\n{ans}"
                 else:
                     agent_answer = ans
                 source_used = "AGENT"
             else:
-                agent_answer = await asyncio.to_thread(ai_system.fuse, valid_results, question)
+                agent_answer = await asyncio.to_thread(ai_system.fuse, valid_results, question, lang=lang)
                 source_used = "AGENT"
 
         # Build sources list (same logic as sync endpoint)
@@ -1320,7 +1461,7 @@ async def chat_followup_stream(
                 for i, chunk in enumerate(rag_sources[:3]):
                     sources.append({
                         "chunk_index": chunk.get("chunk_index", i),
-                        "section_name": f"Tài liệu RAG - {chunk.get('section_title', 'Chuyên môn')}",
+                        "section_name": f"RAG Document - {chunk.get('section_title', 'Expertise')}" if lang == "en" else f"Tài liệu RAG - {chunk.get('section_title', 'Chuyên môn')}",
                         "content": chunk["content"],
                         "semantic_score": chunk.get("similarity_score", 0.0),
                         "rerank_score": chunk.get("similarity_score", 0.0),
@@ -1328,18 +1469,18 @@ async def chat_followup_stream(
                         "rank_position": i + 1
                     })
             else:
-                sources.append({"chunk_index": 0, "section_name": "Tài liệu RAG", "content": "Không tìm thấy chunk RAG phù hợp.", "semantic_score": 0.0, "rerank_score": 0.0, "final_score": 0.0, "rank_position": 1})
+                sources.append({"chunk_index": 0, "section_name": "RAG Document" if lang == "en" else "Tài liệu RAG", "content": "No matching RAG chunk found." if lang == "en" else "Không tìm thấy chunk RAG phù hợp.", "semantic_score": 0.0, "rerank_score": 0.0, "final_score": 0.0, "rank_position": 1})
             graph_sources = hybrid_res.get("graph_sources", {})
             if isinstance(graph_sources, dict):
                 entities_count = len(graph_sources.get("entities", []))
                 relationships_count = len(graph_sources.get("relationships", []))
-                sources.append({"chunk_index": 0, "section_name": "Dữ liệu GraphRAG", "content": f"Graph Database: Tìm thấy {entities_count} thực thể chiêm tinh và {relationships_count} quan hệ liên quan.", "semantic_score": 1.0, "rerank_score": 1.0, "final_score": 1.0, "rank_position": 1})
+                sources.append({"chunk_index": 0, "section_name": "GraphRAG Data" if lang == "en" else "Dữ liệu GraphRAG", "content": f"Graph Database: Found {entities_count} astrology entities and {relationships_count} related relations for interpretation." if lang == "en" else f"Graph Database: Tìm thấy {entities_count} thực thể chiêm tinh và {relationships_count} quan hệ liên quan.", "semantic_score": 1.0, "rerank_score": 1.0, "final_score": 1.0, "rank_position": 1})
         elif source_used == "AGENT":
-            sources.append({"chunk_index": 0, "section_name": "Hệ thống chuyên gia Chiêm tinh (MARA-AI)", "content": "Câu trả lời được sinh ra trực tiếp bởi các Agent chuyên gia.", "semantic_score": 1.0, "rerank_score": 1.0, "final_score": 1.0, "rank_position": 1})
+            sources.append({"chunk_index": 0, "section_name": "Astrology Expert System (MARA-AI)" if lang == "en" else "Hệ thống chuyên gia Chiêm tinh (MARA-AI)", "content": "The answer is generated directly by expert agents based on your birth info and question." if lang == "en" else "Câu trả lời được sinh ra trực tiếp bởi các Agent chuyên gia dựa trên thông tin ngày sinh và câu hỏi của bạn.", "semantic_score": 1.0, "rerank_score": 1.0, "final_score": 1.0, "rank_position": 1})
         elif source_used == "LLM_FALLBACK":
-            sources.append({"chunk_index": 0, "section_name": "Trí tuệ nhân tạo (LLM Fallback)", "content": "Câu trả lời dựa trên tri thức chiêm tinh học của mô hình ngôn ngữ lớn.", "semantic_score": 1.0, "rerank_score": 1.0, "final_score": 1.0, "rank_position": 1})
+            sources.append({"chunk_index": 0, "section_name": "Artificial Intelligence (LLM Fallback)" if lang == "en" else "Trí tuệ nhân tạo (LLM Fallback)", "content": "No relevant personalized data found, the answer is reasoned based on the large language model's astrology knowledge." if lang == "en" else "Không tìm thấy dữ liệu cá nhân hóa phù hợp, câu trả lời được lập luận dựa trên tri thức chiêm tinh học của mô hình ngôn ngữ lớn.", "semantic_score": 1.0, "rerank_score": 1.0, "final_score": 1.0, "rank_position": 1})
         else:
-            sources.append({"chunk_index": 0, "section_name": "Không tìm thấy dữ liệu phù hợp", "content": "Dữ liệu bản đồ sao hiện tại chưa đủ thông tin cho câu hỏi này.", "semantic_score": 0.0, "rerank_score": 0.0, "final_score": 0.0, "rank_position": 1})
+            sources.append({"chunk_index": 0, "section_name": "No relevant data found" if lang == "en" else "Không tìm thấy dữ liệu phù hợp", "content": "Current natal chart data does not have enough information for this question." if lang == "en" else "Dữ liệu bản đồ sao hiện tại chưa đủ thông tin cho câu hỏi này.", "semantic_score": 0.0, "rerank_score": 0.0, "final_score": 0.0, "rank_position": 1})
 
     except HTTPException:
         if token_counter is not None: token_counter.close()
@@ -1587,6 +1728,38 @@ async def delete_chat_history(current_user: dict = Depends(get_current_user)):
     if user_db is not None: user_db.close()
 
     return {"message": "Đã xóa lịch sử chat thành công"}
+
+
+# ============================================
+# FEEDBACK SYSTEM
+# ============================================
+
+class FeedbackRequest(BaseModel):
+    conversation_id: int
+    log_id: int
+    rating: str  # "like" or "dislike"
+    comment: str | None = None
+
+
+@router.post("/chat/feedback")
+async def save_feedback(
+    request: FeedbackRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    user_db = UserDB()
+    try:
+        assert_conversation_owner(user_db, request.conversation_id, current_user["id"])
+        
+        user_db.save_chat_feedback(
+            user_id=current_user["id"],
+            conversation_id=request.conversation_id,
+            log_id=request.log_id,
+            rating=request.rating,
+            comment=request.comment
+        )
+        return {"message": "Feedback saved successfully"}
+    finally:
+        user_db.close()
 
 
 # ============================================

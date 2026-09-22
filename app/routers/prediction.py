@@ -19,6 +19,7 @@ class PredictionRequest(BaseModel):
     field: str # Sự nghiệp, Tình cảm, Sức khỏe...
     birth_info: dict
     conversation_id: int | None = None
+    language: str | None = "vi"
 
 @router.post("/daily")
 async def get_daily_prediction(request: PredictionRequest, current_user: dict = Depends(get_current_user)):
@@ -27,10 +28,19 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
     token_counter = None
 
     try:
+        # Kiểm tra số dư token
+        if not current_user.get("is_admin") and float(current_user.get("token_balance", 0.0)) <= 0:
+            lang = request.language or "vi"
+            msg = "You have run out of tokens. Please recharge to continue using the service." if lang == "en" else "Bạn đã hết tokens. Vui lòng nạp thêm để tiếp tục sử dụng dịch vụ."
+            raise HTTPException(
+                status_code=402,
+                detail=msg
+            )
+
         user_db = await asyncio.to_thread(UserDB)
         history_db = await asyncio.to_thread(ChatHistoryDB)
         token_counter = await asyncio.to_thread(TokenCounter)
-        llm_name = os.environ.get("LLM_NAME", "vertex")
+        llm_name = os.environ.get("LLM_NAME")
         llm = LLM().get_llm(llm_name)
         
         # 1. Thu thập bối cảnh & Tính toán bản đồ sao
@@ -46,6 +56,34 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
 
         chart_svg = ""
         chart_data_str = ""
+        lang = request.language or "vi"
+
+        field_labels_vi = {
+            "overview": "Tổng quan",
+            "love": "Tình cảm",
+            "career": "Sự nghiệp",
+            "health": "Sức khỏe"
+        }
+        field_labels_en = {
+            "overview": "General Overview",
+            "love": "Love & Relationships",
+            "career": "Career & Wealth",
+            "health": "Health & Energy"
+        }
+        field_id = "overview"
+        req_field_lower = (request.field or "").lower()
+        if "tổng quan" in req_field_lower or "overview" in req_field_lower or "general" in req_field_lower:
+            field_id = "overview"
+        elif "tình cảm" in req_field_lower or "love" in req_field_lower:
+            field_id = "love"
+        elif "sự nghiệp" in req_field_lower or "career" in req_field_lower:
+            field_id = "career"
+        elif "sức khỏe" in req_field_lower or "health" in req_field_lower:
+            field_id = "health"
+        else:
+            field_id = request.field or "overview"
+
+        field_name = field_labels_en.get(field_id, field_id) if lang == "en" else field_labels_vi.get(field_id, field_id)
 
         try:
             lat, lng, tz_str = get_coordinates(city, country)
@@ -63,9 +101,17 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
 
             # Format data for LLM
             planets_keys = ["sun","moon","mercury","venus","mars","jupiter","saturn","uranus","neptune","pluto"]
-            planets = [f"- {getattr(user_chart, k).name}: {getattr(user_chart, k).sign} (Nhà {getattr(user_chart, k).house})" for k in planets_keys if hasattr(user_chart, k)]
+            planets = [f"- {getattr(user_chart, k).name}: {getattr(user_chart, k).sign} (" + (f"House {getattr(user_chart, k).house}" if lang == "en" else f"Nhà {getattr(user_chart, k).house}") + ")" for k in planets_keys if hasattr(user_chart, k)]
             
-            chart_data_str = f"""
+            if lang == "en":
+                chart_data_str = f"""
+            NATAL CHART:
+            Ascendant: {user_chart.ascendant.sign}
+            Planets:
+            {chr(10).join(planets)}
+            """
+            else:
+                chart_data_str = f"""
             BẢN ĐỒ SAO GỐC (NATAL CHART):
             Cung Mọc (Ascendant): {user_chart.ascendant.sign}
             Các hành tinh:
@@ -74,7 +120,16 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
         except Exception as e:
             print(f"Lỗi tính toán bản đồ sao trong dự đoán ngày: {e}")
 
-        birth_context = f"""
+        if lang == "en":
+            birth_context = f"""
+        USER NATAL INFO:
+        - Full Name: {name}
+        - Birthdate: {day}/{month}/{year} at {hour}:{minute}
+        - Birthplace: {city}
+        {chart_data_str}
+        """
+        else:
+            birth_context = f"""
         THÔNG TIN GỐC CỦA NGƯỜI DÙNG:
         - Họ tên: {name}
         - Ngày sinh: {day}/{month}/{year} lúc {hour}:{minute}
@@ -83,19 +138,46 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
         """
 
         # 2. Xây dựng Prompt chuyên sâu
-        prompt = f"""
+        if lang == "en":
+            prompt = f"""
+        You are a professional Astrologer. Please provide a SHORT, CONCISE prediction for date {request.date}.
+        
+        {birth_context}
+        
+        PREDICTION FIELD: "{field_name}"
+        
+        FORMATTING REQUIREMENTS (MANDATORY):
+        1. MAIN TITLE: Must start with `# DAILY ENERGY INTERPRETATION {request.date}`.
+        2. SECTIONS: Use `##` for section titles (e.g., `## Dominant Energy`).
+        3. CONTENT:
+           - Quick analysis of 2-3 transiting planetary impacts on the user's natal chart.
+           - Brief highlights of opportunities and challenges in the field of "{field_name}".
+           - Provide 2-3 concise action advice items.
+           - Cosmic message (exactly 1 sentence).
+           - Energy score (0-100).
+        4. Present in complete Markdown format. Do not return arrays or raw objects.
+        
+        Return exactly in the following JSON format:
+        {{
+          "score": 85,
+          "content": "## Main Impacts...\n* **Saturn:** ...\n\n## Opportunities & Challenges...\n...",
+          "cosmic_message": "..."
+        }}
+        """
+        else:
+            prompt = f"""
         Bạn là một chuyên gia Chiêm tinh học. Hãy đưa ra dự đoán NGẮN GỌN, SÚC TÍCH cho ngày {request.date}.
         
         {birth_context}
         
-        LĨNH VỰC DỰ ĐOÁN: "{request.field}"
+        LĨNH VỰC DỰ ĐOÁN: "{field_name}"
         
         YÊU CẦU ĐỊNH DẠNG (BẮT BUỘC):
         1. TIÊU ĐỀ CHÍNH: Phải bắt đầu bằng `# LUẬN GIẢI NĂNG LƯỢNG NGÀY {request.date}`.
         2. CÁC MỤC LỚN: Sử dụng `##` cho các tiêu đề phần (ví dụ: `## Năng lượng Chủ đạo`).
         3. NỘI DUNG:
            - Phân tích nhanh 2-3 tác động chính từ các hành tinh đến bản đồ sao gốc.
-           - Điểm tin nhanh về cơ hội và thách thức trong lĩnh vực "{request.field}".
+           - Điểm tin nhanh về cơ hội và thách thức trong lĩnh vực "{field_name}".
            - Đưa ra 2-3 lời khuyên hành động ngắn gọn.
            - Thông điệp vũ trụ (1 câu duy nhất).
            - Chấm điểm năng lượng (0-100).
@@ -115,7 +197,7 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
         result_data = {
             "score": 75,
             "content": content,
-            "cosmic_message": "Hãy tin vào bản thân."
+            "cosmic_message": "Trust in yourself." if lang == "en" else "Hãy tin vào bản thân."
         }
 
         # --- HỆ THỐNG BÓC TÁCH DỮ LIỆU ĐA LỚP ---
@@ -191,11 +273,15 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
         result_data["content"] = final_cleanup(result_data.get("content"))
 
         # 3. LƯU LỊCH SỬ DỮ LIỆU CẤU TRÚC
-        conv_title = f"[Vận Trình Ngày] - Ngày {request.date}"
+        conv_title = f"[Daily Forecast] - Date {request.date}" if lang == "en" else f"[Vận Trình Ngày] - Ngày {request.date}"
         new_conv_id = await asyncio.to_thread(history_db.create_conversation, current_user["id"], title=conv_title)
         
-        msg_user = f"Xem vận trình ngày {request.date} - Lĩnh vực: {request.field}"
-        msg_bot = f"# LUẬN GIẢI NĂNG LƯỢNG NGÀY {request.date}\n\n**Chỉ số năng lượng: {result_data['score']}/100**\n\n{result_data['content']}\n\n> ✨ **Thông điệp:** {result_data['cosmic_message']}"
+        msg_user = f"View daily forecast for {request.date} - Field: {field_name}" if lang == "en" else f"Xem vận trình ngày {request.date} - Lĩnh vực: {field_name}"
+        
+        if lang == "en":
+            msg_bot = f"# DAILY ENERGY INTERPRETATION {request.date}\n\n**Energy Score: {result_data['score']}/100**\n\n{result_data['content']}\n\n> ✨ **Cosmic Message:** {result_data['cosmic_message']}"
+        else:
+            msg_bot = f"# LUẬN GIẢI NĂNG LƯỢNG NGÀY {request.date}\n\n**Chỉ số năng lượng: {result_data['score']}/100**\n\n{result_data['content']}\n\n> ✨ **Thông điệp:** {result_data['cosmic_message']}"
         
         # Deduct tokens
         tokens = token_counter.count_tokens(prompt + content)
@@ -204,7 +290,7 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
         chart_data = {
             "prediction": result_data,
             "date": request.date,
-            "field": request.field,
+            "field": field_name,
             "birth_info": request.birth_info
         }
 
@@ -226,7 +312,7 @@ async def get_daily_prediction(request: PredictionRequest, current_user: dict = 
                 token_counter.deduct_tokens,
                 email=email,
                 tokens=cost,
-                description=f"Dự đoán ngày mới: {request.field}"
+                description=f"Dự đoán ngày mới: {field_name}"
             )
         else:
             db_user = await asyncio.to_thread(user_db.get_by_email, email)

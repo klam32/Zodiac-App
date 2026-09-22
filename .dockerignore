@@ -18,7 +18,7 @@ frontend/.vercel
 .env.*
 frontend/.env*
 
-database.db
+# Keep database.db in the Docker context so deploy_bootstrap.py can seed /data/database.db.
 database.db.*
 memory_store.json
 uploads

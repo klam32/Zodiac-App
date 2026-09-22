@@ -107,6 +107,7 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
           ""
         }
         percent={Number((msg as any).compatibility || 0)}
+        sources={msg.sources}
       />
     );
   }
@@ -138,26 +139,8 @@ const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ msg, userAvatar, botA
           chartSummary={(msg as any).chart_summary} 
           chart_svg={(msg as any).chart_svg}
           isFollowUp={isFollowUp}
+          sources={msg.sources}
         />
-        {msg.sources && msg.sources.length > 0 && !msg.isStreaming && (
-          <div className="mt-8 mb-4 w-full max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="flex items-center gap-3 mb-4 px-2">
-              <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
-                <BookOpen className="w-4 h-4 text-purple-300" />
-              </div>
-              <h4 className="text-[11px] font-bold text-purple-300/80 uppercase tracking-[0.2em]">
-                {t('chat.message.ragReferences', 'Tài liệu tham khảo (RAG)')}
-              </h4>
-              <div className="flex-1 h-[1px] bg-gradient-to-r from-purple-500/20 to-transparent ml-2"></div>
-            </div>
-            
-            <div className="flex flex-col gap-3">
-              {msg.sources.map((source, idx) => (
-                <RagSourceItem key={idx} source={source} idx={idx} />
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     );  
   }

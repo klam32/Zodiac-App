@@ -137,42 +137,60 @@
 
 #         return self.gemini()
 # ------------------DÙNG VERTEX AI-------------------
-from langchain_google_vertexai import ChatVertexAI
-import vertexai
 import os
 
 
 class LLM:
 
-    def __init__(self, temperature: float = 0.0, max_tokens = 8192):
+    def __init__(self, temperature: float = 0.0, max_tokens=8192):
         self.temperature = temperature
         self.max_tokens = int(os.getenv("LLM_MAX_TOKENS", max_tokens))
 
+    def gemini(self):
+        from langchain_google_genai import ChatGoogleGenerativeAI
+
+        api_key = os.getenv("GEMINI_API_KEY") or os.getenv("KEY_API_GOOGLE")
+        model_name = os.getenv("GEMINI_MODEL") or os.getenv("GOOGLE_LLM_MODEL_NAME") or "gemini-2.5-flash"
+
+        if not api_key:
+            raise RuntimeError("Missing GEMINI_API_KEY for Gemini LLM")
+
+        return ChatGoogleGenerativeAI(
+            api_key=api_key,
+            model=model_name,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+        )
+
     def vertex(self):
+        import vertexai
+        from langchain_google_vertexai import ChatVertexAI
 
         project_id = os.getenv("PROJECT_ID")
-        location = os.getenv("LOCATION")
+        location = os.getenv("LOCATION", "us-central1")
         model_name = os.getenv("VERTEX_MODEL_NAME", "gemini-1.5-flash")
 
         if not project_id:
-            raise Exception("Thiếu PROJECT_ID")
+            raise RuntimeError("Missing PROJECT_ID for Vertex AI LLM")
 
-        vertexai.init(
-            project=project_id,
-            location=location
-        )
+        vertexai.init(project=project_id, location=location)
 
-        llm = ChatVertexAI(
+        return ChatVertexAI(
             model=model_name,
             temperature=self.temperature,
-            max_output_tokens=self.max_tokens,
+            max_tokens=self.max_tokens,
         )
 
-        return llm
+    def get_llm(self, llm_name=None):
+        llm_name = (llm_name or os.getenv("LLM_NAME") or "").strip().lower()
 
-    def get_llm(self, llm_name="vertex"):
+        if not llm_name:
+            llm_name = "vertex" if os.getenv("PROJECT_ID") else "gemini"
 
         if llm_name == "vertex":
             return self.vertex()
 
-        raise Exception("LLM không hỗ trợ")
+        if llm_name in {"gemini", "google", "google_genai"}:
+            return self.gemini()
+
+        raise RuntimeError(f"Unsupported LLM provider: {llm_name}")

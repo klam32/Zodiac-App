@@ -390,10 +390,10 @@ async def ingest_pdfs_to_graphrag(pdf_paths: List[str]):
 # =========================================================
 
 if __name__ == "__main__":
-
+    current_dir = os.path.dirname(os.path.abspath(__file__))
     my_pdfs = [
-        r"e:\HOC_TAP\THUC_TAP\LuanVanTotNghiep\chatbot\rag\pdf\6.1-Chiem-tinh-noi-mon-Tong-quan.pdf",
-        r"e:\HOC_TAP\THUC_TAP\LuanVanTotNghiep\chatbot\rag\pdf\5323-chiem-tinh-hoc-pdf-khoahoctamlinh.vn.pdf"
+        os.path.join(current_dir, "pdf", "6.1-Chiem-tinh-noi-mon-Tong-quan.pdf"),
+        os.path.join(current_dir, "pdf", "5323-chiem-tinh-hoc-pdf-khoahoctamlinh.vn.pdf")
     ]
 
     asyncio.run(
