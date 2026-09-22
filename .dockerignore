@@ -27,5 +27,11 @@ memory_store.json
 uploads
 cache
 output
+chatbot/rag/pdf
+chatbot/rag/ingest_pdf_to_graph.py
+chatbot/rag/build_vector_db_only.py
+evaluation
+scratch
+Astrology-Chatbot-main
 
 *.log

@@ -163,8 +163,14 @@ class LLM:
         )
 
     def vertex(self):
-        import vertexai
-        from langchain_google_vertexai import ChatVertexAI
+        try:
+            import vertexai
+            from langchain_google_vertexai import ChatVertexAI
+        except ImportError as exc:
+            raise RuntimeError(
+                "Vertex AI dependencies are not installed in the production image. "
+                "Set LLM_NAME=gemini and GEMINI_API_KEY, or add Vertex dependencies back."
+            ) from exc
 
         project_id = os.getenv("PROJECT_ID")
         location = os.getenv("LOCATION", "us-central1")
@@ -185,10 +191,16 @@ class LLM:
         llm_name = (llm_name or os.getenv("LLM_NAME") or "").strip().lower()
 
         if not llm_name:
-            llm_name = "vertex" if os.getenv("PROJECT_ID") else "gemini"
+            llm_name = "gemini"
 
         if llm_name == "vertex":
-            return self.vertex()
+            try:
+                return self.vertex()
+            except RuntimeError:
+                if os.getenv("GEMINI_API_KEY") or os.getenv("KEY_API_GOOGLE"):
+                    print("[LLM] Vertex unavailable in this image; falling back to Gemini.")
+                    return self.gemini()
+                raise
 
         if llm_name in {"gemini", "google", "google_genai"}:
             return self.gemini()

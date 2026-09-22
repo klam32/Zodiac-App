@@ -17,11 +17,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY requirements.txt ./
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends build-essential curl \
-    && pip install --no-cache-dir -r requirements.txt \
-    && apt-get purge -y --auto-remove build-essential \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
+RUN pip install --no-cache-dir -r requirements.txt \
+    && rm -rf /tmp/* /root/.cache
 
 COPY . .
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
