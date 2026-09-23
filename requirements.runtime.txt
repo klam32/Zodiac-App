@@ -1,0 +1,32 @@
+# Web runtime only. Keep versions aligned with the existing deployment via
+# constraints; pip still installs every transitive dependency these packages need.
+-c requirements.txt
+
+# API, authentication, uploads, HTTP and WebSocket support
+fastapi
+uvicorn
+websockets
+httpx
+pydantic
+python-dotenv
+python-multipart
+python-jose
+bcrypt
+
+# Astrology calculations and chart rendering
+kerykeion
+pyswisseph
+
+# Both supported LLM providers, embeddings, GraphRAG and token accounting
+google-auth
+# Match the SDK version in the last successful dependency installation.
+google-genai==1.68.0
+google-cloud-aiplatform
+langchain-core
+langchain-google-genai
+langchain-google-vertexai
+langchain-text-splitters
+networkx
+neo4j
+numpy
+tiktoken

@@ -4,12 +4,17 @@
 .vscode
 __pycache__
 *.pyc
+**/__pycache__
+**/*.pyc
 .pytest_cache
 .mypy_cache
 .pyre
 .tox
+.agents
+.codex
 
 venv
+.venv
 frontend/node_modules
 frontend/dist
 frontend/.vercel
@@ -35,3 +40,21 @@ scratch
 Astrology-Chatbot-main
 
 *.log
+
+# Local reference material, scripts and legacy uploads are not web runtime data.
+utils
+app/utils/download
+*.md
+*.puml
+*.mermaid
+*.backup
+qrcode_*.png
+generate_docs.py
+add_tokens.py
+set_admin.py
+run_api.py
+start_deploy.py
+start.sh
+plan_Zodiac_Klam
+frontend/**/*.test.*
+chatbot/rag/evaluate_graphrag.py

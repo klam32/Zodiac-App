@@ -49,6 +49,7 @@ sacred-flash-*.json
 /docker/
 /utils*
 venv/
+/output/
 database.db
 memory_store.json
 uploads/
