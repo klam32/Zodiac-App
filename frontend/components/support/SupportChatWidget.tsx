@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, API_ROOT } from '../../api';
+import { getSupportWebSocketUrl } from '../../utils/supportWebSocket';
 import { MessageSquare, X, Send, Cpu, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -122,10 +123,14 @@ const SupportChatWidget: React.FC<SupportChatWidgetProps> = ({ user }) => {
     const token = localStorage.getItem('access_token');
     if (!token) return;
 
-    const wsProto = API_ROOT.startsWith('https') ? 'wss' : 'ws';
-    const cleanHost = API_ROOT.replace(/^https?:\/\//, '');
-    const wsUrl = `${wsProto}://${cleanHost}/api/v1/ws/support?token=${token}`;
-    const ws = new WebSocket(wsUrl);
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(getSupportWebSocketUrl(API_ROOT, window.location.origin, token));
+    } catch {
+      // Keep the page usable; the existing HTTP polling handles support messages.
+      console.warn('[WS Support] Connection unavailable; using HTTP fallback.');
+      return;
+    }
     socketRef.current = ws;
 
     ws.onopen = () => {

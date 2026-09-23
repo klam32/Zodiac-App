@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, API_ROOT, getImageUrl } from '../../api';
+import { getSupportWebSocketUrl } from '../../utils/supportWebSocket';
 import toast from 'react-hot-toast';
 
 interface Conversation {
@@ -66,11 +67,13 @@ const SupportTab: React.FC<SupportTabProps> = ({ adminUser }) => {
     const token = localStorage.getItem('access_token');
     if (!token) return;
 
-    const wsProto = API_ROOT.startsWith('https') ? 'wss' : 'ws';
-    const cleanHost = API_ROOT.replace(/^https?:\/\//, '');
-    const wsUrl = `${wsProto}://${cleanHost}/api/v1/ws/support?token=${token}`;
-
-    const ws = new WebSocket(wsUrl);
+    let ws: WebSocket;
+    try {
+      ws = new WebSocket(getSupportWebSocketUrl(API_ROOT, window.location.origin, token));
+    } catch {
+      console.warn('[WS Admin] Connection unavailable; using HTTP fallback.');
+      return;
+    }
     socketRef.current = ws;
 
     ws.onopen = () => {
